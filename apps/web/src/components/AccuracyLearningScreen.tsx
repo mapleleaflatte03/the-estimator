@@ -13,6 +13,7 @@ interface AccuracyLearningScreenProps {
 }
 
 const pct = (v: number) => `${Math.abs(Math.round(v))}%`;
+const hours1 = (v: number) => `${v.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} giờ`;
 const diffText = (actual: number, estimate: number) => {
   const d = ((actual - estimate) / estimate) * 100;
   if (Math.abs(d) < 1) return 'đúng bằng dự toán';
@@ -208,7 +209,8 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               <ul className="list-disc pl-5 space-y-1">
                 <li>
                   Trên {holdout.n_test.toLocaleString('vi-VN')} công việc chưa từng thấy, sai lệch trung bình giảm từ{' '}
-                  {hours(holdout.baseline.mae)} xuống {hours(holdout.calibrated.mae)} so với ước lượng ban đầu của người làm.
+                  {hours1(holdout.baseline.mae)} xuống {hours1(holdout.calibrated.mae)} mỗi công việc (giảm{' '}
+                  {pct(((holdout.calibrated.mae - holdout.baseline.mae) / holdout.baseline.mae) * 100)}) so với ước lượng ban đầu của người làm.
                 </li>
                 {holdout.calibrated.interval_coverage != null && (
                   <li>Kết quả thực tế nằm trong khoảng dao động dự báo ở {Math.round(holdout.calibrated.interval_coverage)}% số trường hợp.</li>
