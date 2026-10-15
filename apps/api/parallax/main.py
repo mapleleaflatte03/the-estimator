@@ -11,6 +11,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .schemas import (
@@ -29,6 +30,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 # PARALLAX_DATA_PATH lets tests and deployments use an isolated store.
 DATA_PATH = Path(os.environ.get("PARALLAX_DATA_PATH", ROOT_DIR / "data" / "parallax_store.json"))
 GOLDEN_DIR = ROOT_DIR / "datasets" / "golden_briefs"
+WEB_DIST = Path(os.environ.get("PARALLAX_WEB_DIST", ROOT_DIR / "apps" / "web" / "dist"))
 repo = StorageRepository(data_path=DATA_PATH)
 service = ParallaxService(repository=repo)
 
@@ -198,3 +200,9 @@ def run_benchmark():
         return service.run_benchmark_suite()
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
+
+
+# Serve the built web UI from the same origin when it exists (production image).
+# Mounted last so every API route above takes precedence.
+if WEB_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=WEB_DIST, html=True), name="web")

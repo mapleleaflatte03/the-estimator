@@ -14,6 +14,13 @@ uvicorn parallax.main:app --port 8000       # API (store: data/parallax_store.js
 cd apps/web && npm install && npm run dev   # UI on :3000 (proxy target: $PARALLAX_API_URL, default :8000)
 ```
 
+## Deploy (single service)
+
+`Dockerfile` builds the web UI and serves it from the FastAPI app (same origin, no proxy needed).
+On Render: **New → Blueprint →** select this repo (uses `render.yaml`), or open
+`https://render.com/deploy?repo=https://github.com/mapleleaflatte03/the-estimator`.
+The free plan has no persistent disk: projects entered on the live site reset when the service restarts.
+
 ## Real data: SiP effort estimation dataset
 
 `datasets/sip/` contains the unmodified files of the [SiP dataset](https://github.com/Derek-Jones/SiP_dataset)

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: the-estimator
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
