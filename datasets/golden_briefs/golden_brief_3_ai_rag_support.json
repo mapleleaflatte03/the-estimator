@@ -1,0 +1,15 @@
+{
+  "brief_id": "GOLDEN-03",
+  "title": "Customer Support AI RAG & Smart Ticket Routing Agent",
+  "project_type": "ai_workflow",
+  "brief_text": "Dự án: Trợ lý AI Hỗ trợ Khách hàng và Điều phối Ticket Thông minh.\n1. Tri thức nền tảng: Xây dựng pipeline RAG (Retrieval-Augmented Generation) nạp tài liệu hướng dẫn kỹ thuật PDF, Notion và FAQ.\n2. Tìm kiếm vector: Sử dụng PostgreSQL pgvector để lưu trữ và truy vấn tương đồng ngữ nghĩa câu hỏi khách hàng.\n3. Trả lời tự động: Chatbot AI phản hồi thắc mắc khách hàng với trích dẫn nguồn tài liệu tham khảo chính xác.\n4. Báo cáo & Giám sát: Dashboard trực quan thống kê tỷ lệ giải quyết câu hỏi và đánh giá độ chính xác của AI.\n5. Tích hợp kênh: Hỗ trợ tích hợp live-chat widget nhúng website và kênh Slack nội bộ công ty.",
+  "expected_confirmed_quotes": [
+    "RAG",
+    "pgvector",
+    "báo cáo"
+  ],
+  "expected_ambiguities": [
+    "CLAR-ERP"
+  ],
+  "min_wbs_items": 6
+}

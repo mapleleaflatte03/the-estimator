@@ -1,0 +1,16 @@
+{
+  "brief_id": "GOLDEN-02",
+  "title": "Multichannel E-Commerce Inventory & Order Integration Hub",
+  "project_type": "api_integration",
+  "brief_text": "Dự án: Hệ thống Tích hợp & Đồng bộ Đơn hàng - Tồn kho Đa kênh Thương mại Điện tử.\n1. Kết nối kênh bán: Tích hợp API của Shopee, Lazada, TikTok Shop và Shopify để đồng bộ tồn kho tức thời (real-time).\n2. Webhook & Sự kiện: Tiếp nhận webhook đơn hàng mới, cập nhật trạng thái giao dịch và tự động khóa tồn kho chống bán vượt.\n3. Xử lý tải cao: Hệ thống phải chịu tải tối thiểu 500 yêu cầu/giây trong các đợt flash sale lớn mà không bị nghẽn đơn.\n4. Báo cáo đối soát: Bảng điều khiển đối soát doanh thu, phí sàn và cảnh báo đơn hàng lỗi đồng bộ.\n5. Tích hợp thanh toán và hệ thống legacy ERP cũ để kết chuyển chứng từ cuối ngày.",
+  "expected_confirmed_quotes": [
+    "tồn kho",
+    "đơn hàng",
+    "báo cáo",
+    "legacy ERP"
+  ],
+  "expected_ambiguities": [
+    "CLAR-ERP"
+  ],
+  "min_wbs_items": 6
+}

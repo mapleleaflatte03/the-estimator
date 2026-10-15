@@ -1,0 +1,116 @@
+# PARALLAX AI — Nhật ký phát triển (Development Log)
+
+**Dự án**: PARALLAX AI — Evidence-Driven, Self-Calibrating Estimation Intelligence  
+**Thử thách**: Anduin Cybernetics · Agent in the Shell (15–19/10/2026)  
+**Tác giả**: Team Anduin / mapleleaflatte03  
+**Bắt đầu**: 15/10/2026 23:15 (Giờ TP.HCM)  
+**Cập nhật lần cuối**: 15/10/2026 23:45  
+
+---
+
+## 1. Bảng theo dõi tiến độ tổng thể (Milestone Tracker)
+
+| Giai đoạn | Thời gian | Trọng tâm | Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **Day 0: Foundation** | 15/10 (Đêm) | Dựng repo, schema Pydantic, provenance check, Monte Carlo, Benchmark harness, CI, venv | **HOÀN THÀNH (100%)** |
+| **Day 1: Scope & API** | 16/10 | FastAPI backend, 3 Golden Briefs, WBS generator, Evidence extractor, REST contracts | **HOÀN THÀNH (100%)** |
+| **Day 2: Intelligence** | 17/10 | Reference-class retrieval, Adversarial Critic, What-if Clarification engine, Monte Carlo correlated shock | **HOÀN THÀNH (100%)** |
+| **Day 3: Learning & UI**| 18/10 | Giao diện 5 màn hình (Next.js/Vite React), Actuals feedback loop, Calibration gate, UI/UX Pro Max Redesign | **HOÀN THÀNH (100%)** |
+| **Day 4: Verification** | 19/10 | Benchmark holdout evaluation, documentation, video demo, audit an toàn, nộp bài | **CHUẨN BỊ** |
+
+---
+
+## 2. Chi tiết các hạng mục đã hoàn thành
+
+### Giai đoạn 0: Foundation & Core Mathematics (15/10/2026)
+- [x] **Giải nén & Chuẩn hóa workspace**:
+  - Nhận bàn giao gói `parallax-estimator-day0.zip`.
+  - Chuẩn hóa layout thư mục: `apps/api`, `apps/web`, `datasets`, `docs`, `scripts`, `tests`.
+  - Khởi tạo local Git repository nhánh `main`.
+- [x] **Môi trường & Phụ thuộc**:
+  - Thiết lập virtual environment Python 3.14 (`.venv`).
+  - Cài đặt `pydantic>=2`, `numpy>=1.26`, `pytest>=8`, `fastapi>=0.110.0`, `uvicorn[standard]>=0.28.0`, `httpx>=0.27.0`.
+  - Đóng gói editable package `parallax-estimator-foundation`.
+- [x] **Data Contracts (`apps/api/parallax/schemas.py`)**:
+  - `VerificationStatus`: CONFIRMED, ASSUMED, MISSING.
+  - `EvidenceSpan`: quote, source_doc, location (chặn quote rỗng hoặc ngắn hơn 5 ký tự).
+  - `RequirementNode`: Ràng buộc requirement CONFIRMED bắt buộc phải có `EvidenceSpan`.
+  - `WorkItem`: Ước tính 3 điểm (optimistic $\le$ likely $\le$ pessimistic).
+  - `CriticFinding`: Chặn unverified finding tự động áp dụng vào WBS.
+  - `ClarificationQuestion`: Đo `sensitivity_spread_hours`.
+  - `ProbabilisticForecast`: Phân vị P10 $\le$ P50 $\le$ P80 $\le$ P90, mean, std, cảnh báo phân kỳ.
+  - `EstimateVersion`: Phát hiện chu trình (cycle detection) trong đồ thị DAG phụ thuộc công việc và kiểm tra tính toàn vẹn của mã định danh.
+  - Mở rộng thêm `Project`, `ProjectCreate`, `HistoricalCase`, `ActualWork`, `EvaluationRun`, `ClarificationAnswer`.
+- [x] **Cơ chế Provenance (`apps/api/parallax/provenance.py`)**:
+  - Hàm `validate_evidence_against_sources` kiểm tra chuỗi trích dẫn thực tế so với văn bản gốc (NFKC normalization, loại bỏ khoảng trắng thừa) nhằm chặn triệt để hiện tượng bịa đặt trích dẫn.
+- [x] **Monte Carlo & Risk Engine (`apps/api/parallax/estimation/engine.py`)**:
+  - Beta-PERT mô phỏng từng task.
+  - Lognormal systemic risk shock ($\mu = -0.5\sigma^2$, mean = 1.0) mô phỏng sự tương quan dương giữa các task.
+  - Cảnh báo phân kỳ nếu Reference Class P50 lệch $> 30\%$ so với Bottom-up P50.
+  - Đánh dấu rõ ràng `insufficient_historical_evidence` khi có dưới 5 case tương đồng.
+- [x] **Benchmark & Calibration Gate (`apps/api/parallax/evaluation/benchmark.py`, `calibration.py`)**:
+  - Tính toán MAE, MdAPE, WAPE, PRED(25), Interval Coverage, Mean Interval Width.
+  - Cổng phê duyệt hiệu chỉnh `calibration_gate_decision`: chỉ cho phép đánh giá trên tập `validation`, từ chối nghiêm ngặt việc rò rỉ dữ liệu sang tập `test`.
+- [x] **Kiểm thử tự động**:
+  - Đạt 18/18 tests pass trong 0.51s (`test_foundation.py`, `test_api.py`, `test_golden_briefs.py`).
+
+---
+
+### Giai đoạn 1 & 2: Backend API, Scope Extractor & Golden Briefs
+- [x] **Storage Repository (`apps/api/parallax/storage.py`)**:
+  - Quản lý phiên bản bất biến (`EstimateVersion` không bao giờ bị ghi đè, tạo DAG phả hệ phiên bản theo `parent_version_id`).
+  - Nạp sẵn 16 case dự án lịch sử (internal tools, e-commerce, AI/RAG) làm reference class.
+- [x] **Scope & Evidence Extractor (`apps/api/parallax/extractor.py`)**:
+  - Bóc tách tự động các yêu cầu CONFIRMED với trích dẫn verbatim chuẩn xác 100% từ brief.
+  - Nhận diện các giả định ngầm (ASSUMED) và các lỗ hổng cần làm rõ (MISSING).
+  - Tự động sinh DAG WBS gồm các vai trò (Frontend, Backend, DevOps, QA) với ước tính 3 điểm.
+  - Sinh các câu hỏi làm rõ (Active Clarification) xếp hạng theo độ nhạy (Sensitivity Spread).
+  - Khởi tạo nhận định của Adversarial Critic.
+- [x] **Bộ 3 Golden Briefs (`datasets/golden_briefs/`)**:
+  - `golden_brief_1_pm_portal.json`: Cổng thông tin Quản lý Dự án & ERP Legacy.
+  - `golden_brief_2_ecommerce_sync.json`: Đồng bộ Tồn kho & Đơn hàng Đa sàn Thương mại Điện tử.
+  - `golden_brief_3_ai_rag_support.json`: Trợ lý AI Hỗ trợ Khách hàng RAG & pgvector.
+- [x] **FastAPI REST API (`apps/api/parallax/main.py`)**:
+  - `GET /health`: Kiểm tra trạng thái hệ thống.
+  - `POST /api/v1/projects`: Tạo dự án mới.
+  - `GET /api/v1/projects`: Danh sách dự án.
+  - `POST /api/v1/projects/{id}/estimate`: Sinh version dự toán mới.
+  - `GET /api/v1/projects/{id}/versions`: Lịch sử phiên bản.
+  - `POST /api/v1/projects/{id}/clarify`: Trả lời câu hỏi làm rõ & kích hoạt What-if.
+  - `POST /api/v1/projects/{id}/actuals`: Ghi nhận giờ thực tế & đánh giá sai lệch.
+  - `POST /api/v1/benchmark/run`: Chạy bộ benchmark tự động trên dữ liệu holdout.
+
+---
+
+### Giai đoạn 3: UI/UX Pro Max Redesign (Frontend Workspace)
+- [x] **Khởi tạo ứng dụng Web React TypeScript + Tailwind CSS (`apps/web`)**:
+  - Tích hợp công nghệ Vite v8, TypeScript, Tailwind CSS v4, Lucide React icons.
+  - Cấu hình proxy tự động từ frontend port 3000 sang FastAPI port 8000.
+- [x] **Tạo tài nguyên hình ảnh thương hiệu (Asset Generation)**:
+  - `apps/web/public/parallax_hero.jpg`: Tranh minh họa không gian 3D Isometric hiện đại biểu diễn mạng lưới bằng chứng và phân phối xác suất Monte Carlo trên nền sáng tinh tế.
+  - `apps/web/public/parallax_logo.jpg`: Logo lăng kính khúc xạ ánh sáng ba chiều (Holographic Prism) biểu trưng cho trí tuệ dự toán đa chiều.
+- [x] **Nâng cấp thẩm mỹ theo chuẩn UI/UX Pro Max**:
+  - **Màu sắc sáng & hài hòa**: Nền sáng mềm mại `#F8FAFC`, thẻ trắng tinh khiết `#FFFFFF`, viền mờ `#E2E8F0`, màu điểm nhấn tím ánh điện `#4F46E5` và xanh cyan `#0284C7`.
+  - **Hỗ trợ Light / Dark Mode**: Tích hợp nút chuyển đổi giao diện sáng/tối tức thời.
+  - **Font chữ hiện đại**: Import Google Fonts `Plus Jakarta Sans` và `Space Grotesk`.
+  - **Pipeline Stepper 5 bước trực quan**:
+    1. *Intake & Brief* (Nạp yêu cầu)
+    2. *Scope & Evidence* (Trích dẫn WBS)
+    3. *Estimation Lab* (Monte Carlo)
+    4. *Active Clarify* (What-if)
+    5. *Accuracy & Learn* (Tự hiệu chỉnh)
+- [x] **Chi tiết 5 màn hình**:
+  1. **Project Intake**: Banner Hero 3D, chọn nhanh 3 Golden Briefs chỉ với 1 click, form nhập brief kèm đếm ký tự.
+  2. **Scope & Evidence Graph**: Thẻ tóm tắt tổng số yêu cầu, trích dẫn verbatim, bộ lọc theo trạng thái (Confirmed/Assumed/Missing), bảng WBS có huy hiệu vai trò màu sắc và kiểm tra chu trình DAG (0 cycles).
+  3. **Estimation Laboratory**: 4 thẻ phân vị (P10 Lạc quan, P50 Target Commit, P80 An toàn, P90 Biên độ cao), biểu đồ SVG đường cong phân phối xác suất mượt mà, so sánh hai nhánh Bottom-up vs. Reference-Class, và bảng nhận định phản biện của Critic.
+  4. **What-if & Active Clarification**: Thước đo mức độ ảnh hưởng (Sensitivity Impact), so sánh trực quan kịch bản "KHÔNG tích hợp" vs "CÓ tích hợp", các nút xác nhận tương tác, và cây phả hệ phiên bản dự toán (Version Tree).
+  5. **Accuracy & Learning**: Form nạp giờ công thực tế, tính toán chênh lệch tuyệt đối và sai số %, kiểm tra độ phủ P10-P90, nút bấm chạy bộ kiểm định tự động (MAE, MdAPE, WAPE, PRED(25), Coverage), và cam kết trung thực nghiên cứu.
+
+---
+
+## 3. Trạng thái kiểm thử & Vận hành
+
+- **Backend Tests**: 18/18 tests passed (`.venv/bin/pytest -v` trong 0.51s).
+- **Frontend Build**: 100% build thành công (`npm run build` trong 418ms, zero TypeScript errors).
+- **Backend Service**: Đang chạy trên `http://127.0.0.1:8000/`.
+- **Frontend Service**: Đang chạy trên `http://localhost:3000/` với proxy kết nối trực tiếp đến backend.
