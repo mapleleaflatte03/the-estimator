@@ -21,6 +21,7 @@ def load_golden_brief(filename: str) -> dict:
         "golden_brief_1_pm_portal.json",
         "golden_brief_2_ecommerce_sync.json",
         "golden_brief_3_ai_rag_support.json",
+        "golden_brief_4_field_service.json",
     ],
 )
 def test_golden_brief_extraction_and_provenance(fixture_name):
@@ -57,26 +58,23 @@ def test_golden_brief_extraction_and_provenance(fixture_name):
 
 
 def test_golden_brief_1_active_clarification_sensitivity():
-    """Verify that clarifying ERP integration impacts the forecast by sensitivity spread."""
+    """The tentative ERP clause becomes a scope question whose answer moves the forecast."""
     data = load_golden_brief("golden_brief_1_pm_portal.json")
     brief_text = data["brief_text"]
+    v1 = extract_scope_and_wbs(project_id="GOLDEN-01", brief_text=brief_text, version_id="v1")
+    erp_q = next(q for q in v1.clarifications if any("ERP" in ev.quote for ev in q.evidence))
+    assert erp_q.current_assumption is True
+    assert erp_q.affected_item_ids
 
-    # Version with ERP = True
     v_with_erp = extract_scope_and_wbs(
-        project_id="GOLDEN-01",
-        brief_text=brief_text,
-        clarification_answers={"CLAR-ERP": True},
-        version_id="v_true",
+        project_id="GOLDEN-01", brief_text=brief_text,
+        clarification_answers={erp_q.question_id: True}, version_id="v_true",
     )
-
-    # Version with ERP = False
     v_no_erp = extract_scope_and_wbs(
-        project_id="GOLDEN-01",
-        brief_text=brief_text,
-        clarification_answers={"CLAR-ERP": False},
-        version_id="v_false",
+        project_id="GOLDEN-01", brief_text=brief_text,
+        clarification_answers={erp_q.question_id: False}, version_id="v_false",
     )
-
+    assert not any(i.item_id in erp_q.affected_item_ids for i in v_no_erp.wbs)
     diff = v_with_erp.forecast.p50_hours - v_no_erp.forecast.p50_hours
-    # ERP connector is 55 likely hours + 25 likely hours QA/retry = ~80-100 hours difference
-    assert diff >= 60.0, f"Expected sensitivity spread >= 60 hours, got {diff:.1f}"
+    # The removed items' PERT mean is the sensitivity; Monte Carlo + QA share keep it close.
+    assert diff >= 0.7 * erp_q.sensitivity_spread_hours, f"diff={diff:.1f}, spread={erp_q.sensitivity_spread_hours}"

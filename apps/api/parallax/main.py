@@ -4,6 +4,8 @@ Exposes endpoints for project intake, evidence-backed WBS estimation,
 adversarial review, what-if active clarification, and actuals calibration.
 """
 from __future__ import annotations
+import json
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -19,12 +21,15 @@ from .schemas import (
     Project,
     ProjectCreate,
 )
+from . import empirical
 from .service import ParallaxService
 from .storage import StorageRepository
 
-# Initialize persistence and service
-DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
-repo = StorageRepository(data_path=DATA_DIR / "parallax_store.json")
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+# PARALLAX_DATA_PATH lets tests and deployments use an isolated store.
+DATA_PATH = Path(os.environ.get("PARALLAX_DATA_PATH", ROOT_DIR / "data" / "parallax_store.json"))
+GOLDEN_DIR = ROOT_DIR / "datasets" / "golden_briefs"
+repo = StorageRepository(data_path=DATA_PATH)
 service = ParallaxService(repository=repo)
 
 app = FastAPI(
@@ -58,6 +63,29 @@ def health_check():
         "projects_count": len(repo.list_projects()),
         "historical_cases_count": len(repo.list_historical_cases()),
     }
+
+
+@app.get("/api/v1/system/status", tags=["System"])
+def system_status():
+    """Live facts for the UI header: dataset, calibration state, last benchmark."""
+    return service.system_status()
+
+
+@app.get("/api/v1/sample-briefs", tags=["Projects"])
+def sample_briefs():
+    """Golden briefs stored in datasets/golden_briefs (inputs only, no labels claimed)."""
+    briefs = []
+    for path in sorted(GOLDEN_DIR.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        briefs.append(
+            {
+                "id": data.get("brief_id", path.stem),
+                "title": data.get("title", path.stem),
+                "project_type": data.get("project_type", "custom_software"),
+                "brief_text": data["brief_text"],
+            }
+        )
+    return briefs
 
 
 @app.post("/api/v1/projects", response_model=Project, status_code=status.HTTP_201_CREATED, tags=["Projects"])
@@ -147,20 +175,26 @@ def record_actuals(project_id: str, payload: ActualWorkCreate):
 
 @app.get("/api/v1/historical-cases", response_model=list[HistoricalCase], tags=["Historical Intelligence"])
 def list_historical_cases(domain: Optional[str] = None):
+    """Completed projects in this workspace (projects with recorded actuals)."""
     return repo.list_historical_cases(domain=domain)
+
+
+@app.get("/api/v1/calibration", tags=["Actuals & Learning"])
+def calibration_status():
+    return service.calibration_status()
+
+
+@app.get("/api/v1/datasets/sip", tags=["Historical Intelligence"])
+def sip_dataset_summary():
+    try:
+        return empirical.dataset_summary()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
 
 @app.post("/api/v1/benchmark/run", tags=["Evaluation"])
 def run_benchmark():
-    metrics = service.run_benchmark_suite()
-    return {
-        "model_name": metrics.model_name,
-        "split": metrics.split,
-        "n_cases": metrics.n_cases,
-        "mae": round(metrics.mae, 2),
-        "mdape": round(metrics.mdape, 2),
-        "wape": round(metrics.wape, 2),
-        "pred_25": round(metrics.pred_25, 2),
-        "interval_coverage": round(metrics.interval_coverage, 2),
-        "mean_interval_width": round(metrics.mean_interval_width, 2),
-    }
+    try:
+        return service.run_benchmark_suite()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))

@@ -27,3 +27,6 @@ def validate_evidence_against_sources(version: EstimateVersion, source_texts: di
     for finding in version.critic_findings:
         for ev in finding.supporting_evidence:
             verify(ev)
+    for question in version.clarifications:
+        for ev in question.evidence:
+            verify(ev)

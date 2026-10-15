@@ -1,6 +1,6 @@
 {
   "brief_id": "GOLDEN-01",
-  "title": "Enterprise Project Management Portal with Legacy ERP Ambiguity",
+  "title": "Cổng quản lý dự án & duyệt ngân sách",
   "project_type": "internal_tool",
   "brief_text": "Dự án: Xây dựng Cổng thông tin Quản lý Dự án & Phê duyệt Ngân sách Doanh nghiệp.\n1. Xác thực người dùng: Bắt buộc hỗ trợ Single Sign-On (SSO) qua Okta / Google Workspace cho toàn bộ 500 nhân sự.\n2. Quản lý dự án: Cho phép tạo dự án, phân rã công việc WBS, gán người phụ trách, theo dõi tiến độ theo thời gian thực.\n3. Báo cáo & Thống kê: Dashboard trực quan hiển thị KPI, biểu đồ Gantt tiến độ, và xuất báo cáo PDF/Excel hàng tuần.\n4. Tích hợp: Doanh nghiệp hiện có hệ thống legacy ERP lưu trữ số liệu kế toán. Cần xem xét khả năng đồng bộ hai chiều nhưng chưa có tài liệu kỹ thuật về API của ERP.\n5. Bảo mật: Phân quyền đa cấp (Admin, Project Manager, Member, Viewer) kèm audit log ghi nhận mọi thay đổi.",
   "expected_confirmed_quotes": [

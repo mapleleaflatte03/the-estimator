@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 
 class VerificationStatus(str, Enum):
@@ -28,6 +28,8 @@ class RequirementNode(BaseModel):
     description: str
     status: VerificationStatus
     evidence: list[EvidenceSpan] = Field(default_factory=list)
+    components: list[str] = Field(default_factory=list)
+    in_scope: bool = True
 
     @model_validator(mode="after")
     def confirmed_needs_evidence(self):
@@ -46,6 +48,7 @@ class WorkItem(BaseModel):
     most_likely_hours: float = Field(gt=0, allow_inf_nan=False)
     pessimistic_hours: float = Field(gt=0, allow_inf_nan=False)
     assumption_id: Optional[str] = None
+    basis: Optional[str] = None
 
     @model_validator(mode="after")
     def check_three_point_order(self):
@@ -79,11 +82,22 @@ class ClarificationQuestion(BaseModel):
     hours_if_false: float = Field(ge=0, allow_inf_nan=False)
     hours_if_true: float = Field(ge=0, allow_inf_nan=False)
     prior_probability: Optional[float] = Field(default=None, ge=0, le=1)
+    affected_item_ids: list[str] = Field(default_factory=list)
+    evidence: list[EvidenceSpan] = Field(default_factory=list)
+    current_assumption: bool = True  # whether the unanswered estimate includes the "yes" scope
+    answer: Optional[bool] = None
 
+    @computed_field
     @property
     def sensitivity_spread_hours(self) -> float:
         """Sensitivity proxy, NOT an expected value-of-information estimate."""
         return abs(self.hours_if_true - self.hours_if_false)
+
+
+class HistogramBin(BaseModel):
+    start: float
+    end: float
+    share: float = Field(ge=0, le=1)
 
 
 class ProbabilisticForecast(BaseModel):
@@ -97,6 +111,15 @@ class ProbabilisticForecast(BaseModel):
     reference_class_p50: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
     divergence_warning: Optional[str] = None
     insufficient_historical_evidence: bool = False
+    calibration_multiplier: float = Field(default=1.0, gt=0, allow_inf_nan=False)
+    uncalibrated_p50_hours: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    uncertainty_source: Optional[str] = None
+    n_simulations: Optional[int] = None
+    percentile_curve: list[list[float]] = Field(default_factory=list)
+    histogram: list[HistogramBin] = Field(default_factory=list)
+    p99_hours: Optional[float] = None
+    max_hours: Optional[float] = None
+    tail_start_hours: Optional[float] = None  # histogram upper edge (P97.5)
 
     @model_validator(mode="after")
     def sorted_quantiles(self):
@@ -116,6 +139,7 @@ class EstimateVersion(BaseModel):
     critic_findings: list[CriticFinding] = Field(default_factory=list)
     clarifications: list[ClarificationQuestion] = Field(default_factory=list)
     forecast: ProbabilisticForecast
+    clarification_answers: dict[str, bool] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def verify_links_and_acyclic_graph(self):
@@ -175,7 +199,8 @@ class HistoricalCase(BaseModel):
     domain: str = "software"
     actual_hours: float = Field(gt=0)
     task_count: int = Field(gt=0)
-    complexity_score: float = Field(ge=0.0, le=10.0, default=5.0)
+    estimated_p50_hours: Optional[float] = None
+    completed_at: Optional[datetime] = None
     tags: list[str] = Field(default_factory=list)
     notes: Optional[str] = None
 
@@ -198,6 +223,30 @@ class EvaluationRun(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metrics: dict[str, float] = Field(default_factory=dict)
     gate_decision: Optional[dict] = None
+
+
+class CalibrationObservation(BaseModel):
+    project_id: str
+    version_id: str
+    project_type: str
+    uncalibrated_p50: float = Field(gt=0)
+    actual_hours: float = Field(gt=0)
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @property
+    def log_ratio(self) -> float:
+        import math
+
+        return math.log(self.actual_hours / self.uncalibrated_p50)
+
+
+class CalibrationState(BaseModel):
+    """Bias multiplier learned from this workspace's own recorded actuals."""
+
+    multiplier: float = Field(default=1.0, gt=0)
+    prior_strength: float = Field(default=3.0, gt=0)
+    observations: list[CalibrationObservation] = Field(default_factory=list)
+    updated_at: Optional[datetime] = None
 
 
 class ClarificationAnswer(BaseModel):

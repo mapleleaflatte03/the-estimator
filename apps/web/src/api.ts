@@ -1,109 +1,76 @@
 import type {
-  BenchmarkMetrics,
+  ActualsResult,
+  BenchmarkReport,
+  CalibrationStatus,
   EstimateVersion,
   HistoricalCase,
   Project,
+  SampleBrief,
+  SipSummary,
+  SystemStatus,
 } from './types';
 
 const API_BASE = '/api/v1';
 
-export async function fetchProjects(): Promise<Project[]> {
-  const res = await fetch(`${API_BASE}/projects`);
-  if (!res.ok) throw new Error('Failed to fetch projects');
+async function request<T>(url: string, init?: RequestInit, fallbackError = 'Request failed'): Promise<T> {
+  const res = await fetch(url, init);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: fallbackError }));
+    throw new Error(typeof err.detail === 'string' ? err.detail : fallbackError);
+  }
   return res.json();
 }
 
-export async function createProject(payload: {
+const postJson = (body: unknown): RequestInit => ({
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
+export const fetchProjects = () => request<Project[]>(`${API_BASE}/projects`, undefined, 'Failed to fetch projects');
+
+export const createProject = (payload: {
   title: string;
   project_type: string;
   brief_text: string;
   documents?: Record<string, string>;
-}): Promise<Project> {
-  const res = await fetch(`${API_BASE}/projects`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Creation failed' }));
-    throw new Error(err.detail || 'Failed to create project');
-  }
-  return res.json();
-}
+}) => request<Project>(`${API_BASE}/projects`, postJson(payload), 'Failed to create project');
 
-export async function estimateProject(projectId: string): Promise<EstimateVersion> {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/estimate`, {
-    method: 'POST',
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Estimation failed' }));
-    throw new Error(err.detail || 'Failed to generate estimate');
-  }
-  return res.json();
-}
+export const estimateProject = (projectId: string) =>
+  request<EstimateVersion>(`${API_BASE}/projects/${projectId}/estimate`, { method: 'POST' }, 'Failed to generate estimate');
 
-export async function fetchVersions(projectId: string): Promise<EstimateVersion[]> {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/versions`);
-  if (!res.ok) throw new Error('Failed to fetch versions');
-  return res.json();
-}
+export const fetchVersions = (projectId: string) =>
+  request<EstimateVersion[]>(`${API_BASE}/projects/${projectId}/versions`, undefined, 'Failed to fetch versions');
 
-export async function answerClarification(
-  projectId: string,
-  questionId: string,
-  answer: boolean,
-  notes?: string
-): Promise<EstimateVersion> {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/clarify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question_id: questionId, answer, notes }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Clarification failed' }));
-    throw new Error(err.detail || 'Failed to answer clarification');
-  }
-  return res.json();
-}
+export const answerClarification = (projectId: string, questionId: string, answer: boolean, notes?: string) =>
+  request<EstimateVersion>(
+    `${API_BASE}/projects/${projectId}/clarify`,
+    postJson({ question_id: questionId, answer, notes }),
+    'Failed to answer clarification',
+  );
 
-export async function recordActuals(
-  projectId: string,
-  actualHours: number,
-  deviationReasons?: string[]
-): Promise<{
-  actual_id: string;
-  project_id: string;
-  baseline_version_id: string;
-  estimated_p50: number;
-  actual_hours: number;
-  delta_hours: number;
-  percentage_error: number;
-  inside_p10_p90: boolean;
-}> {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/actuals`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      actual_hours: actualHours,
-      deviation_reasons: deviationReasons,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Actuals recording failed' }));
-    throw new Error(err.detail || 'Failed to record actuals');
-  }
-  return res.json();
-}
+export const recordActuals = (projectId: string, actualHours: number, deviationReasons?: string[]) =>
+  request<ActualsResult>(
+    `${API_BASE}/projects/${projectId}/actuals`,
+    postJson({ actual_hours: actualHours, deviation_reasons: deviationReasons }),
+    'Failed to record actuals',
+  );
 
-export async function fetchHistoricalCases(domain?: string): Promise<HistoricalCase[]> {
-  const url = domain ? `${API_BASE}/historical-cases?domain=${domain}` : `${API_BASE}/historical-cases`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch historical cases');
-  return res.json();
-}
+export const fetchHistoricalCases = (domain?: string) =>
+  request<HistoricalCase[]>(
+    domain ? `${API_BASE}/historical-cases?domain=${encodeURIComponent(domain)}` : `${API_BASE}/historical-cases`,
+    undefined,
+    'Failed to fetch completed projects',
+  );
 
-export async function runBenchmark(): Promise<BenchmarkMetrics> {
-  const res = await fetch(`${API_BASE}/benchmark/run`, { method: 'POST' });
-  if (!res.ok) throw new Error('Failed to run benchmark');
-  return res.json();
-}
+export const runBenchmark = () =>
+  request<BenchmarkReport>(`${API_BASE}/benchmark/run`, { method: 'POST' }, 'Failed to run benchmark');
+
+export const fetchSystemStatus = () => request<SystemStatus>(`${API_BASE}/system/status`, undefined, 'Status unavailable');
+
+export const fetchSampleBriefs = () => request<SampleBrief[]>(`${API_BASE}/sample-briefs`, undefined, 'Samples unavailable');
+
+export const fetchCalibration = () =>
+  request<CalibrationStatus>(`${API_BASE}/calibration`, undefined, 'Calibration unavailable');
+
+export const fetchSipSummary = () => request<SipSummary>(`${API_BASE}/datasets/sip`, undefined, 'Dataset unavailable');

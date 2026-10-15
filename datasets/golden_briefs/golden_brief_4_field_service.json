@@ -1,0 +1,16 @@
+{
+  "brief_id": "GOLDEN-04",
+  "title": "Ứng dụng điều phối kỹ thuật viên",
+  "project_type": "field_service",
+  "brief_text": "Dự án: Ứng dụng điều phối kỹ thuật viên bảo trì điều hòa.\n- Điều phối viên xếp lịch và phân công kỹ thuật viên theo khu vực, kỹ năng và ca làm.\n- Kỹ thuật viên dùng điện thoại để nhận việc, chụp ảnh hiện trường và cập nhật trạng thái kể cả khi offline, tự đồng bộ khi có mạng.\n- Gửi thông báo SMS/Zalo cho khách hàng khi kỹ thuật viên đang trên đường tới.\n- Nhập danh sách khách hàng và thiết bị từ file CSV hiện có.\n- Có thể cần thêm báo cáo năng suất kỹ thuật viên theo tháng.",
+  "expected_confirmed_quotes": [
+    "xếp lịch và phân công kỹ thuật viên",
+    "offline",
+    "thông báo SMS/Zalo",
+    "file CSV"
+  ],
+  "expected_ambiguities": [
+    "tentative monthly productivity report"
+  ],
+  "min_wbs_items": 10
+}
