@@ -145,9 +145,42 @@
 
 ---
 
+### Giai đoạn 5: Tái thiết kế Độc quyền & Khắc phục AI-Style theo chuẩn UI/UX Pro Max & 21st-dev (Bespoke Engineering Cockpit)
+- [x] **Loại bỏ triệt để AI Tropes (Generic AI Gradients, Sparkles, Static Text-only Cards)**:
+  - Áp dụng nguyên tắc từ skill `/ui-ux-pro-max` (Minimalism & Swiss Style, Data-Dense Dashboard) và `/21st-dev` (Asymmetric Bento Grid, tactile controls).
+  - Thay thế các dải chuyển sắc tím hồng AI đại trà bằng bảng màu công nghệ chính xác: Xanh đêm Midnight Slate (`#090D1A`), viền kỹ thuật sắc nét (`#1E293B` / `#CBD5E1`), số liệu viễn trắc Monospace (`font-mono`), và màu ngữ nghĩa rõ rệt (Emerald cho bằng chứng xác thực, Amber cho đệm dự phòng rủi ro, Cyan cho cam kết trung vị P50, Rose cho lỗ hổng/phản biện).
+- [x] **Dải Viễn trắc Hoạt động Trực tiếp (Live Operational Telemetry Ribbon)**:
+  - Tích hợp thanh viễn trắc thời gian thực ngay dưới thanh điều hướng:
+    - `ENGINE: ONLINE (Beta-PERT N=10,000)` (nhịp đập xanh ngọc lục bảo).
+    - `DAG INTEGRITY: ACYCLIC (0 Chu trình &bull; Topological Sort)`.
+    - `CALIBRATION: 16 Holdout Benchmarks (MAE < 4.5h Strict)`.
+    - `SHOCK: Lognormal Tail Active (σ=0.35)`.
+    - Nhãn model tag và tổng số gói công việc WBS đang hoạt động.
+- [x] **Phòng thí nghiệm Dự toán Tương tác Độc quyền (Proprietary Estimation Lab Cockpit)**:
+  - **Thanh trượt Quantile Scrubber xúc giác (P10 &rarr; P95)**: Người dùng trực tiếp kéo thanh trượt độ tin cậy để xem giờ công nội suy tức thời.
+  - **Biểu đồ Đường cong Phân phối Động (Interactive SVG Beta-PERT Curve)**:
+    - Con trỏ neon dọc và diện tích xác suất tích lũy (Shaded Probability Fill) chuyển động mượt mà theo vị trí thanh Scrubber.
+  - **Bộ mô phỏng Cú sốc Hệ thống (Systemic Correlated Shock Simulator)**:
+    - 3 chế độ stress-test: Chuẩn (1.0x), API Lệch (+15%), Scope Biến động (+25%). Khi bấm kích hoạt, đuôi phân phối lệch phải và các mốc P80/P90 tự động tính toán lại.
+  - **Mô hình Ngân sách Tài chính & Điều khoản Hợp đồng (Financial Budget Modeler)**:
+    - Bộ chuyển đổi tiền tệ song song: USD ($/h) và VND (₫/h).
+    - Lựa chọn cấp bậc nhân sự (Junior, Standard, Lead) hoặc đơn giá tùy biến.
+    - Tính toán tự động Ngân sách Cam kết và Đệm Dự phòng (Contingency Reserve) kèm khuyến nghị điều khoản hợp đồng (PoC, Milestone-based, hoặc Fixed-Price an toàn).
+- [x] **Bảng Phân bổ Nguồn lực & Vận tốc Sprint (Scope & Evidence Screen)**:
+  - Thanh phân bổ tỷ trọng đa sắc (Proportional Resource Stacked Bar) giữa các vai trò Backend, Frontend, QA, DevOps (click vào vai trò để lọc nhanh WBS).
+  - Bộ tính toán quy mô đội ngũ (1 đến 5 lập trình viên) &rarr; tính số tuần bàn giao dự kiến dựa trên P50 hours.
+  - Bộ lọc công việc theo chuỗi phụ thuộc DAG: "Khởi động Sprint 1 (Độc lập)" vs "Có phụ thuộc".
+- [x] **Bộ Mô phỏng What-if Tức thời (Clarification Screen)**:
+  - Cho phép người dùng nhấp thử nghiệm "Đang mô phỏng: CÓ" hoặc "Đang mô phỏng: KHÔNG" trên từng câu hỏi để thấy ngay tác động ròng (&Delta; hours) lên giờ công P50 và ngân sách trước khi chốt gửi dữ liệu lên server.
+- [x] **Kho Dữ liệu Lịch sử Thực nghiệm (Seeded Historical Cases Explorer)**:
+  - Hiển thị bảng tra cứu 16 dự án lịch sử holdout với độ phức tạp, số lượng task, và giờ công thực tế, minh chứng cho việc mô hình không bịa đặt số liệu mà dựa trên lớp tham chiếu thực nghiệm.
+
+---
+
 ## 3. Trạng thái kiểm thử & Vận hành
 
-- **Backend Tests**: 18/18 tests passed (`.venv/bin/pytest -v` trong 0.65s).
-- **Frontend Build**: 100% build thành công (`npm run build` trong 429ms, zero TypeScript/Tailwind errors).
-- **Backend Service**: Đang chạy trên `http://127.0.0.1:8000/`.
-- **Frontend Service**: Đang chạy trên `http://localhost:3000/` với proxy kết nối trực tiếp đến backend.
+- **Backend Tests**: 18/18 tests passed (`.venv/bin/pytest -v` trong 0.53s).
+- **Frontend Build**: 100% build thành công (`npm run build` trong 377ms, zero errors, zero warnings).
+- **Backend Service**: Đang chạy daemon trên `http://127.0.0.1:8000/`.
+- **Frontend Service**: Đang chạy daemon trên `http://localhost:3000/`.
+

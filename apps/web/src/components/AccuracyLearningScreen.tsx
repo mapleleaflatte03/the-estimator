@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Award,
   BarChart,
@@ -8,9 +8,15 @@ import {
   AlertOctagon,
   CheckCircle2,
   TrendingDown,
-  Sparkles,
+  Database,
+  Search,
+  Filter,
+  Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import type { BenchmarkMetrics, EstimateVersion } from '../types';
+import type { BenchmarkMetrics, EstimateVersion, HistoricalCase } from '../types';
+import { fetchHistoricalCases } from '../api';
 
 interface AccuracyLearningScreenProps {
   version: EstimateVersion;
@@ -32,6 +38,28 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
 
   const [benchmarkMetrics, setBenchmarkMetrics] = useState<BenchmarkMetrics | null>(null);
   const [isRunningBenchmark, setIsRunningBenchmark] = useState(false);
+
+  // Historical cases explorer
+  const [historicalCases, setHistoricalCases] = useState<HistoricalCase[]>([]);
+  const [selectedDomain, setSelectedDomain] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingCases, setIsLoadingCases] = useState(false);
+
+  useEffect(() => {
+    loadCases();
+  }, []);
+
+  const loadCases = async () => {
+    setIsLoadingCases(true);
+    try {
+      const data = await fetchHistoricalCases();
+      setHistoricalCases(data);
+    } catch (err) {
+      console.error('Error fetching historical cases:', err);
+    } finally {
+      setIsLoadingCases(false);
+    }
+  };
 
   const handleActualsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,12 +84,21 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
     }
   };
 
+  // Filter historical cases
+  const filteredCases = historicalCases.filter((c) => {
+    if (selectedDomain !== 'all' && c.domain.toLowerCase() !== selectedDomain.toLowerCase()) return false;
+    if (searchQuery && !c.title.toLowerCase().includes(searchQuery.toLowerCase()) && !c.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-          <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-emerald-400 dark:bg-emerald-950/80 dark:border dark:border-emerald-800 text-[11px] font-mono font-bold tracking-wider">
+          <Award className="w-3.5 h-3.5 text-emerald-400" />
           <span>CONTINUOUS SELF-CALIBRATION & EMPIRICAL BENCHMARK</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -81,7 +118,7 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               <Clock className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
               <span>Ghi nhận Giờ công Thực tế (Actuals)</span>
             </h2>
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-cyan-400 border border-indigo-200/60 dark:border-slate-700 font-bold">
+            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-cyan-400 border border-slate-200 dark:border-slate-700 font-bold">
               So sánh baseline v1
             </span>
           </div>
@@ -119,7 +156,7 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !actualHours}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs tracking-wide transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 dark:bg-cyan-400 dark:hover:bg-cyan-300 dark:text-slate-950 font-bold text-xs tracking-wide transition-all shadow-sm disabled:opacity-50 cursor-pointer font-mono"
             >
               {isSubmitting ? 'Đang phân tích...' : 'Lưu Actuals & Phân tích Sai lệch'}
             </button>
@@ -175,7 +212,7 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
                   ) : (
                     <>
                       <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                      <span>Actuals vượt ngoài khoảng P10-P90</span>
+                      <span>Actuals vượt ngoài khoảng P10-P90 &bull; Kích hoạt Re-weighting</span>
                     </>
                   )}
                 </span>
@@ -194,7 +231,7 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
             <button
               onClick={handleBenchmarkRun}
               disabled={isRunningBenchmark}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-sm font-mono"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${isRunningBenchmark ? 'animate-spin' : ''}`} />
               <span>{isRunningBenchmark ? 'Đang tính...' : 'Chạy Benchmark'}</span>
@@ -208,40 +245,40 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
           {benchmarkMetrics ? (
             <div className="space-y-3 animate-fadeIn">
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/40 dark:to-[#0f172a] border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs">
-                  <div className="text-indigo-800 dark:text-indigo-300 font-bold uppercase text-[10px]">MAE (Sai lệch tuyệt đối TB)</div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0b0f1a] border border-slate-200 dark:border-slate-800 shadow-xs">
+                  <div className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">MAE (Sai lệch tuyệt đối TB)</div>
                   <div className="text-xl font-extrabold font-mono text-indigo-700 dark:text-cyan-300 mt-0.5">
                     {benchmarkMetrics.mae} giờ
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Mean Absolute Error</div>
+                  <div className="text-[10px] text-slate-500">Mean Absolute Error</div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-cyan-50/70 to-white dark:from-cyan-950/40 dark:to-[#0f172a] border border-cyan-200/80 dark:border-cyan-800/60 shadow-xs">
-                  <div className="text-cyan-800 dark:text-cyan-300 font-bold uppercase text-[10px]">MdAPE (Sai số trung vị)</div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0b0f1a] border border-slate-200 dark:border-slate-800 shadow-xs">
+                  <div className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">MdAPE (Sai số trung vị)</div>
                   <div className="text-xl font-extrabold font-mono text-cyan-700 dark:text-cyan-300 mt-0.5">
                     {benchmarkMetrics.mdape}%
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Median Abs % Error</div>
+                  <div className="text-[10px] text-slate-500">Median Abs % Error</div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-purple-50/70 to-white dark:from-purple-950/40 dark:to-[#0f172a] border border-purple-200/80 dark:border-purple-800/60 shadow-xs">
-                  <div className="text-purple-800 dark:text-purple-300 font-bold uppercase text-[10px]">WAPE (Tỷ lệ tổng sai số)</div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0b0f1a] border border-slate-200 dark:border-slate-800 shadow-xs">
+                  <div className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">WAPE (Tỷ lệ tổng sai số)</div>
                   <div className="text-xl font-extrabold font-mono text-purple-700 dark:text-purple-300 mt-0.5">
                     {benchmarkMetrics.wape}%
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Weighted Abs % Error</div>
+                  <div className="text-[10px] text-slate-500">Weighted Abs % Error</div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-emerald-50/70 to-white dark:from-emerald-950/40 dark:to-[#0f172a] border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
-                  <div className="text-emerald-800 dark:text-emerald-300 font-bold uppercase text-[10px]">PRED(25) (% trong sai số 25%)</div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0b0f1a] border border-slate-200 dark:border-slate-800 shadow-xs">
+                  <div className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">PRED(25) (% sai số &le; 25%)</div>
                   <div className="text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
                     {benchmarkMetrics.pred_25}%
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Tỷ lệ dự đoán chuẩn xác</div>
+                  <div className="text-[10px] text-slate-500">Tỷ lệ dự đoán chuẩn xác</div>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between text-xs shadow-xs">
+              <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/80 flex items-center justify-between text-xs shadow-xs">
                 <div>
                   <div className="text-emerald-900 dark:text-emerald-200 font-bold text-sm">
                     Độ phủ khoảng (Interval Coverage): {benchmarkMetrics.interval_coverage}%
@@ -261,8 +298,86 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
         </div>
       </div>
 
+      {/* Seeded Historical Holdout Projects Explorer */}
+      <div className="modern-card p-6 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Database className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
+              <span>Kho Dữ liệu Lịch sử Holdout (16 Seeded Reference Projects)</span>
+            </h2>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Cơ sở dữ liệu thực nghiệm dùng cho định giá lớp tham chiếu (Reference-Class Forecasting)
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              {['all', 'Fintech', 'Security', 'Integration'].map((dom) => (
+                <button
+                  key={dom}
+                  onClick={() => setSelectedDomain(dom)}
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    selectedDomain === dom
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  {dom === 'all' ? 'Tất cả' : dom}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Table of cases */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/90 dark:bg-[#0b0f1a] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold border-b border-slate-200 dark:border-slate-800 text-[11px]">
+              <tr>
+                <th className="py-2.5 px-3">Mã &amp; Tên dự án</th>
+                <th className="py-2.5 px-3">Lĩnh vực</th>
+                <th className="py-2.5 px-3">Số Task</th>
+                <th className="py-2.5 px-3">Độ phức tạp</th>
+                <th className="py-2.5 px-3 text-right">Giờ công thực tế</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-mono">
+              {filteredCases.slice(0, 8).map((c) => (
+                <tr key={c.case_id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                  <td className="py-2.5 px-3">
+                    <span className="font-bold text-indigo-600 dark:text-cyan-400 mr-2">{c.case_id}</span>
+                    <span className="font-sans text-slate-800 dark:text-slate-200 font-semibold">{c.title}</span>
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">
+                      {c.domain}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{c.task_count} tasks</td>
+                  <td className="py-2.5 px-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-indigo-600 dark:bg-cyan-400 rounded-full"
+                          style={{ width: `${Math.round(c.complexity_score * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500">{c.complexity_score}</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                    {c.actual_hours}h
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Methodological Integrity Alert */}
-      <div className="modern-card p-5 bg-gradient-to-r from-indigo-50/50 via-white to-white dark:from-[#131b2e] dark:to-[#121829] border border-slate-200/90 dark:border-slate-800 border-l-4 border-l-indigo-600 dark:border-l-cyan-400 flex items-start gap-3.5 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
+      <div className="modern-card p-5 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 border-l-4 border-l-indigo-600 dark:border-l-cyan-400 flex items-start gap-3.5 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
         <AlertOctagon className="w-5 h-5 text-indigo-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <span className="font-bold text-slate-900 dark:text-white block mb-0.5 text-xs">

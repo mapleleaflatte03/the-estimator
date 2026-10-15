@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   CheckCircle2,
   HelpCircle,
@@ -9,8 +9,12 @@ import {
   Layers,
   Search,
   Filter,
+  Users,
+  Calendar,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
-import type { EstimateVersion, RequirementNode } from '../types';
+import type { EstimateVersion, RequirementNode, WorkItem } from '../types';
 
 interface ScopeGraphScreenProps {
   version: EstimateVersion;
@@ -22,18 +26,60 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
   );
   const [reqFilter, setReqFilter] = useState<'all' | 'confirmed' | 'assumed' | 'missing'>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [depFilter, setDepFilter] = useState<'all' | 'independent' | 'dependent'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [teamSize, setTeamSize] = useState<number>(3); // 3 FTEs default
 
+  // Resource breakdown calculation
+  const roleStats = useMemo(() => {
+    const totals: Record<string, number> = {
+      Backend: 0,
+      Frontend: 0,
+      QA: 0,
+      DevOps: 0,
+    };
+    version.wbs.forEach((item) => {
+      const role = item.role || 'Backend';
+      totals[role] = (totals[role] || 0) + item.most_likely_hours;
+    });
+
+    const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0) || 1;
+    return {
+      totals,
+      grandTotal,
+      percentages: {
+        Backend: Math.round((totals.Backend / grandTotal) * 100),
+        Frontend: Math.round((totals.Frontend / grandTotal) * 100),
+        QA: Math.round((totals.QA / grandTotal) * 100),
+        DevOps: Math.round((totals.DevOps / grandTotal) * 100),
+      },
+    };
+  }, [version.wbs]);
+
+  // Sprint delivery estimate: P50 hours / (teamSize * 32 productive hours/week)
+  const estimatedWeeks = useMemo(() => {
+    const weeklyProductiveHours = teamSize * 32;
+    return (version.forecast.p50_hours / weeklyProductiveHours).toFixed(1);
+  }, [version.forecast.p50_hours, teamSize]);
+
+  // Filter requirements
   const filteredReqs = version.requirements.filter((r) => {
     if (reqFilter !== 'all' && r.status !== reqFilter) return false;
-    if (searchQuery && !r.title.toLowerCase().includes(searchQuery.toLowerCase()) && !r.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      searchQuery &&
+      !r.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !r.description.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
       return false;
     }
     return true;
   });
 
+  // Filter WBS
   const filteredWbs = version.wbs.filter((item) => {
     if (roleFilter !== 'all' && item.role !== roleFilter) return false;
+    if (depFilter === 'independent' && item.dependencies.length > 0) return false;
+    if (depFilter === 'dependent' && item.dependencies.length === 0) return false;
     return true;
   });
 
@@ -84,7 +130,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
     <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
       {/* Overview Stat Ribbon with Semantic Color Identities */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="modern-card p-4 bg-gradient-to-br from-white to-slate-50 dark:from-[#131b2e] dark:to-[#0f172a] border border-slate-200/90 dark:border-slate-800 shadow-xs">
+        <div className="modern-card p-4 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tổng Yêu cầu</div>
           <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono">
             {version.requirements.length}
@@ -92,7 +138,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Bóc tách từ brief</div>
         </div>
 
-        <div className="modern-card p-4 bg-gradient-to-br from-emerald-50/70 to-white dark:from-emerald-950/40 dark:to-[#121829] border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+        <div className="modern-card p-4 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Có bằng chứng</div>
           <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-300 mt-1 font-mono">
             {confirmedCount}
@@ -100,7 +146,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
           <div className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 mt-0.5 font-medium">Trích dẫn verbatim</div>
         </div>
 
-        <div className="modern-card p-4 bg-gradient-to-br from-amber-50/70 to-white dark:from-amber-950/40 dark:to-[#121829] border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
+        <div className="modern-card p-4 bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">Giả định ngầm</div>
           <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-300 mt-1 font-mono">
             {assumedCount}
@@ -108,7 +154,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
           <div className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-0.5 font-medium">Cần xác nhận</div>
         </div>
 
-        <div className="modern-card p-4 bg-gradient-to-br from-rose-50/70 to-white dark:from-rose-950/40 dark:to-[#121829] border border-rose-200/80 dark:border-rose-800/60 shadow-xs">
+        <div className="modern-card p-4 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-800/60 shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-400">Khoảng trống</div>
           <div className="text-2xl font-extrabold text-rose-600 dark:text-rose-300 mt-1 font-mono">
             {missingCount}
@@ -116,7 +162,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
           <div className="text-[10px] text-rose-700/80 dark:text-rose-400/80 mt-0.5 font-medium">Chờ active clarify</div>
         </div>
 
-        <div className="modern-card p-4 col-span-2 md:col-span-1 bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/40 dark:to-[#121829] border border-indigo-200/80 dark:border-indigo-800/60 flex flex-col justify-between shadow-xs">
+        <div className="modern-card p-4 col-span-2 md:col-span-1 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/60 flex flex-col justify-between shadow-xs">
           <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-400 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
             <span>DAG Integrity</span>
@@ -129,9 +175,143 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
         </div>
       </div>
 
-      {/* Main Grid: Left Requirements List, Right WBS Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Requirements Column */}
+      {/* Proportional Resource Allocation & Delivery Velocity Cockpit */}
+      <div className="modern-card p-6 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Users className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
+              <span>Phân bổ Nguồn lực Vai trò &amp; Vận tốc Sprint (Velocity Modeling)</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Nhấp vào từng vai trò để lọc nhanh danh sách WBS bên dưới &bull; Tổng giờ cơ sở: {roleStats.grandTotal}h
+            </p>
+          </div>
+
+          {/* Team Capacity Selector */}
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0b0f1a] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 pl-1 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-cyan-400" /> Quy mô Dev:
+            </span>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => setTeamSize(n)}
+                className={`w-6 h-6 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                  teamSize === n
+                    ? 'bg-indigo-600 text-white dark:bg-cyan-400 dark:text-slate-950 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+            <span className="text-[11px] font-mono font-bold text-indigo-700 dark:text-cyan-300 pl-1 pr-1.5">
+              &rarr; {estimatedWeeks} tuần
+            </span>
+          </div>
+        </div>
+
+        {/* Proportional Stacked Bar */}
+        <div className="w-full h-4 rounded-xl overflow-hidden flex bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5 shadow-inner">
+          <div
+            onClick={() => setRoleFilter(roleFilter === 'Backend' ? 'all' : 'Backend')}
+            style={{ width: `${roleStats.percentages.Backend}%` }}
+            className={`h-full rounded-l-lg bg-indigo-600 hover:opacity-90 transition-all cursor-pointer ${
+              roleFilter === 'Backend' ? 'ring-2 ring-white dark:ring-cyan-300 z-10' : ''
+            }`}
+            title={`Backend: ${roleStats.totals.Backend}h (${roleStats.percentages.Backend}%)`}
+          />
+          <div
+            onClick={() => setRoleFilter(roleFilter === 'Frontend' ? 'all' : 'Frontend')}
+            style={{ width: `${roleStats.percentages.Frontend}%` }}
+            className={`h-full bg-cyan-500 hover:opacity-90 transition-all cursor-pointer ${
+              roleFilter === 'Frontend' ? 'ring-2 ring-white dark:ring-cyan-300 z-10' : ''
+            }`}
+            title={`Frontend: ${roleStats.totals.Frontend}h (${roleStats.percentages.Frontend}%)`}
+          />
+          <div
+            onClick={() => setRoleFilter(roleFilter === 'QA' ? 'all' : 'QA')}
+            style={{ width: `${roleStats.percentages.QA}%` }}
+            className={`h-full bg-emerald-500 hover:opacity-90 transition-all cursor-pointer ${
+              roleFilter === 'QA' ? 'ring-2 ring-white dark:ring-cyan-300 z-10' : ''
+            }`}
+            title={`QA: ${roleStats.totals.QA}h (${roleStats.percentages.QA}%)`}
+          />
+          <div
+            onClick={() => setRoleFilter(roleFilter === 'DevOps' ? 'all' : 'DevOps')}
+            style={{ width: `${roleStats.percentages.DevOps}%` }}
+            className={`h-full rounded-r-lg bg-purple-500 hover:opacity-90 transition-all cursor-pointer ${
+              roleFilter === 'DevOps' ? 'ring-2 ring-white dark:ring-cyan-300 z-10' : ''
+            }`}
+            title={`DevOps: ${roleStats.totals.DevOps}h (${roleStats.percentages.DevOps}%)`}
+          />
+        </div>
+
+        {/* Legend Chips with click-to-filter */}
+        <div className="flex flex-wrap items-center gap-3 text-xs pt-1">
+          <button
+            onClick={() => setRoleFilter(roleFilter === 'Backend' ? 'all' : 'Backend')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono transition-all cursor-pointer ${
+              roleFilter === 'Backend'
+                ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-cyan-300 border-indigo-400 font-bold shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+            <span>Backend: {roleStats.totals.Backend}h ({roleStats.percentages.Backend}%)</span>
+          </button>
+
+          <button
+            onClick={() => setRoleFilter(roleFilter === 'Frontend' ? 'all' : 'Frontend')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono transition-all cursor-pointer ${
+              roleFilter === 'Frontend'
+                ? 'bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border-cyan-400 font-bold shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+            <span>Frontend: {roleStats.totals.Frontend}h ({roleStats.percentages.Frontend}%)</span>
+          </button>
+
+          <button
+            onClick={() => setRoleFilter(roleFilter === 'QA' ? 'all' : 'QA')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono transition-all cursor-pointer ${
+              roleFilter === 'QA'
+                ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-400 font-bold shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span>QA: {roleStats.totals.QA}h ({roleStats.percentages.QA}%)</span>
+          </button>
+
+          <button
+            onClick={() => setRoleFilter(roleFilter === 'DevOps' ? 'all' : 'DevOps')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono transition-all cursor-pointer ${
+              roleFilter === 'DevOps'
+                ? 'bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-400 font-bold shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+            <span>DevOps: {roleStats.totals.DevOps}h ({roleStats.percentages.DevOps}%)</span>
+          </button>
+
+          {roleFilter !== 'all' && (
+            <button
+              onClick={() => setRoleFilter('all')}
+              className="text-xs text-indigo-600 dark:text-cyan-400 hover:underline font-semibold cursor-pointer ml-auto"
+            >
+              Đặt lại bộ lọc vai trò
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Grid: Left Requirements Column, Right WBS Column */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Requirements Column (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -203,7 +383,9 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
                         <div className="italic">&ldquo;{ev.quote}&rdquo;</div>
                         <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 font-sans">
                           <span>Nguồn: <strong className="font-mono text-indigo-700 dark:text-cyan-300">{ev.source_doc}</strong></span>
-                          <span className="font-mono font-semibold text-amber-700 dark:text-amber-400">{ev.location ? `[${ev.location}]` : 'Đã đối soát'}</span>
+                          <span className="font-mono font-semibold text-amber-700 dark:text-amber-400">
+                            {ev.location ? `[${ev.location}]` : 'Đã đối soát'}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -214,28 +396,40 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
           </div>
         </div>
 
-        {/* WBS Column */}
+        {/* WBS Column (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
               <GitFork className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
-              <span>Phân rã WBS & Ước tính 3 điểm ({filteredWbs.length} gói)</span>
+              <span>Phân rã WBS &amp; Ước tính 3 Điểm ({filteredWbs.length} gói)</span>
             </h2>
 
-            {/* Role Filter */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-              <Filter className="w-3.5 h-3.5" />
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 px-2 py-1 rounded-lg text-xs font-semibold focus:outline-none"
+            {/* Dependency chain filter */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
+              <button
+                onClick={() => setDepFilter('all')}
+                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  depFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-bold shadow-xs' : 'text-slate-500'
+                }`}
               >
-                <option value="all">Tất cả vai trò</option>
-                <option value="Backend">Backend</option>
-                <option value="Frontend">Frontend</option>
-                <option value="QA">QA</option>
-                <option value="DevOps">DevOps</option>
-              </select>
+                Tất cả
+              </button>
+              <button
+                onClick={() => setDepFilter('independent')}
+                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  depFilter === 'independent' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'text-slate-500'
+                }`}
+              >
+                Khởi động Sprint 1
+              </button>
+              <button
+                onClick={() => setDepFilter('dependent')}
+                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  depFilter === 'dependent' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'text-slate-500'
+                }`}
+              >
+                Có phụ thuộc DAG
+              </button>
             </div>
           </div>
 
@@ -244,9 +438,9 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50/90 dark:bg-[#0b0f1a] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold border-b border-slate-200 dark:border-slate-800 text-[11px]">
                   <tr>
-                    <th className="py-3 px-4">Công việc</th>
+                    <th className="py-3 px-4">Gói công việc</th>
                     <th className="py-3 px-3">Role</th>
-                    <th className="py-3 px-3">Phụ thuộc</th>
+                    <th className="py-3 px-3">Phụ thuộc DAG</th>
                     <th className="py-3 px-4 text-right">3 Điểm (O / L / P)</th>
                   </tr>
                 </thead>
@@ -277,7 +471,9 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version }) =
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-400 font-mono">—</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-semibold">
+                            Sprint 1 ready
+                          </span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono">
