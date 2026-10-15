@@ -40,14 +40,24 @@ export const App: React.FC = () => {
   const [currentVersion, setCurrentVersion] = useState<EstimateVersion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('parallax_theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
   // Toggle Dark / Light mode class on document element
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      localStorage.setItem('parallax_theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      localStorage.setItem('parallax_theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -136,131 +146,135 @@ export const App: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070b13] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
-      {/* Top Header Navbar */}
-      <header className="border-b border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-700 flex-shrink-0">
-              <img
-                src="/parallax_logo.jpg"
-                alt="PARALLAX AI Logo"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white font-mono">
-                  PARALLAX AI
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-cyan-950 text-indigo-700 dark:text-cyan-400 border border-indigo-200 dark:border-cyan-800 font-bold">
-                  EVIDENCE-DRIVEN
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Self-Calibrating Estimation Intelligence &bull; Anduin Cybernetics
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col bg-[#f4f6fb] dark:bg-[#090d1a] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300 relative selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200">
+      {/* Ambient background mesh for depth and warmth */}
+      <div className="fixed inset-0 pointer-events-none bg-mesh-light dark:bg-mesh-dark opacity-60 z-0" />
 
-          {/* Right Header Controls */}
-          <div className="flex items-center gap-3">
-            {/* Project Picker */}
-            {projects.length > 0 && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                <FolderOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-cyan-400" />
-                <select
-                  value={currentProject?.project_id || ''}
-                  onChange={(e) => {
-                    const found = projects.find((p) => p.project_id === e.target.value);
-                    if (found) selectProject(found);
-                  }}
-                  className="bg-transparent text-slate-800 dark:text-white font-semibold focus:outline-none cursor-pointer max-w-[210px] truncate"
-                >
-                  {projects.map((p) => (
-                    <option key={p.project_id} value={p.project_id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                      {p.title}
-                    </option>
-                  ))}
-                </select>
-                {currentVersion && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-cyan-950 text-indigo-800 dark:text-cyan-300 font-bold">
-                    {currentVersion.version_id}
+      <div className="relative z-10 flex-1 flex flex-col">
+        {/* Top Header Navbar */}
+        <header className="border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#0d1322]/90 backdrop-blur-md sticky top-0 z-50 shadow-sm transition-colors">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
+            {/* Logo & Brand */}
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-700/80 flex-shrink-0 bg-slate-900">
+                <img
+                  src="/parallax_logo.jpg"
+                  alt="PARALLAX AI Logo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-white dark:via-indigo-200 dark:to-cyan-200 bg-clip-text text-transparent font-mono">
+                    PARALLAX AI
                   </span>
-                )}
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-cyan-300 border border-indigo-200 dark:border-indigo-800 font-bold">
+                    EVIDENCE-DRIVEN
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Self-Calibrating Estimation Intelligence &bull; Anduin Cybernetics
+                </div>
               </div>
-            )}
+            </div>
 
-            {/* New Project Button */}
-            <button
-              onClick={() => setActiveTab('intake')}
-              className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-cyan-300 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Dự án mới</span>
-            </button>
+            {/* Right Header Controls */}
+            <div className="flex items-center gap-3">
+              {/* Project Picker */}
+              {projects.length > 0 && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs shadow-inner">
+                  <FolderOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-cyan-400" />
+                  <select
+                    value={currentProject?.project_id || ''}
+                    onChange={(e) => {
+                      const found = projects.find((p) => p.project_id === e.target.value);
+                      if (found) selectProject(found);
+                    }}
+                    className="bg-transparent text-slate-800 dark:text-slate-200 font-semibold focus:outline-none cursor-pointer max-w-[210px] truncate text-xs"
+                  >
+                    {projects.map((p) => (
+                      <option key={p.project_id} value={p.project_id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                        {p.title}
+                      </option>
+                    ))}
+                  </select>
+                  {currentVersion && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-cyan-300 font-bold">
+                      {currentVersion.version_id}
+                    </span>
+                  )}
+                </div>
+              )}
 
-            {/* Theme Toggle Button */}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              title={isDarkMode ? 'Chuyển sang chế độ Sáng' : 'Chuyển sang chế độ Tối'}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-amber-300 transition-colors cursor-pointer"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-            </button>
+              {/* New Project Button */}
+              <button
+                onClick={() => setActiveTab('intake')}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-sm hover:shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Dự án mới</span>
+              </button>
+
+              {/* Theme Toggle Button */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                title={isDarkMode ? 'Chuyển sang chế độ Sáng' : 'Chuyển sang chế độ Tối'}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-700 dark:text-amber-300 transition-colors cursor-pointer shadow-sm"
+              >
+                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* 5-Step Pipeline Stepper Bar */}
-        <div className="border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between overflow-x-auto py-2 scrollbar-none gap-2">
-            {STEPS.map((step, idx) => {
-              const isActive = activeTab === step.id;
-              const isDisabled = step.id !== 'intake' && !currentVersion;
+          {/* 5-Step Pipeline Stepper Bar */}
+          <div className="border-t border-slate-200/60 dark:border-slate-800/70 bg-slate-50/80 dark:bg-[#0b0f1d]/80">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between overflow-x-auto py-2 scrollbar-none gap-2">
+              {STEPS.map((step, idx) => {
+                const isActive = activeTab === step.id;
+                const isDisabled = step.id !== 'intake' && !currentVersion;
 
-              return (
-                <button
-                  key={step.id}
-                  disabled={isDisabled}
-                  onClick={() => setActiveTab(step.id)}
-                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-left whitespace-nowrap transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isActive
-                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-cyan-400 font-bold border border-indigo-200 dark:border-cyan-800/80 shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span
-                    className={`w-6 h-6 rounded-lg text-[11px] font-mono font-bold flex items-center justify-center ${
+                return (
+                  <button
+                    key={step.id}
+                    disabled={isDisabled}
+                    onClick={() => setActiveTab(step.id)}
+                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-left whitespace-nowrap transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                       isActive
-                        ? 'bg-indigo-600 text-white dark:bg-cyan-400 dark:text-slate-950 shadow-sm'
-                        : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        ? 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-cyan-300 font-bold border border-indigo-200 dark:border-slate-700 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    {step.number}
-                  </span>
-                  <div>
-                    <div className="text-xs font-bold leading-tight">{step.label}</div>
-                    <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{step.sub}</div>
-                  </div>
-                  {idx < STEPS.length - 1 && (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-700 ml-1 hidden lg:block" />
-                  )}
-                </button>
-              );
-            })}
+                    <span
+                      className={`w-6 h-6 rounded-lg text-[11px] font-mono font-bold flex items-center justify-center transition-colors ${
+                        isActive
+                          ? 'bg-indigo-600 text-white dark:bg-cyan-500 dark:text-slate-950 shadow-sm'
+                          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {step.number}
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">{step.label}</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{step.sub}</div>
+                    </div>
+                    {idx < STEPS.length - 1 && (
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-700 ml-1 hidden lg:block" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {statusMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-semibold flex items-center gap-3 animate-pulse shadow-sm">
-            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-cyan-400 flex-shrink-0" />
-            <span>{statusMessage}</span>
-          </div>
-        )}
+        {/* Main Container */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+          {statusMessage && (
+            <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 text-xs sm:text-sm font-semibold flex items-center gap-3 animate-pulse shadow-sm">
+              <Sparkles className="w-5 h-5 text-indigo-600 dark:text-cyan-400 flex-shrink-0" />
+              <span>{statusMessage}</span>
+            </div>
+          )}
 
         {activeTab === 'intake' && (
           <IntakeScreen onProjectCreated={handleProjectCreated} isLoading={isLoading} />
@@ -307,6 +321,7 @@ export const App: React.FC = () => {
         </div>
       </footer>
     </div>
+  </div>
   );
 };
 

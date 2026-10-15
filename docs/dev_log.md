@@ -108,9 +108,46 @@
 
 ---
 
+### Giai đoạn 4: Nghiên cứu & Hoàn thiện Phối màu Đa tầng theo Từng Phân vùng (Intuitive & Dynamic Thematic Color Palette)
+- [x] **Khắc phục triệt để lỗi xung đột tương phản Dark/Light mode**:
+  - Khai báo `@custom-variant dark (&:where(.dark, .dark *));` trong `index.css` để kích hoạt Dark mode class-based chuẩn cho Tailwind CSS v4, chấm dứt việc chữ trắng biến mất trên thẻ trắng khi OS ở dark mode.
+  - Đồng bộ `isDarkMode` state với `localStorage` và `prefers-color-scheme` của hệ điều hành.
+- [x] **Nâng cấp màu sắc nền trực quan, thân thiện và êm dịu (Canvas Aesthetics)**:
+  - Chuyển từ màu đen đặc `#070b13` sang màu xanh đêm sang trọng `#090D1A` ở chế độ Tối, và màu nền canvas mềm mại `#F4F6FB` ở chế độ Sáng.
+  - Bổ sung lớp phủ lưới phát quang Ambient Mesh Gradient (`bg-mesh-light` / `bg-mesh-dark`) tạo chiều sâu không gian ba chiều mà không làm rối mắt.
+- [x] **Nghiên cứu phối màu chuyên biệt cho từng phân vùng (Section-by-Section Color Identities)**:
+  1. **Intake & Brief (Tím & Chàm - Cosmic Indigo & Royal Violet)**:
+     - Hero card chuyển sắc tinh tế với viền phát sáng nhẹ, huy hiệu công nghệ nổi bật.
+     - 3 thẻ Golden Briefs được định danh mã màu riêng biệt theo phân loại domain:
+       - *Internal Tool*: Sắc xanh doanh nghiệp Azure / Sapphire Blue (`#0284C7` / `#2563EB`).
+       - *E-Commerce Sync*: Sắc xanh giao dịch thanh toán Emerald / Mint (`#059669` / `#10B981`).
+       - *AI & RAG Pipeline*: Sắc tím trí tuệ nhân tạo Cyber Violet / Fuchsia (`#7C3AED` / `#A855F7`).
+     - Form nhập brief có ô nhập liệu độ tương phản cao, focus ring mềm mại, nút bấm chuyển sắc tím chàm chuyển động mượt mà.
+  2. **Scope & Evidence (Xanh ngọc lục bảo & Hổ phách - Precision Emerald & Amber)**:
+     - Dải thống kê Ribbon 5 chỉ số có gradient và huy hiệu ngữ nghĩa độc lập (Confirmed: Emerald, Assumed: Amber, Missing: Rose, DAG: Indigo).
+     - Khung trích dẫn bằng chứng Verbatim Citation kiểu parchment nổi bật trên nền vàng hổ phách, hiển thị chính xác tên tài liệu và vị trí offset.
+     - Bảng WBS phân cấp vai trò với các chip màu pastel và hiển thị 3 điểm (O / L / P) sắc nét.
+  3. **Estimation Lab (Dải phổ rủi ro 4 phân vị - Chromatic Risk Spectrum)**:
+     - Thẻ P10 (Lạc quan - Emerald).
+     - Thẻ P50 (Target Commit - Tiêu điểm nổi bật với viền đôi Indigo/Cyan và huy hiệu phát sáng).
+     - Thẻ P80 (Kế hoạch cam kết an toàn - Amber).
+     - Thẻ P90 (Biên độ sốc hệ thống - Purple/Violet).
+     - Biểu đồ đường cong mật độ xác suất SVG nhiều tầng chuyển sắc (Indigo $\to$ Sky $\to$ Violet).
+     - Thẻ đối soát hai nhánh độc lập (Bottom-up WBS vs. Reference Class) trực quan.
+  4. **Active Clarification (Xanh điện Cyan & Hổ phách - Electric Cyan & Amber)**:
+     - Huy hiệu độ nhạy lệch giờ công (&plusmn;XX giờ) viền vàng nổi bật.
+     - Khung so sánh What-if trực quan giữa kịch bản KHÔNG triển khai (viền xám / chữ hồng) vs CÓ triển khai (viền chàm / chữ xanh ngọc).
+     - Cây phả hệ phiên bản dự toán (Version Tree) hiển thị phân cấp v1 $\to$ v2 $\to$ v3 không bao giờ ghi đè.
+  5. **Accuracy & Continuous Learning (Vàng kim & Xanh ngọc - Executive Gold & Emerald)**:
+     - 4 thẻ đo lường chuẩn quốc tế (MAE, MdAPE, WAPE, PRED(25)) được thiết kế với dải màu riêng biệt, dễ đọc số liệu.
+     - Dải banner độ phủ khoảng dự báo (Interval Coverage) sắc nét.
+     - Hộp thoại cam kết trung thực nghiên cứu có đường viền chỉ thị Indigo/Cyan rõ ràng.
+
+---
+
 ## 3. Trạng thái kiểm thử & Vận hành
 
-- **Backend Tests**: 18/18 tests passed (`.venv/bin/pytest -v` trong 0.51s).
-- **Frontend Build**: 100% build thành công (`npm run build` trong 418ms, zero TypeScript errors).
+- **Backend Tests**: 18/18 tests passed (`.venv/bin/pytest -v` trong 0.65s).
+- **Frontend Build**: 100% build thành công (`npm run build` trong 429ms, zero TypeScript/Tailwind errors).
 - **Backend Service**: Đang chạy trên `http://127.0.0.1:8000/`.
 - **Frontend Service**: Đang chạy trên `http://localhost:3000/` với proxy kết nối trực tiếp đến backend.

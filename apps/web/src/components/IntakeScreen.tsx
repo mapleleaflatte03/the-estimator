@@ -112,30 +112,30 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn">
       {/* Hero Visual Card with Generated Artwork */}
-      <div className="modern-card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl relative">
+      <div className="modern-card overflow-hidden border border-slate-200/90 dark:border-slate-800/90 bg-gradient-to-br from-white via-indigo-50/30 to-slate-50 dark:from-[#131b2e] dark:via-[#101726] dark:to-[#0d1322] shadow-xl relative">
         <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
           <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold tracking-wide">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200/80 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-xs font-bold tracking-wide shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-cyan-400" />
               <span>EVIDENCE-DRIVEN ESTIMATION INTELLIGENCE</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-              Dự toán phần mềm dựa trên bằng chứng & Tự hiệu chỉnh
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight leading-tight">
+              Dự toán phần mềm dựa trên bằng chứng &amp; Tự hiệu chỉnh
             </h1>
             <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
               PARALLAX AI không chỉ tạo văn bản báo giá. Hệ thống bóc tách các yêu cầu có trích dẫn nguồn, phát hiện câu hỏi quan trọng nhất để giảm sai số và mô phỏng xác suất Monte Carlo trước khi đưa ra cam kết.
             </p>
 
-            <div className="pt-2 flex flex-wrap gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
-              <div className="flex items-center gap-1.5">
+            <div className="pt-2 flex flex-wrap gap-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>100% Trích dẫn nguồn verbatim</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/40">
                 <CheckCircle2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                 <span>Monte Carlo Beta-PERT P10-P90</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40">
                 <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>Active Clarification (EVI)</span>
               </div>
@@ -143,54 +143,107 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
           </div>
 
           <div className="lg:col-span-5 p-4 sm:p-6 flex justify-center">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-slate-700/80 max-h-[300px] w-full">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-slate-700/80 max-h-[300px] w-full bg-slate-900 group">
               <img
                 src="/parallax_hero.jpg"
                 alt="PARALLAX AI Evidence Network"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] text-white/90 font-mono">
+                <span className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Evidence Graph Network
+                </span>
+                <span className="bg-black/50 backdrop-blur-md px-2 py-0.5 rounded">10,000 Iterations</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Load Golden Briefs */}
+      {/* Quick Load Golden Briefs with Distinctive Palettes */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-            <Compass className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2">
+            <Compass className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
             <span>Chọn nhanh bộ Brief kiểm thử chuẩn (Golden Briefs)</span>
           </span>
-          <span className="text-xs text-slate-500">3 kịch bản được gán nhãn thực nghiệm</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">3 kịch bản được gán nhãn thực nghiệm</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {SAMPLE_BRIEFS.map((s) => {
             const Icon = s.icon;
+            // Thematic styling for each domain
+            const styleMap: Record<string, {
+              cardBg: string;
+              badgeBg: string;
+              badgeText: string;
+              badgeBorder: string;
+              complexityBg: string;
+              complexityText: string;
+              actionText: string;
+              borderHover: string;
+            }> = {
+              pm: {
+                cardBg: 'bg-gradient-to-b from-white to-blue-50/30 dark:from-[#111827] dark:to-[#0f172a]',
+                badgeBg: 'bg-blue-50 dark:bg-blue-950/70',
+                badgeText: 'text-blue-700 dark:text-blue-300',
+                badgeBorder: 'border-blue-200 dark:border-blue-800/70',
+                complexityBg: 'bg-blue-100/70 dark:bg-blue-900/50',
+                complexityText: 'text-blue-800 dark:text-blue-200',
+                actionText: 'text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300',
+                borderHover: 'hover:border-blue-400 dark:hover:border-blue-500/80 hover:shadow-blue-500/10',
+              },
+              ecomm: {
+                cardBg: 'bg-gradient-to-b from-white to-emerald-50/30 dark:from-[#0f1d1d] dark:to-[#0d171a]',
+                badgeBg: 'bg-emerald-50 dark:bg-emerald-950/70',
+                badgeText: 'text-emerald-700 dark:text-emerald-300',
+                badgeBorder: 'border-emerald-200 dark:border-emerald-800/70',
+                complexityBg: 'bg-emerald-100/70 dark:bg-emerald-900/50',
+                complexityText: 'text-emerald-800 dark:text-emerald-200',
+                actionText: 'text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300',
+                borderHover: 'hover:border-emerald-400 dark:hover:border-emerald-500/80 hover:shadow-emerald-500/10',
+              },
+              rag: {
+                cardBg: 'bg-gradient-to-b from-white to-purple-50/30 dark:from-[#1a142e] dark:to-[#120f24]',
+                badgeBg: 'bg-purple-50 dark:bg-purple-950/70',
+                badgeText: 'text-purple-700 dark:text-purple-300',
+                badgeBorder: 'border-purple-200 dark:border-purple-800/70',
+                complexityBg: 'bg-purple-100/70 dark:bg-purple-900/50',
+                complexityText: 'text-purple-800 dark:text-purple-200',
+                actionText: 'text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300',
+                borderHover: 'hover:border-purple-400 dark:hover:border-purple-500/80 hover:shadow-purple-500/10',
+              },
+            };
+
+            const domainStyle = styleMap[s.id] || styleMap.pm;
+
             return (
               <div
                 key={s.id}
                 onClick={() => handleApplySample(s)}
-                className="modern-card modern-card-interactive p-5 cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between group"
+                className={`modern-card modern-card-interactive p-5 cursor-pointer ${domainStyle.cardBg} border border-slate-200/90 dark:border-slate-800 flex flex-col justify-between group shadow-sm transition-all duration-200 ${domainStyle.borderHover}`}
               >
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold text-[11px] border border-indigo-200 dark:border-indigo-800">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${domainStyle.badgeBg} ${domainStyle.badgeText} font-bold text-[11px] border ${domainStyle.badgeBorder} shadow-xs`}>
                       <Icon className="w-3.5 h-3.5" />
                       {s.domainLabel}
                     </span>
-                    <span className="text-[10px] text-slate-600 dark:text-slate-300 font-mono font-medium">{s.complexity}</span>
+                    <span className={`text-[10px] ${domainStyle.complexityBg} ${domainStyle.complexityText} px-2 py-0.5 rounded font-mono font-bold`}>
+                      {s.complexity}
+                    </span>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-cyan-400 transition-colors">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:underline transition-colors leading-snug">
                     {s.title}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
                     {s.text}
                   </p>
                 </div>
 
-                <div className="pt-4 flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-cyan-400 border-t border-slate-100 dark:border-slate-800/80 mt-3">
+                <div className={`pt-3.5 flex items-center justify-between text-xs font-bold ${domainStyle.actionText} border-t border-slate-100 dark:border-slate-800/90 mt-4`}>
                   <span>Nạp kịch bản này</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -201,18 +254,18 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
       </div>
 
       {/* Main Intake Form */}
-      <form onSubmit={handleSubmit} className="modern-card p-6 sm:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-6">
+      <form onSubmit={handleSubmit} className="modern-card p-6 sm:p-8 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 shadow-md space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <FileText className="w-5 h-5 text-indigo-600 dark:text-cyan-400" />
               <span>Nạp thông tin yêu cầu dự án mới</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Nhập brief thô từ khách hàng để AI bóc tách Scope Graph và WBS có trích dẫn nguồn.
             </p>
           </div>
-          <span className="text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+          <span className="text-xs font-mono font-bold text-indigo-700 dark:text-cyan-400 bg-indigo-50 dark:bg-slate-800/90 border border-indigo-200/60 dark:border-slate-700 px-2.5 py-1 rounded-lg">
             STAGE 01 / INTAKE
           </span>
         </div>
@@ -234,7 +287,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="VD: Cổng thông tin Quản lý Dự án & Phê duyệt Ngân sách"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 text-sm transition-colors"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50/80 dark:bg-[#0b0f1a] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-cyan-500/20 text-sm transition-all"
               required
             />
           </div>
@@ -246,7 +299,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
             <select
               value={projectType}
               onChange={(e) => setProjectType(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 text-sm transition-colors cursor-pointer"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50/80 dark:bg-[#0b0f1a] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-cyan-500/20 text-sm transition-all cursor-pointer font-medium"
             >
               <option value="internal_tool">Hệ thống nội bộ / Quản trị (Internal Tool)</option>
               <option value="api_integration">Tích hợp API / E-Commerce</option>
@@ -261,7 +314,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Văn bản Brief / Yêu cầu kỹ thuật <span className="text-rose-500">*</span>
             </label>
-            <span className="text-[11px] text-slate-400 font-mono">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
               {briefText.length} ký tự
             </span>
           </div>
@@ -270,30 +323,30 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
             onChange={(e) => setBriefText(e.target.value)}
             rows={8}
             placeholder="Dán toàn bộ nội dung tài liệu yêu cầu, email, specs, hoặc ghi chú cuộc họp tại đây..."
-            className="w-full p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 text-sm font-mono leading-relaxed transition-colors"
+            className="w-full p-4 rounded-xl bg-slate-50/80 dark:bg-[#0b0f1a] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-cyan-500/20 text-sm font-mono leading-relaxed transition-all"
             required
           />
         </div>
 
-        <div className="pt-2 flex items-center justify-between">
-          <span className="text-xs text-slate-500 flex items-center gap-1.5">
-            <Database className="w-4 h-4 text-slate-400" /> Lưu trữ phiên bản bất biến (v1, v2) — không ghi đè dữ liệu gốc.
+        <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <Database className="w-4 h-4 text-indigo-500 dark:text-cyan-400" /> Lưu trữ phiên bản bất biến (v1, v2) — không ghi đè dữ liệu gốc.
           </span>
 
           <button
             type="submit"
             disabled={isLoading || !title || !briefText}
-            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/20 dark:shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:translate-y-[-1px]"
           >
             {isLoading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white dark:border-slate-950 border-t-transparent rounded-full animate-spin" />
-                <span>Đang phân tích & tạo WBS...</span>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Đang phân tích &amp; tạo WBS...</span>
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Bóc tách Evidence & Ước tính WBS &rarr;</span>
+                <span>Bóc tách Evidence &amp; Ước tính WBS &rarr;</span>
               </>
             )}
           </button>

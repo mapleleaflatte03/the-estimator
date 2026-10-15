@@ -57,11 +57,11 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
             <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
             <span>Câu hỏi có tác động lớn nhất ({version.clarifications.length})</span>
           </h2>
-          <span className="text-xs text-slate-500">Xếp hạng theo biên độ lệch giờ công</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Xếp hạng theo biên độ lệch giờ công</span>
         </div>
 
         {version.clarifications.length === 0 ? (
-          <div className="modern-card p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center text-slate-500 text-sm">
+          <div className="modern-card p-8 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
             Toàn bộ các giả định trọng yếu đã được xác nhận ở phiên bản này.
           </div>
         ) : (
@@ -72,18 +72,18 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
             return (
               <div
                 key={q.question_id}
-                className="modern-card p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm"
+                className="modern-card p-6 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 space-y-5 shadow-sm"
               >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-cyan-400 border border-indigo-200 dark:border-indigo-800 font-bold">
+                    <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-cyan-300 border border-indigo-200 dark:border-indigo-800 font-bold">
                       {q.question_id}
                     </span>
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono">
                       Mã giả định: {q.assumption_id}
                     </span>
                   </div>
-                  <div className="px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 text-xs font-mono font-extrabold">
+                  <div className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80 text-xs font-mono font-extrabold shadow-xs">
                     Biên độ ảnh hưởng: &plusmn;{spread}h
                   </div>
                 </div>
@@ -99,18 +99,18 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
 
                 {/* What-if comparison bars */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
-                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-[#0b0f1a] border border-slate-200/80 dark:border-slate-800 space-y-1">
+                    <div className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
                       <X className="w-3.5 h-3.5 text-rose-500" />
                       <span>Kịch bản 1: KHÔNG triển khai</span>
                     </div>
                     <div className="text-2xl font-extrabold font-mono text-slate-800 dark:text-slate-200">
                       {q.hours_if_false}h
                     </div>
-                    <div className="text-[11px] text-slate-500">Giảm bớt thời gian kết nối và rủi ro tích hợp</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">Giảm bớt thời gian kết nối và rủi ro tích hợp</div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-1">
+                  <div className="p-4 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/60 space-y-1">
                     <div className="text-xs font-bold text-indigo-700 dark:text-cyan-400 flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-500" />
                       <span>Kịch bản 2: CÓ triển khai</span>
@@ -118,19 +118,19 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
                     <div className="text-2xl font-extrabold font-mono text-indigo-950 dark:text-white">
                       {q.hours_if_true}h
                     </div>
-                    <div className="text-[11px] text-indigo-700 dark:text-indigo-300">Bao gồm adapter, hàng đợi thử lại và kiểm thử regression</div>
+                    <div className="text-[11px] text-indigo-800 dark:text-indigo-300 font-medium">Bao gồm adapter, hàng đợi thử lại và kiểm thử regression</div>
                   </div>
                 </div>
 
                 {/* Customer Response Action Buttons */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-medium text-slate-500">Xác nhận từ khách hàng:</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Xác nhận từ khách hàng:</span>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       disabled={isLoading || isAnswering}
                       onClick={() => handleAnswer(q.question_id, false)}
-                      className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 hover:border-rose-300 text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 border border-slate-200 dark:border-slate-700"
                     >
                       <X className="w-3.5 h-3.5 text-rose-500" />
                       <span>Không cần</span>
@@ -139,7 +139,7 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
                       type="button"
                       disabled={isLoading || isAnswering}
                       onClick={() => handleAnswer(q.question_id, true)}
-                      className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-md shadow-indigo-600/20 dark:shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
+                      className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
                     >
                       <Check className="w-3.5 h-3.5" />
                       <span>Có yêu cầu &rarr;</span>
@@ -153,16 +153,16 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
       </div>
 
       {/* Version Progression Tree */}
-      <div className="modern-card p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+      <div className="modern-card p-6 bg-white dark:bg-[#121829] border border-slate-200/90 dark:border-slate-800 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
             <History className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
             <span>Cây Phả hệ Phiên bản Dự toán (Estimate Version Lineage)</span>
           </h2>
-          <span className="text-xs font-mono text-slate-500">{versionsHistory.length} phiên bản</span>
+          <span className="text-xs font-mono text-slate-500 dark:text-slate-400 font-semibold">{versionsHistory.length} phiên bản</span>
         </div>
 
-        <p className="text-xs text-slate-600 dark:text-slate-400">
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
           Mỗi lần làm rõ sẽ sinh phiên bản con mới (v2, v3...), liên kết với phiên bản cha (`parent_version_id`) và không bao giờ ghi đè dự toán ban đầu để bảo đảm tính kiểm toán độc lập.
         </p>
 
@@ -175,7 +175,7 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
                 className={`p-4 rounded-xl border flex items-center justify-between gap-4 transition-all ${
                   isCurrent
                     ? 'border-indigo-500 dark:border-cyan-400 bg-indigo-50/40 dark:bg-cyan-950/20 shadow-sm ring-1 ring-indigo-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0b0f1a]'
                 }`}
               >
                 <div className="flex items-center gap-3">
