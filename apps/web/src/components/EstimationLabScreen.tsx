@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, HelpCircle } from 'lucide-react';
+import { AlertTriangle, Download, FileSpreadsheet, HelpCircle, Sparkles } from 'lucide-react';
 import type { EstimateVersion } from '../types';
-import { card, hours } from '../ui';
+import { proposalUrl, wbsCsvUrl } from '../api';
+import { HOURS_PER_PERSON_WEEK, card, hours } from '../ui';
 
 interface EstimationLabScreenProps {
   version: EstimateVersion;
+  projectId: string;
   openQuestions: number;
   onGoToQuestions: () => void;
 }
@@ -16,9 +18,8 @@ const X0 = 10;
 const X1 = 790;
 const Y_BASE = 150;
 const Y_TOP = 10;
-const HOURS_PER_PERSON_WEEK = 32;
 
-export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ version, openQuestions, onGoToQuestions }) => {
+export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ version, projectId, openQuestions, onGoToQuestions }) => {
   const { forecast } = version;
   const [confidence, setConfidence] = useState(80);
   const [currency, setCurrency] = useState<Currency>('VND');
@@ -50,7 +51,11 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
   const maxPct = curve[curve.length - 1][0];
   const chosen = Math.round(hoursAt(confidence));
   const cost = chosen * rate[currency];
-  const weeks = chosen / (people * HOURS_PER_PERSON_WEEK);
+  // Adding people cannot shorten the longest chain of work that must happen in sequence.
+  const chainWeeks = ((forecast.critical_path_hours ?? 0) * (forecast.calibration_multiplier ?? 1)) / HOURS_PER_PERSON_WEEK;
+  const teamWeeks = chosen / (people * HOURS_PER_PERSON_WEEK);
+  const weeks = Math.max(teamWeeks, chainWeeks);
+  const chainLimited = chainWeeks > teamWeeks;
   const formatCost = (v: number) =>
     currency === 'VND'
       ? `${(v / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} triệu đồng`
@@ -90,6 +95,11 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
       <section className={`${card} p-6 sm:p-8 text-center`}>
         <p className="text-slate-600 dark:text-slate-400">Ước tính khối lượng công việc</p>
         <p className="text-4xl sm:text-5xl font-extrabold tracking-tight mt-1">{hours(forecast.p50_hours)}</p>
+        {version.reader === 'rules+jev' && (
+          <p className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-cyan-300 mt-2">
+            <Sparkles className="w-3.5 h-3.5" /> Mô tả được đọc bằng luật + AI (Jev)
+          </p>
+        )}
         <p className="text-slate-700 dark:text-slate-300 mt-3">
           Thường dao động từ <strong>{hours(forecast.p10_hours)}</strong> đến <strong>{hours(forecast.p90_hours)}</strong>
         </p>
@@ -181,6 +191,9 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
               Thời gian với
             </label>
             <div className="text-2xl font-extrabold">khoảng {Math.max(1, Math.ceil(weeks))} tuần</div>
+            {chainLimited && (
+              <div className="text-xs text-amber-800 dark:text-amber-300 mt-1">Thêm người không nhanh hơn: có chuỗi việc phải làm nối tiếp.</div>
+            )}
             <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 mt-1">
               <input
                 id="people"
@@ -194,6 +207,27 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
               <span>người làm</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className={`${card} p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
+        <div>
+          <h2 className="font-bold">Gửi cho khách hàng</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Báo giá dùng đúng mức chắc chắn, đơn giá và số người bạn đang chọn ở trên.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={proposalUrl(projectId, { confidence, rate: rate[currency], currency, people })}
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm inline-flex items-center gap-1.5"
+          >
+            <Download className="w-4 h-4" /> Tải báo giá
+          </a>
+          <a
+            href={wbsCsvUrl(projectId)}
+            className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:border-indigo-400 font-bold text-sm inline-flex items-center gap-1.5"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Bảng công việc (Excel)
+          </a>
         </div>
       </section>
 
@@ -216,8 +250,11 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         <p className="mt-2 leading-relaxed">
           Mỗi công việc được ước tính số giờ ít nhất, thường gặp và nhiều nhất. Hệ thống chạy thử 10.000 kịch bản, trong đó mức
           chênh lệch giữa dự toán và thực tế được lấy từ dữ liệu thật của hơn 10.000 công việc phần mềm đã làm. Khi bạn nhập giờ thực
-          tế của các dự án đã xong, các dự toán sau sẽ tự điều chỉnh
+          tế của các dự án đã xong, các dự toán sau sẽ tự điều chỉnh theo từng loại dự án
           {forecast.calibration_multiplier !== 1 && ` (hiện đang nhân ×${forecast.calibration_multiplier.toFixed(2)})`}.
+          {version.reader === 'rules+jev'
+            ? ' Phần đọc mô tả kết hợp luật nhận diện với AI Jev: AI giúp nhận ra loại việc và những yêu cầu khách chưa chốt.'
+            : ' Phần đọc mô tả dùng luật nhận diện từ khóa.'}
         </p>
       </details>
     </div>

@@ -9,8 +9,9 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -19,10 +20,12 @@ from .schemas import (
     ClarificationAnswer,
     EstimateVersion,
     HistoricalCase,
+    ManualEdits,
     Project,
     ProjectCreate,
 )
 from . import empirical
+from .export import proposal_markdown, wbs_csv
 from .service import ParallaxService
 from .storage import StorageRepository
 
@@ -126,6 +129,58 @@ def estimate_project(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.put("/api/v1/projects/{project_id}/wbs", response_model=EstimateVersion, tags=["Estimation"])
+def update_wbs(project_id: str, payload: ManualEdits):
+    """Replace the user's WBS edits (hours, names, removed and added items) and re-estimate."""
+    try:
+        return service.update_wbs(project_id, payload.model_dump(exclude_none=True))
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Project not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def _latest(project_id: str) -> tuple[Project, EstimateVersion]:
+    project = repo.get_project(project_id)
+    versions = repo.get_versions(project_id) if project else []
+    if not project or not versions:
+        raise HTTPException(status_code=404, detail="Project or estimate not found")
+    return project, versions[-1]
+
+
+def _download_name(project: Project, ext: str) -> str:
+    return f"du-toan-{project.project_id}.{ext}"
+
+
+@app.get("/api/v1/projects/{project_id}/export/proposal.md", tags=["Deliverables"])
+def export_proposal(project_id: str, confidence: float = Query(80, ge=50, le=95), rate: float = Query(500_000, ge=0),
+                    currency: str = Query("VND", pattern="^(VND|USD)$"), people: int = Query(3, ge=1, le=50)):
+    project, version = _latest(project_id)
+    body = proposal_markdown(project, version, confidence, rate, currency, people)
+    return Response(body, media_type="text/markdown; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{_download_name(project, "md")}"'})
+
+
+@app.get("/api/v1/projects/{project_id}/export/wbs.csv", tags=["Deliverables"])
+def export_wbs(project_id: str):
+    project, version = _latest(project_id)
+    return Response(wbs_csv(version), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{_download_name(project, "csv")}"'})
+
+
+@app.get("/api/v1/reader/evaluation", tags=["Evaluation"])
+def reader_evaluation():
+    """Measured accuracy of the scope readers on the hand-labelled held-out clause set."""
+    out = {}
+    for key, name in (("held_out", "reader_results_v1_heldout.json"), ("latest", "reader_results_latest.json")):
+        path = ROOT_DIR / "datasets" / "eval" / name
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            out[key] = {k: data.get(k) for k in ("note", "model", "thresholds", "summary")}
+    out["status"] = service.reader.status()
+    return out
 
 
 @app.get("/api/v1/projects/{project_id}/versions", response_model=list[EstimateVersion], tags=["Estimation"])

@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
-import type { ActualsResult, BenchmarkReport, EstimateVersion, HistoricalCase } from '../types';
-import { fetchHistoricalCases } from '../api';
-import { card, hours } from '../ui';
+import type { ActualsResult, BenchmarkReport, EstimateVersion, HistoricalCase, ReaderEvaluation, ReaderSummary } from '../types';
+import { fetchHistoricalCases, fetchReaderEvaluation } from '../api';
+import { PROJECT_TYPES, card, hours } from '../ui';
+
+const READER_NAMES: Partial<Record<ReaderSummary['reader'], string>> = {
+  rules: 'Chỉ luật từ khóa',
+  jev: 'Chỉ AI (Jev)',
+  shipped: 'Luật + AI (đang dùng)',
+};
+const typeLabel = (t: string) => PROJECT_TYPES.find((p) => p.value === t)?.label.toLowerCase() ?? t;
 
 interface AccuracyLearningScreenProps {
   version: EstimateVersion;
@@ -35,8 +42,12 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
   const [completed, setCompleted] = useState<HistoricalCase[]>([]);
   const [report, setReport] = useState<BenchmarkReport | null>(null);
   const [checking, setChecking] = useState(false);
+  const [readerEval, setReaderEval] = useState<ReaderEvaluation | null>(null);
 
   useEffect(() => {
+    fetchReaderEvaluation()
+      .then(setReaderEval)
+      .catch((err) => console.error('Error fetching reader evaluation:', err));
     fetchHistoricalCases()
       .then(setCompleted)
       .catch((err) => console.error('Error fetching completed projects:', err));
@@ -69,7 +80,9 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
     }
   };
 
-  const adjust = result ? (result.calibration.multiplier_after - result.calibration.multiplier_before) * 100 : 0;
+  const adjust = result
+    ? (result.calibration.type_multiplier_after / result.calibration.type_multiplier_before - 1) * 100
+    : 0;
   const holdout = report?.sip.holdout;
   const curve = report?.sip.learning_curve.points ?? [];
   const rollingWins = curve.filter((p) => p.rolling_mae < p.frozen_mae).length;
@@ -137,7 +150,9 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
             {Math.abs(adjust) >= 0.5 && (
               <>
                 <p className="text-sm text-slate-700 dark:text-slate-300">
-                  Từ giờ, các dự toán mới sẽ được điều chỉnh {adjust > 0 ? 'tăng' : 'giảm'} khoảng {pct(adjust)}.
+                  Từ giờ, dự toán mới cho dự án loại “{typeLabel(result.calibration.project_type)}” sẽ được điều chỉnh{' '}
+                  {adjust > 0 ? 'tăng' : 'giảm'} khoảng {pct(adjust)} (học từ {result.calibration.type_observations} dự án cùng loại; các loại
+                  khác điều chỉnh ít hơn).
                 </p>
                 <button
                   type="button"
@@ -232,6 +247,44 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
                 </li>
               </ul>
             )
+          )}
+          {readerEval?.held_out && (
+            <div className="space-y-2 pt-2">
+              <h3 className="font-semibold text-slate-900 dark:text-white">Đọc mô tả chính xác đến đâu?</h3>
+              <p>
+                Thử trên {readerEval.held_out.summary[0]?.n_clauses} câu yêu cầu mới (đáp án gán tay trước khi chạy, không có trong các
+                ví dụ mẫu):
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th scope="col" className="py-1.5 pr-3 font-semibold">Cách đọc</th>
+                      <th scope="col" className="py-1.5 px-3 font-semibold text-right">Đúng loại việc chính</th>
+                      <th scope="col" className="py-1.5 pl-3 font-semibold text-right">Nhận ra yêu cầu chưa chốt</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {readerEval.held_out.summary
+                      .filter((r) => READER_NAMES[r.reader])
+                      .map((r) => (
+                      <tr key={r.reader} className={r.reader === 'shipped' ? 'font-semibold' : ''}>
+                        <td className="py-1.5 pr-3">{READER_NAMES[r.reader]}</td>
+                        <td className="py-1.5 px-3 text-right">
+                          {r.primary_kind_found}/{r.n_clauses}
+                          {!!r.primary_kind_suggested_as_question && ` (+${r.primary_kind_suggested_as_question} qua câu hỏi)`}
+                        </td>
+                        <td className="py-1.5 pl-3 text-right">{r.tentative_caught}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Khi AI gợi ý thêm một loại việc mà luật không thấy, hệ thống hỏi bạn thay vì tự cộng giờ.
+                {readerEval.status.configured ? '' : ' Hiện AI chưa được bật trên máy chủ này, chỉ dùng kết quả đã lưu sẵn.'}
+              </p>
+            </div>
           )}
           <p className="text-xs text-slate-600 dark:text-slate-400">
             Nguồn dữ liệu:{' '}

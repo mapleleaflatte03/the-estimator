@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, Sparkles, X } from 'lucide-react';
 import type { EstimateVersion, ClarificationQuestion } from '../types';
 import { card, hours } from '../ui';
 
@@ -52,6 +52,11 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
       ) : (
         version.clarifications.map((q) => (
           <section key={q.question_id} className={`${card} p-6 space-y-3`}>
+            {(q.question_id.endsWith('-AI') || q.context_reason.includes('AI')) && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-cyan-300">
+                <Sparkles className="w-3.5 h-3.5" /> Gợi ý từ AI
+              </span>
+            )}
             <h2 className="text-lg font-bold leading-snug">{q.question_text}</h2>
             {q.evidence[0] && (
               <p className="text-sm text-slate-700 dark:text-slate-300 border-l-4 border-amber-400 pl-3 italic">

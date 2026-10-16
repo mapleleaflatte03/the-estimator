@@ -106,7 +106,9 @@ def test_full_project_lifecycle_api():
 
     # 6. A re-estimate now uses the learned multiplier; v1/v2 stay unchanged
     v3 = client.post(f"/api/v1/projects/{project_id}/estimate").json()
-    assert v3["forecast"]["calibration_multiplier"] == round(cal["multiplier_after"], 4)
+    # Re-estimates use the multiplier for this project's type (partially pooled with the global one)
+    assert v3["forecast"]["calibration_multiplier"] == round(cal["type_multiplier_after"], 4)
+    assert cal["type_multiplier_after"] >= cal["multiplier_after"] > 1.0
     assert v3["forecast"]["p50_hours"] > v2["forecast"]["p50_hours"]
     assert v3["clarification_answers"] == v2["clarification_answers"]
     assert client.get(f"/api/v1/projects/{project_id}/versions/v2").json() == v2
@@ -134,3 +136,55 @@ def test_system_status_and_samples():
     assert status_resp["dataset"]["available"] is True
     samples = client.get("/api/v1/sample-briefs").json()
     assert len(samples) >= 3 and all(s["brief_text"] for s in samples)
+
+
+def test_wbs_edits_persist_across_versions():
+    brief = "- Có thể cần thêm báo cáo doanh thu theo tháng.\n- Quản lý danh sách khách hàng và đơn hàng."
+    pid = client.post("/api/v1/projects", json={"title": "Edit test", "brief_text": brief}).json()["project_id"]
+    v1 = client.post(f"/api/v1/projects/{pid}/estimate").json()
+    crud = next(w for w in v1["wbs"] if "CRUD-BE" in w["item_id"])
+    report = next(w for w in v1["wbs"] if "REPORTING-FE" in w["item_id"])
+    edits = {
+        "overrides": {crud["item_id"]: {"hours": 80, "name": "API khách hàng & đơn hàng"}},
+        "removed": [report["item_id"]],
+        "added": [{"name": "Đào tạo người dùng", "hours": 12, "role": "QA"}],
+    }
+    resp = client.put(f"/api/v1/projects/{pid}/wbs", json=edits)
+    assert resp.status_code == 200, resp.text
+    v2 = resp.json()
+    items = {w["item_id"]: w for w in v2["wbs"]}
+    edited = items[crud["item_id"]]
+    mean = (edited["optimistic_hours"] + 4 * edited["most_likely_hours"] + edited["pessimistic_hours"]) / 6
+    assert abs(mean - 80) < 1 and edited["name"] == "API khách hàng & đơn hàng"
+    assert report["item_id"] not in items
+    assert any(w["name"] == "Đào tạo người dùng" for w in v2["wbs"])
+    # Answering a clarification afterwards keeps the edits
+    q = v2["clarifications"][0]["question_id"]
+    v3 = client.post(f"/api/v1/projects/{pid}/clarify", json={"question_id": q, "answer": True}).json()
+    assert v3["manual_edits"] == v2["manual_edits"]
+    assert any(w["name"] == "API khách hàng & đơn hàng" for w in v3["wbs"])
+    # Unknown ids are rejected
+    bad = client.put(f"/api/v1/projects/{pid}/wbs", json={"overrides": {"NOPE-1": {"hours": 3}}})
+    assert bad.status_code == 400
+
+
+def test_exports_are_plain_language_and_excel_ready():
+    brief = "- Có thể cần thêm báo cáo doanh thu theo tháng.\n- Gửi email nhắc lịch hẹn."
+    pid = client.post("/api/v1/projects", json={"title": "Export test", "brief_text": brief}).json()["project_id"]
+    client.post(f"/api/v1/projects/{pid}/estimate")
+    md = client.get(f"/api/v1/projects/{pid}/export/proposal.md?confidence=80&rate=500000&people=2")
+    assert md.status_code == 200 and "attachment" in md.headers["content-disposition"]
+    text = md.text
+    assert "# Dự toán: Export test" in text and "triệu đồng" in text and "Câu hỏi cần khách hàng xác nhận" in text
+    assert "P50" not in text and "Monte Carlo" not in text
+    csv_resp = client.get(f"/api/v1/projects/{pid}/export/wbs.csv")
+    assert csv_resp.status_code == 200 and csv_resp.text.startswith("\ufeff")
+    assert "Gửi email nhắc lịch hẹn." in csv_resp.text
+    assert client.get("/api/v1/projects/NOPE/export/wbs.csv").status_code == 404
+
+
+def test_reader_evaluation_endpoint():
+    data = client.get("/api/v1/reader/evaluation").json()
+    names = [s["reader"] for s in data["held_out"]["summary"]]
+    assert names == ["rules", "jev", "hybrid", "shipped"]
+    assert data["status"]["configured"] is False  # tests never call a paid provider

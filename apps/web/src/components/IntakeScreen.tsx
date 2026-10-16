@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowRight, Upload } from 'lucide-react';
 import type { Project, SampleBrief } from '../types';
 import { createProject, fetchSampleBriefs } from '../api';
 import { PROJECT_TYPES, card } from '../ui';
@@ -24,6 +24,26 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
       .then(setSamples)
       .catch((err) => console.error('Error fetching sample briefs:', err));
   }, []);
+
+  const MAX_FILE_BYTES = 200_000;
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setError('File quá lớn (tối đa 200 KB). Hãy dán phần mô tả yêu cầu vào ô bên dưới.');
+      return;
+    }
+    const text = (await file.text()).trim();
+    if (!text) {
+      setError('File không có nội dung chữ. Hãy dùng file .txt, .md hoặc .csv.');
+      return;
+    }
+    setError(null);
+    setBriefText((prev) => (prev.trim() ? `${prev.trim()}\n${text}` : text));
+    if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ''));
+  };
 
   const applySample = (s: SampleBrief) => {
     setTitle(s.title);
@@ -93,9 +113,15 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="intake-brief" className="text-sm font-semibold">
-            Mô tả yêu cầu
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="intake-brief" className="text-sm font-semibold">
+              Mô tả yêu cầu
+            </label>
+            <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-700 dark:text-cyan-300 cursor-pointer hover:underline">
+              <Upload className="w-4 h-4" /> Tải file (.txt, .md, .csv)
+              <input type="file" accept=".txt,.md,.csv,text/plain,text/markdown,text/csv" onChange={handleFile} className="sr-only" />
+            </label>
+          </div>
           <textarea
             id="intake-brief"
             value={briefText}

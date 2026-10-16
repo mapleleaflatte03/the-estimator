@@ -138,3 +138,18 @@ def test_reference_class_needs_five_real_projects(tmp_path):
     v = svc.estimate_project(new.project_id)
     assert v.forecast.insufficient_historical_evidence is False
     assert v.forecast.reference_class_p50 is not None
+
+
+def test_type_multiplier_pools_towards_global():
+    from parallax.schemas import CalibrationObservation
+    from parallax.service import hierarchical_multiplier
+
+    obs = [CalibrationObservation(project_id=f"a{i}", version_id="v1", project_type="ai", uncalibrated_p50=100,
+                                  actual_hours=150) for i in range(4)]
+    obs += [CalibrationObservation(project_id=f"b{i}", version_id="v1", project_type="tool", uncalibrated_p50=100,
+                                   actual_hours=95) for i in range(4)]
+    m_ai, n_ai = hierarchical_multiplier(obs, "ai", 3)
+    m_tool, _ = hierarchical_multiplier(obs, "tool", 3)
+    m_new, n_new = hierarchical_multiplier(obs, "never_seen", 3)
+    assert n_ai == 4 and n_new == 0
+    assert m_ai > m_new > m_tool, "each type learns its own bias; unseen types use the global one"

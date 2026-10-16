@@ -6,6 +6,7 @@ version immutability.
 """
 from __future__ import annotations
 
+import logging
 import math
 import uuid
 from datetime import datetime, timezone
@@ -13,7 +14,8 @@ from typing import Optional
 
 from . import empirical
 from .evaluation.benchmark import PredictionRecord, evaluate_predictions
-from .extractor import MODEL_TAG, extract_scope_and_wbs
+from .extractor import MODEL_TAG, clause_texts, extract_scope_and_wbs
+from .jev import JevReader
 from .schemas import (
     ActualWork,
     CalibrationObservation,
@@ -25,6 +27,7 @@ from .schemas import (
 from .storage import StorageRepository
 
 MULTIPLIER_BOUNDS = (0.5, 2.0)
+logger = logging.getLogger(__name__)
 
 
 def shrunk_multiplier(log_ratios: list[float], prior_strength: float) -> float:
@@ -40,14 +43,45 @@ def shrunk_multiplier(log_ratios: list[float], prior_strength: float) -> float:
     return min(MULTIPLIER_BOUNDS[1], max(MULTIPLIER_BOUNDS[0], m))
 
 
+def hierarchical_multiplier(observations, project_type: str, prior_strength: float) -> tuple[float, int]:
+    """Per-project-type bias multiplier, partially pooled towards the global one.
+
+    With no actuals of this type it equals the global multiplier; each
+    completed project of this type pulls it further towards that type's own
+    record. Returns (multiplier, number of same-type observations).
+    """
+    global_m = shrunk_multiplier([o.log_ratio for o in observations], prior_strength)
+    same = [o.log_ratio for o in observations if o.project_type == project_type]
+    if not same:
+        return global_m, 0
+    log_m = (sum(same) + prior_strength * math.log(global_m)) / (len(same) + prior_strength)
+    return min(MULTIPLIER_BOUNDS[1], max(MULTIPLIER_BOUNDS[0], math.exp(log_m))), len(same)
+
+
 class ParallaxService:
-    def __init__(self, repository: StorageRepository, use_empirical_data: bool = True):
+    def __init__(self, repository: StorageRepository, use_empirical_data: bool = True,
+                 reader: Optional[JevReader] = None):
         self.repo = repository
         self.use_empirical_data = use_empirical_data
+        cache = repository.data_path.with_name("jev_cache.json") if repository.data_path else None
+        self.reader = reader if reader is not None else JevReader(cache_path=cache)
+
+    def _readings(self, project: Project) -> dict:
+        if not self.reader.configured and not self.reader.cache:
+            return {}
+        try:
+            return self.reader.read(clause_texts(project.brief_text, project.documents))
+        except Exception as exc:  # never let the optional AI reader break estimation
+            logger.warning("AI reader failed, using rules only: %s", exc)
+            return {}
 
     @property
     def calibration_multiplier(self) -> float:
         return self.repo.get_calibration().multiplier
+
+    def multiplier_for(self, project_type: str) -> float:
+        state = self.repo.get_calibration()
+        return hierarchical_multiplier(state.observations, project_type, state.prior_strength)[0]
 
     def _systemic_pool(self) -> Optional[tuple[float, ...]]:
         if not self.use_empirical_data:
@@ -62,8 +96,11 @@ class ParallaxService:
         cases = [c for c in cases if c.case_id != project.project_id]
         return [c.actual_hours for c in cases] or None
 
-    def _build_version(self, project: Project, answers: dict[str, bool]) -> EstimateVersion:
+    def _build_version(self, project: Project, answers: dict[str, bool],
+                       manual_edits: Optional[dict] = None) -> EstimateVersion:
         existing = self.repo.get_versions(project.project_id)
+        if manual_edits is None:
+            manual_edits = dict(existing[-1].manual_edits) if existing else {}
         return extract_scope_and_wbs(
             project_id=project.project_id,
             brief_text=project.brief_text,
@@ -71,9 +108,11 @@ class ParallaxService:
             clarification_answers=answers,
             version_id=f"v{len(existing) + 1}",
             parent_version_id=existing[-1].version_id if existing else None,
-            calibration_multiplier=self.calibration_multiplier,
+            calibration_multiplier=self.multiplier_for(project.project_type),
             historical_cases=self._comparable_hours(project),
             systemic_ratio_pool=self._systemic_pool(),
+            readings=self._readings(project),
+            manual_edits=manual_edits,
         )
 
     def create_project(
@@ -124,6 +163,25 @@ class ParallaxService:
         self.repo.save_project(project)
         return version
 
+    def update_wbs(self, project_id: str, edits: dict) -> EstimateVersion:
+        """New immutable version with the user's WBS edits; edits persist across later versions."""
+        project = self.repo.get_project(project_id)
+        if not project:
+            raise KeyError(f"Project {project_id} not found")
+        existing = self.repo.get_versions(project_id)
+        if not existing:
+            raise ValueError("Cannot edit the WBS before generating an estimate")
+        parent = existing[-1]
+        known = {w.item_id for w in parent.wbs} | {
+            i for i in (parent.manual_edits.get("overrides") or {})
+        }
+        for i, add in enumerate(edits.get("added") or [], start=1):
+            add["item_id"] = f"USER-{i:02d}"
+        unknown = [i for i in (edits.get("overrides") or {}) if i not in known and not i.startswith("USER-")]
+        if unknown:
+            raise ValueError(f"Unknown work items: {', '.join(unknown[:5])}")
+        return self.repo.add_version(self._build_version(project, dict(parent.clarification_answers), edits))
+
     def record_actuals(
         self,
         project_id: str,
@@ -166,6 +224,8 @@ class ParallaxService:
             )
         )
         after = shrunk_multiplier([o.log_ratio for o in observations], state.prior_strength)
+        type_before = hierarchical_multiplier(state.observations, project.project_type, state.prior_strength)[0]
+        type_after, type_n = hierarchical_multiplier(observations, project.project_type, state.prior_strength)
         self.repo.save_calibration(
             CalibrationState(
                 multiplier=after,
@@ -197,6 +257,10 @@ class ParallaxService:
             "calibration": {
                 "multiplier_before": round(before, 4),
                 "multiplier_after": round(after, 4),
+                "project_type": project.project_type,
+                "type_multiplier_before": round(type_before, 4),
+                "type_multiplier_after": round(type_after, 4),
+                "type_observations": type_n,
                 "n_observations": len(observations),
                 "prior_strength": state.prior_strength,
                 "applies_to": "new estimates and re-estimates; existing versions stay unchanged",
@@ -205,8 +269,14 @@ class ParallaxService:
 
     def calibration_status(self) -> dict:
         state = self.repo.get_calibration()
+        types = sorted({o.project_type for o in state.observations})
+        by_type = []
+        for t in types:
+            m, n = hierarchical_multiplier(state.observations, t, state.prior_strength)
+            by_type.append({"project_type": t, "multiplier": round(m, 4), "n_observations": n})
         return {
             "multiplier": round(state.multiplier, 4),
+            "by_type": by_type,
             "n_observations": len(state.observations),
             "prior_strength": state.prior_strength,
             "updated_at": state.updated_at,
@@ -235,8 +305,8 @@ class ParallaxService:
             return result
         raw, loo = [], []
         for i, o in enumerate(obs):
-            others = [x.log_ratio for j, x in enumerate(obs) if j != i]
-            m = shrunk_multiplier(others, state.prior_strength)
+            others = [x for j, x in enumerate(obs) if j != i]
+            m = hierarchical_multiplier(others, o.project_type, state.prior_strength)[0]
             raw.append(PredictionRecord(o.project_id, o.actual_hours, o.uncalibrated_p50, o.uncalibrated_p50, o.uncalibrated_p50))
             p = o.uncalibrated_p50 * m
             loo.append(PredictionRecord(o.project_id, o.actual_hours, p, p, p))
@@ -292,6 +362,7 @@ class ParallaxService:
                 "n_observations": len(self.repo.get_calibration().observations),
             },
             "reference_class_projects": len(self.repo.list_historical_cases()),
+            "ai_reader": self.reader.status(),
             "last_benchmark": (
                 {"run_id": last.run_id, "created_at": last.created_at, "metrics": last.metrics}
                 if last

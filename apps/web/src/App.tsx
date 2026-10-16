@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { PlusCircle, FolderOpen, Sun, Moon, Loader2 } from 'lucide-react';
-import type { Project, EstimateVersion } from './types';
+import type { Project, EstimateVersion, ManualEdits } from './types';
 import {
   fetchProjects,
   fetchVersions,
@@ -8,6 +8,7 @@ import {
   answerClarification,
   recordActuals,
   runBenchmark,
+  updateWbs,
 } from './api';
 import { IntakeScreen } from './components/IntakeScreen';
 import { ScopeGraphScreen } from './components/ScopeGraphScreen';
@@ -107,6 +108,14 @@ export const App: React.FC = () => {
       setVersions((prev) => [...prev, v]);
       setCurrentVersion(v);
       setActiveTab('estimation');
+    });
+
+  const handleUpdateWbs = (edits: ManualEdits) =>
+    withBusy('Đang lưu chỉnh sửa và tính lại dự toán…', async () => {
+      if (!currentProject) return;
+      const v = await updateWbs(currentProject.project_id, edits);
+      setVersions((prev) => [...prev, v]);
+      setCurrentVersion(v);
     });
 
   const handleRecordActuals = async (hoursSpent: number, reasons: string[]) => {
@@ -222,10 +231,13 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'intake' && <IntakeScreen onProjectCreated={handleProjectCreated} isLoading={isLoading} />}
-        {activeTab === 'scope' && currentVersion && <ScopeGraphScreen version={currentVersion} />}
+        {activeTab === 'scope' && currentVersion && (
+          <ScopeGraphScreen version={currentVersion} onSaveEdits={handleUpdateWbs} isLoading={isLoading} />
+        )}
         {activeTab === 'estimation' && currentVersion && (
           <EstimationLabScreen
             version={currentVersion}
+            projectId={currentProject?.project_id ?? ''}
             openQuestions={openQuestions}
             onGoToQuestions={() => setActiveTab('clarification')}
           />

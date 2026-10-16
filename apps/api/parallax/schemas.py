@@ -30,6 +30,7 @@ class RequirementNode(BaseModel):
     evidence: list[EvidenceSpan] = Field(default_factory=list)
     components: list[str] = Field(default_factory=list)
     in_scope: bool = True
+    ai_reading: Optional[dict] = None
 
     @model_validator(mode="after")
     def confirmed_needs_evidence(self):
@@ -120,6 +121,8 @@ class ProbabilisticForecast(BaseModel):
     p99_hours: Optional[float] = None
     max_hours: Optional[float] = None
     tail_start_hours: Optional[float] = None  # histogram upper edge (P97.5)
+    critical_path_hours: Optional[float] = None  # longest dependent chain, PERT means, uncalibrated
+    critical_path_ids: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def sorted_quantiles(self):
@@ -140,6 +143,9 @@ class EstimateVersion(BaseModel):
     clarifications: list[ClarificationQuestion] = Field(default_factory=list)
     forecast: ProbabilisticForecast
     clarification_answers: dict[str, bool] = Field(default_factory=dict)
+    reader: str = "rules"
+    reader_model: Optional[str] = None
+    manual_edits: dict = Field(default_factory=dict)  # {"overrides": {id: {name, hours}}, "removed": [id], "added": [...]}
 
     @model_validator(mode="after")
     def verify_links_and_acyclic_graph(self):
@@ -247,6 +253,27 @@ class CalibrationState(BaseModel):
     prior_strength: float = Field(default=3.0, gt=0)
     observations: list[CalibrationObservation] = Field(default_factory=list)
     updated_at: Optional[datetime] = None
+
+
+class WbsItemOverride(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=200)
+    hours: Optional[float] = Field(default=None, gt=0, le=5000, allow_inf_nan=False)
+
+
+class WbsItemAdd(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    hours: float = Field(gt=0, le=5000, allow_inf_nan=False)
+    req_id: str = "REQ-00"
+    role: str = "Backend"
+    item_id: Optional[str] = None
+
+
+class ManualEdits(BaseModel):
+    """Full set of user edits to the WBS; replaces the previous set."""
+
+    overrides: dict[str, WbsItemOverride] = Field(default_factory=dict)
+    removed: list[str] = Field(default_factory=list)
+    added: list[WbsItemAdd] = Field(default_factory=list)
 
 
 class ClarificationAnswer(BaseModel):

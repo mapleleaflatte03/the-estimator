@@ -14,6 +14,15 @@ export interface RequirementNode {
   evidence: EvidenceSpan[];
   components?: string[];
   in_scope?: boolean;
+  ai_reading?: {
+    kind: string;
+    confidence: number;
+    tentative: number;
+    model: string;
+    added_component?: string | null;
+    suggested_component?: string | null;
+    flagged_tentative: boolean;
+  } | null;
 }
 
 export interface WorkItem {
@@ -79,6 +88,8 @@ export interface ProbabilisticForecast {
   p99_hours?: number | null;
   max_hours?: number | null;
   tail_start_hours?: number | null;
+  critical_path_hours?: number | null;
+  critical_path_ids?: string[];
 }
 
 export interface EstimateVersion {
@@ -93,6 +104,15 @@ export interface EstimateVersion {
   clarifications: ClarificationQuestion[];
   forecast: ProbabilisticForecast;
   clarification_answers: Record<string, boolean>;
+  reader?: string;
+  reader_model?: string | null;
+  manual_edits?: ManualEdits;
+}
+
+export interface ManualEdits {
+  overrides?: Record<string, { name?: string; hours?: number }>;
+  removed?: string[];
+  added?: { name: string; hours: number; req_id?: string; role?: string; item_id?: string }[];
 }
 
 export interface Project {
@@ -238,7 +258,29 @@ export interface ActualsResult {
     n_observations: number;
     prior_strength: number;
     applies_to: string;
+    project_type: string;
+    type_multiplier_before: number;
+    type_multiplier_after: number;
+    type_observations: number;
   };
+}
+
+export interface ReaderSummary {
+  reader: 'rules' | 'jev' | 'hybrid' | 'shipped';
+  n_clauses: number;
+  primary_kind_found: number;
+  kind_recall_pct: number;
+  kind_precision_pct: number;
+  tentative_correct: number;
+  tentative_caught: string;
+  false_tentative: number;
+  primary_kind_suggested_as_question?: number;
+}
+
+export interface ReaderEvaluation {
+  held_out?: { note?: string; model: string; summary: ReaderSummary[] };
+  latest?: { model: string; summary: ReaderSummary[] };
+  status: { configured: boolean; provider: string | null; available: boolean; credits_remaining: number | null; cached_clauses: number };
 }
 
 export interface SystemStatus {

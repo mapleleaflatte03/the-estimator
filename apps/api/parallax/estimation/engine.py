@@ -15,6 +15,35 @@ from parallax.schemas import HistogramBin, ProbabilisticForecast, WorkItem
 CURVE_PERCENTILES = tuple(range(5, 100, 5))
 
 
+def _pert_mean(item: WorkItem) -> float:
+    return (item.optimistic_hours + 4.0 * item.most_likely_hours + item.pessimistic_hours) / 6.0
+
+
+def critical_path(wbs: Sequence[WorkItem]) -> tuple[float, list[str]]:
+    """Longest chain of dependent work (PERT means). Adding people cannot beat it."""
+    by_id = {w.item_id: w for w in wbs}
+    memo: dict[str, tuple[float, list[str]]] = {}
+    visiting: set[str] = set()
+
+    def longest(item_id: str) -> tuple[float, list[str]]:
+        if item_id not in memo:
+            visiting.add(item_id)
+            item = by_id[item_id]
+            best: tuple[float, list[str]] = (0.0, [])
+            for dep in item.dependencies:
+                if dep in by_id and dep not in visiting:  # cycles are rejected later by the schema
+                    cand = longest(dep)
+                    if cand[0] > best[0]:
+                        best = cand
+            memo[item_id] = (best[0] + _pert_mean(item), [*best[1], item_id])
+            visiting.discard(item_id)
+        return memo[item_id]
+
+    paths = [longest(w.item_id) for w in wbs]
+    hours, chain = max(paths, key=lambda p: p[0]) if paths else (0.0, [])
+    return round(hours, 1), chain
+
+
 def simulate_totals(
     wbs: Sequence[WorkItem],
     systemic_uncertainty_cv: float = 0.15,
@@ -144,6 +173,7 @@ def synthesize_forecast(
             else f"Beta-PERT per item x assumed lognormal shock (CV={systemic_uncertainty_cv})"
         )
 
+    cp_hours, cp_ids = critical_path(wbs)
     # Do not silently blend separate forecasts at arbitrary 70/30 weights.
     return ProbabilisticForecast(
         p10_hours=round(p10, 2),
@@ -165,4 +195,6 @@ def synthesize_forecast(
         p99_hours=round(float(np.percentile(samples, 99)), 2),
         max_hours=round(float(np.max(samples)), 2),
         tail_start_hours=round(float(np.percentile(samples, 97.5)), 2),
+        critical_path_hours=cp_hours,
+        critical_path_ids=cp_ids,
     )

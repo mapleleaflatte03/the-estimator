@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
 from .estimation.engine import synthesize_forecast
+from .jev import KIND_CONFIDENCE_MIN, TENTATIVE_MIN, ClauseReading
 from .provenance import validate_evidence_against_sources
 from .schemas import (
     ClarificationQuestion,
@@ -90,7 +91,7 @@ COMPONENTS: tuple[Component, ...] = (
     Component("scheduling", "Scheduling & dispatch", r"\blich\b(?! su)|lich trinh|calendar|schedul|dieu phoi|phan cong|dispatch|dat lich|booking|\bca lam|\bshifts?\b|roster",
               (T("BE", "Backend", "Scheduling engine: availability, assignment rules & conflicts", 16, 30, 60),
                T("FE", "Frontend", "Calendar / dispatch board", 14, 26, 50)), scales_with_breadth=True),
-    Component("mobile", "Mobile client", r"mobile|di dong|dien thoai|android|\bios\b|smartphone|react native|flutter|\bpwa\b|may tinh bang|tablet",
+    Component("mobile", "Mobile client", r"mobile|di dong|(?<!so )dien thoai|android|\bios\b|smartphone|react native|flutter|\bpwa\b|may tinh bang|tablet",
               (T("FE", "Frontend", "Mobile client (cross-platform / PWA)", 24, 45, 90),), shared=True),
     Component("offline", "Offline mode", r"offline|ngoai tuyen|mat ket noi|khong co mang|mat mang|no connectivity",
               (T("BE", "Backend", "Sync API with conflict resolution for offline edits", 12, 22, 44),
@@ -101,7 +102,7 @@ COMPONENTS: tuple[Component, ...] = (
     Component("performance", "Performance / load", r"\d[\d.,]*\s*(req|requests?|yeu cau|rps|tps)\b|chiu tai|tai cao|high load|concurren|dong thoi|flash sale|latency|do tre|throughput|nghen",
               (T("LOAD", "DevOps", "Load testing & performance tuning", 12, 24, 48),
                T("CACHE", "Backend", "Caching / queueing for peak load", 10, 20, 40)), shared=True),
-    Component("ai", "AI / LLM", r"\bai\b|tri tue nhan tao|chatbot|\bbot\b|\bllms?\b|\bgpt|openai|machine learning|hoc may|\bnlp\b|phan loai tu dong|\bocr\b|tro ly ao|tra loi tu dong",
+    Component("ai", "AI / LLM", r"tri tue nhan tao|chatbot|\bbot\b|\bllms?\b|\bgpt|openai|machine learning|hoc may|\bnlp\b|phan loai tu dong|\bocr\b|tro ly ao|tra loi tu dong",
               (T("BE", "Backend", "AI pipeline: prompts, guardrails, fallbacks & cost controls", 20, 36, 72),
                T("EVAL", "QA", "AI evaluation set & answer-quality metrics", 8, 16, 32)), shared=True),
     Component("rag", "Retrieval / knowledge base", r"\brag\b|retrieval|embedding|vector|knowledge base|tri thuc|semantic search|tuong dong ngu nghia",
@@ -134,6 +135,26 @@ GENERIC = Component("generic", "Unclassified feature", "",
                     (T("BE", "Backend", "Feature backend (generic sizing)", 12, 24, 56),
                      T("FE", "Frontend", "Feature UI (generic sizing)", 10, 20, 48)))
 _COMPILED = [(c, re.compile(c.pattern)) for c in COMPONENTS]
+COMPONENT_BY_KEY = {c.key: c for c in COMPONENTS}
+# "AI" only counts in capitals: folded Vietnamese "ai" means "who" ("lịch sử ai đã sửa").
+_AI_ACRONYM = re.compile(r"(?<![\w])AI(?![\w])")
+
+
+def _match_components(text: str) -> list[Component]:
+    folded = fold(text)
+    matched = [c for c, rx in _COMPILED if rx.search(folded)]
+    if _AI_ACRONYM.search(text) and COMPONENT_BY_KEY["ai"] not in matched:
+        matched.append(COMPONENT_BY_KEY["ai"])
+    return matched
+
+
+def clause_texts(brief_text: str, source_docs: Optional[dict[str, str]] = None) -> list[str]:
+    """Clause texts the extractor will read (used to fetch AI readings up front)."""
+    clauses = segment("brief.txt", brief_text)
+    for name, text in (source_docs or {}).items():
+        if name != "brief.txt" and text and text.strip() != brief_text.strip():
+            clauses.extend(segment(name, text))
+    return [c.text for c in clauses if not c.is_title]
 
 KNOWN_SYSTEMS = {
     r"\berp\b": "ERP", r"\bsap\b": "SAP", r"\bcrm\b": "CRM", r"shopee": "Shopee", r"lazada": "Lazada",
@@ -249,6 +270,10 @@ _TEXT = {
         "excluded": "Đã bỏ khỏi dự án.",
         "q_scope": "Có làm phần “{title}” trong đợt này không?",
         "q_scope_why": "Mô tả ghi “{hedge}” nên chưa chắc có làm. Hiện dự toán đang tính cả phần này.",
+        "q_scope_why_ai": "{hedge} (cách diễn đạt cho thấy chưa chốt). Hiện dự toán đang tính cả phần này.",
+        "q_ai_kind": "Phần “{title}” có cần thêm {kind} không?",
+        "q_ai_kind_why": "AI nhận định câu này có liên quan tới {kind} (chắc chắn {p}%), nhưng dự toán hiện chưa tính phần đó.",
+        "c_hedge_ai": "Phần “{title}” có vẻ chưa chốt: {hedge}. Hãy trả lời câu hỏi để chốt.",
         "q_platform": "Có cần làm riêng ứng dụng cho cả iPhone và Android không?",
         "q_platform_why": "Mô tả có nhắc điện thoại nhưng chưa nói loại máy. Hiện đang tính một ứng dụng dùng chung.",
         "q_dataq": "Dữ liệu cũ có cần làm sạch, sửa lỗi trước khi đưa vào không?",
@@ -256,6 +281,7 @@ _TEXT = {
         "q_api": "Có cần tìm hiểu thêm cách kết nối với {system} vì chưa có tài liệu không?",
         "q_api_why": "Kết nối với hệ thống chưa có tài liệu thường tốn thêm thời gian.",
         "c_hedge": "Phần “{title}” chưa chắc chắn (“{hedge}”). Hãy trả lời câu hỏi để chốt.",
+        "ai_hedge": "AI đánh giá {p}% khả năng khách chưa chốt",
         "c_generic": "Chưa rõ “{title}” là loại việc gì nên ước tính có thể lệch nhiều. Nên nhờ người có kinh nghiệm xem lại.",
         "c_perf": "Có yêu cầu chịu tải cao, đã cộng thêm thời gian kiểm tra tốc độ.",
         "c_integrations": "Cần kết nối với {n} hệ thống bên ngoài ({names}). Đây thường là phần dễ phát sinh.",
@@ -270,6 +296,10 @@ _TEXT = {
         "excluded": "Excluded from scope by clarification answer.",
         "q_scope": "Is “{title}” in scope for this delivery?",
         "q_scope_why": "The brief uses tentative wording (“{hedge}”). The estimate currently includes it; answering “No” removes {n} work item(s).",
+        "q_scope_why_ai": "{hedge}. The estimate currently includes it; answering “No” removes {n} work item(s).",
+        "q_ai_kind": "Does “{title}” also need {kind}?",
+        "q_ai_kind_why": "AI reads this clause as involving {kind} ({p}% confident), which the estimate does not include yet.",
+        "c_hedge_ai": "“{title}” looks uncommitted: {hedge}. Answer the question to settle it.",
         "q_platform": "Are separate native apps required for both iOS and Android (instead of one cross-platform/PWA build)?",
         "q_platform_why": "The brief mentions mobile use but no platform. The estimate assumes a single cross-platform/PWA codebase.",
         "q_dataq": "Does imported/migrated data need cleansing, normalisation and de-duplication first?",
@@ -277,6 +307,7 @@ _TEXT = {
         "q_api": "Does {system} lack a documented API / sandbox, requiring discovery or reverse-engineering?",
         "q_api_why": "The brief requires integrating {system} but does not mention API documentation; undocumented interfaces are a common overrun source.",
         "c_hedge": "Tentative wording (“{hedge}”) for “{title}”; included as an assumption and turned into a clarification question.",
+        "ai_hedge": "AI rates it {p}% likely the client has not committed",
         "c_generic": "Could not classify “{title}”; sized with a generic, wide-range template. Needs expert review.",
         "c_perf": "The brief states load/performance requirements; load testing and a cache/queue layer were added to the WBS.",
         "c_integrations": "The brief requires {n} external integrations ({names}); each gets its own adapter plus retry/reconciliation.",
@@ -434,15 +465,56 @@ def _build_items(req_id: str, title: str, components: list[Component], systems: 
 
 
 def _scope_question(L: dict, qid: str, req_id: str, title: str, hedge: str, items: list[WorkItem],
-                    evidence: list[EvidenceSpan], answers: dict[str, bool]) -> ClarificationQuestion:
+                    evidence: list[EvidenceSpan], answers: dict[str, bool], ai: bool = False) -> ClarificationQuestion:
     return ClarificationQuestion(
         question_id=qid, assumption_id=f"ASSUMP-{req_id}-SCOPE",
         question_text=L["q_scope"].format(title=title),
-        context_reason=L["q_scope_why"].format(hedge=hedge, n=len(items)),
+        context_reason=L["q_scope_why_ai" if ai else "q_scope_why"].format(hedge=hedge, n=len(items)),
         hours_if_false=0.0, hours_if_true=round(sum(_pert_mean(i) for i in items), 1),
         affected_item_ids=[i.item_id for i in items], evidence=evidence,
         current_assumption=True, answer=answers.get(qid),
     )
+
+
+def _scale_to(item: WorkItem, hours: float) -> None:
+    """Rescale a three-point estimate so its PERT mean equals `hours` (shape preserved)."""
+    factor = hours / _pert_mean(item)
+    item.optimistic_hours = round(item.optimistic_hours * factor, 1) or 0.1
+    item.most_likely_hours = round(item.most_likely_hours * factor, 1) or 0.1
+    item.pessimistic_hours = max(item.most_likely_hours, round(item.pessimistic_hours * factor, 1))
+    item.optimistic_hours = min(item.optimistic_hours, item.most_likely_hours)
+
+
+def _apply_overrides(items: list[WorkItem], overrides: dict) -> None:
+    for item in items:
+        edit = overrides.get(item.item_id)
+        if not edit:
+            continue
+        if edit.get("name"):
+            item.name = str(edit["name"])[:200]
+        if edit.get("hours"):
+            _scale_to(item, float(edit["hours"]))
+        item.basis = "Edited by user"
+
+
+def _apply_manual_edits(feature_items: list[WorkItem], edits: dict, req_ids: set[str]) -> list[WorkItem]:
+    removed = set(edits.get("removed") or [])
+    kept = [i for i in feature_items if i.item_id not in removed]
+    kept_ids = {i.item_id for i in kept}
+    for item in kept:
+        item.dependencies = [d for d in item.dependencies if d in kept_ids or d == "CORE-ARCH"] or ["CORE-ARCH"]
+    _apply_overrides(kept, edits.get("overrides") or {})
+    for n, add in enumerate(edits.get("added") or [], start=1):
+        hours = float(add["hours"])
+        m = round(hours / 1.0417, 1)
+        req = add.get("req_id") if add.get("req_id") in req_ids else "REQ-00"
+        kept.append(WorkItem(
+            item_id=str(add.get("item_id") or f"USER-{n:02d}"), req_ids=[req], name=str(add["name"])[:200],
+            role=add.get("role") if add.get("role") in ("Backend", "Frontend", "QA", "DevOps") else "Backend",
+            dependencies=["CORE-ARCH"], optimistic_hours=round(m * 0.75, 1), most_likely_hours=m,
+            pessimistic_hours=round(m * 1.5, 1), basis="Added by user",
+        ))
+    return kept
 
 
 def extract_scope_and_wbs(
@@ -455,6 +527,8 @@ def extract_scope_and_wbs(
     calibration_multiplier: float = 1.0,
     historical_cases: Optional[list[float]] = None,
     systemic_ratio_pool: Optional[Sequence[float]] = None,
+    readings: Optional[dict[str, ClauseReading]] = None,
+    manual_edits: Optional[dict] = None,
 ) -> EstimateVersion:
     """Analyse the brief (and extra documents) into a validated EstimateVersion."""
     sources = {k: v for k, v in (source_docs or {}).items() if v and v.strip()}
@@ -479,7 +553,17 @@ def extract_scope_and_wbs(
 
     for clause in clauses:
         folded = fold(clause.text)
-        matched = [c for c, rx in _COMPILED if rx.search(folded)]
+        matched = _match_components(clause.text)
+        reading = readings.get(clause.text.strip()) if readings else None
+        ai_component = None  # AI kind used directly (rules found nothing)
+        ai_suggest = None  # AI kind the rules missed, offered as a question instead of silently added
+        if reading and reading.component and reading.kind_confidence >= KIND_CONFIDENCE_MIN:
+            candidate = COMPONENT_BY_KEY[reading.component]
+            if not matched:
+                ai_component = candidate
+                matched = [candidate]
+            elif candidate not in matched:
+                ai_suggest = candidate
         if clause.is_title:
             continue
         if not matched and not clause.is_item and not _REQUIREMENT_MARKERS.search(folded):
@@ -492,6 +576,10 @@ def extract_scope_and_wbs(
         if hedge_match:
             # map folded offsets back to the original text (fold keeps length for Vietnamese)
             hedge = clause.text[hedge_match.start(): hedge_match.end()] if len(fold(clause.text)) == len(clause.text) else hedge_match.group(0)
+        ai_tentative = None
+        if hedge is None and reading and reading.tentative >= TENTATIVE_MIN:
+            ai_tentative = reading.tentative
+            hedge = L["ai_hedge"].format(p=round(reading.tentative * 100))
         components = matched or [GENERIC]
         if any(c.key in ("performance", "security") for c in components):
             has_nfr = True
@@ -506,6 +594,18 @@ def extract_scope_and_wbs(
             status=VerificationStatus.ASSUMED if hedge and answers.get(scope_q) is None else VerificationStatus.CONFIRMED,
             evidence=evidence,
             components=[c.key for c in components],
+            ai_reading=(
+                {
+                    "kind": reading.kind,
+                    "confidence": reading.kind_confidence,
+                    "tentative": reading.tentative,
+                    "model": reading.model,
+                    "added_component": ai_component.key if ai_component else None,
+                    "suggested_component": ai_suggest.key if ai_suggest else None,
+                    "flagged_tentative": ai_tentative is not None,
+                }
+                if reading else None
+            ),
             in_scope=not excluded,
         )
         draft = _Draft(req=req, hedge=hedge, clause=clause)
@@ -527,7 +627,8 @@ def extract_scope_and_wbs(
                 basis="Brief states API documentation is missing",
             ))
         if excluded:
-            clarifications.append(_scope_question(L, scope_q, req_id, title, hedge, draft.items, evidence, answers))
+            clarifications.append(_scope_question(L, scope_q, req_id, title, hedge, draft.items, evidence, answers,
+                                                 ai=ai_tentative is not None))
             draft.items = []
             continue
         all_systems.extend(s for s in systems if s not in all_systems)
@@ -547,12 +648,32 @@ def extract_scope_and_wbs(
                 supporting_evidence=evidence, action_taken="flagged_for_human_review",
             ))
 
+        if ai_suggest is not None:
+            qid = f"CLAR-{req_id}-AI"
+            accepted = answers.get(qid) is True
+            suggested_items = _build_items(req_id, title, [ai_suggest], systems, folded, factor, breadth,
+                                           shared_items, register=accepted)
+            if suggested_items:
+                kind_label = VI_COMPONENTS.get(ai_suggest.key, ai_suggest.label) if lang == "vi" else ai_suggest.label
+                clarifications.append(ClarificationQuestion(
+                    question_id=qid, assumption_id=f"ASSUMP-{req_id}-AI", evidence=evidence,
+                    question_text=L["q_ai_kind"].format(title=title, kind=kind_label),
+                    context_reason=L["q_ai_kind_why"].format(kind=kind_label, p=round(reading.kind_confidence * 100)),
+                    hours_if_false=0.0, hours_if_true=round(sum(_pert_mean(i) for i in suggested_items), 1),
+                    affected_item_ids=[i.item_id for i in suggested_items],
+                    current_assumption=False, answer=answers.get(qid),
+                ))
+                if accepted:
+                    draft.items.extend(suggested_items)
+
         # --- clarification questions grounded in this clause ---------------
         if hedge:
-            clarifications.append(_scope_question(L, scope_q, req_id, title, hedge, draft.items, evidence, answers))
+            clarifications.append(_scope_question(L, scope_q, req_id, title, hedge, draft.items, evidence, answers,
+                                                 ai=ai_tentative is not None))
             critics.append(CriticFinding(
                 finding_id=f"CRITIC-{req_id}-HEDGE", category="scope_ambiguity",
-                claim=L["c_hedge"].format(hedge=hedge, title=title), verified_by_evidence=True,
+                claim=L["c_hedge_ai" if ai_tentative is not None else "c_hedge"].format(hedge=hedge, title=title),
+                verified_by_evidence=True,
                 supporting_evidence=evidence, action_taken="generated_clarification_question",
             ))
 
@@ -617,6 +738,9 @@ def extract_scope_and_wbs(
     for item in feature_items + [i for d in drafts for i in d.items]:
         seen.setdefault(item.item_id, item)
     feature_items = list(seen.values())
+    edits = manual_edits or {}
+    if edits:
+        feature_items = _apply_manual_edits(feature_items, edits, {"REQ-00", *(d.req.req_id for d in drafts)})
 
     dev_mean = sum(_pert_mean(i) for i in feature_items) + _pert_mean(core)
     depended = {dep for i in feature_items for dep in i.dependencies}
@@ -635,6 +759,8 @@ def extract_scope_and_wbs(
                       name="Production deployment, monitoring & handover",
                       optimistic_hours=6, most_likely_hours=12, pessimistic_hours=24, basis="Engine prior")
     wbs = [setup, core, *feature_items, qa, e2e, deploy]
+    if edits:
+        _apply_overrides([setup, core, qa, e2e, deploy], edits.get("overrides") or {})
     if lang == "vi":
         for item in wbs:
             item.name = _vi_name(item.name)
@@ -688,6 +814,9 @@ def extract_scope_and_wbs(
         clarifications=clarifications,
         forecast=forecast,
         clarification_answers=dict(answers),
+        reader="rules+jev" if readings else "rules",
+        manual_edits=dict(edits),
+        reader_model=next(iter(readings.values())).model if readings else None,
     )
     validate_evidence_against_sources(version, sources)
     return version

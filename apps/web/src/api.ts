@@ -4,7 +4,9 @@ import type {
   CalibrationStatus,
   EstimateVersion,
   HistoricalCase,
+  ManualEdits,
   Project,
+  ReaderEvaluation,
   SampleBrief,
   SipSummary,
   SystemStatus,
@@ -74,3 +76,24 @@ export const fetchCalibration = () =>
   request<CalibrationStatus>(`${API_BASE}/calibration`, undefined, 'Calibration unavailable');
 
 export const fetchSipSummary = () => request<SipSummary>(`${API_BASE}/datasets/sip`, undefined, 'Dataset unavailable');
+
+export const updateWbs = (projectId: string, edits: ManualEdits) =>
+  request<EstimateVersion>(
+    `${API_BASE}/projects/${projectId}/wbs`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edits) },
+    'Failed to save edits',
+  );
+
+export const proposalUrl = (projectId: string, p: { confidence: number; rate: number; currency: string; people: number }) =>
+  `${API_BASE}/projects/${projectId}/export/proposal.md?` +
+  new URLSearchParams({
+    confidence: String(p.confidence),
+    rate: String(p.rate),
+    currency: p.currency,
+    people: String(p.people),
+  }).toString();
+
+export const wbsCsvUrl = (projectId: string) => `${API_BASE}/projects/${projectId}/export/wbs.csv`;
+
+export const fetchReaderEvaluation = () =>
+  request<ReaderEvaluation>(`${API_BASE}/reader/evaluation`, undefined, 'Evaluation unavailable');

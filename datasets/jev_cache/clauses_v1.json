@@ -1,0 +1,614 @@
+{
+ "41cd3f6051f767a63647b64d": {
+  "kind": "notification",
+  "kind_confidence": 0.99,
+  "kind_probabilities": {
+   "notification": 0.99,
+   "scheduling": 0.01,
+   "auth": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "e9b75697b4d59f0494fb7029": {
+  "kind": "payment",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "payment": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "17826edb755af6f0ad38db3f": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.97,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "68c428f8e86916f1a7c68044": {
+  "kind": "offline_sync",
+  "kind_confidence": 0.97,
+  "kind_probabilities": {
+   "offline_sync": 0.97,
+   "mobile_app": 0.03,
+   "auth": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "ce8ca1c757c809221f866a53": {
+  "kind": "auth",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "auth": 1.0,
+   "permissions_audit": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "84ef0cebd52f46dc03b690f5": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.14,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "19cd2b3e0745b4ec043bd6d7": {
+  "kind": "payment",
+  "kind_confidence": 0.47,
+  "kind_probabilities": {
+   "payment": 0.51,
+   "reporting": 0.21,
+   "scheduling": 0.18
+  },
+  "tentative": 0.95,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "3a7743266a155029e5aeaf92": {
+  "kind": "scheduling",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "scheduling": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.13,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "b8b8c131fdf3bd5707e1fe68": {
+  "kind": "external_integration",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "external_integration": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "e8f62eb4826ce99fceaab1dc": {
+  "kind": "permissions_audit",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "permissions_audit": 1.0,
+   "auth": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "f13e7a31ca63b7cbe5e76c6e": {
+  "kind": "reporting",
+  "kind_confidence": 0.47,
+  "kind_probabilities": {
+   "reporting": 0.51,
+   "mobile_app": 0.26,
+   "external_integration": 0.15
+  },
+  "tentative": 0.96,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "a8245dfae9927591038db5c2": {
+  "kind": "data_import",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "data_import": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "b9cc38771d91676556c8d967": {
+  "kind": "permissions_audit",
+  "kind_confidence": 0.79,
+  "kind_probabilities": {
+   "permissions_audit": 0.81,
+   "scheduling": 0.17,
+   "auth": 0.01
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "cc4ea63bec7918f1a6e76fb5": {
+  "kind": "file_export",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "file_export": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "ac36659f24b3a84b712edb73": {
+  "kind": "ai_assistant",
+  "kind_confidence": 0.66,
+  "kind_probabilities": {
+   "ai_assistant": 0.69,
+   "reporting": 0.21,
+   "mobile_app": 0.05
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "cc3d9007c8ea4cfc1e19c342": {
+  "kind": "auth",
+  "kind_confidence": 0.28,
+  "kind_probabilities": {
+   "auth": 0.34,
+   "reporting": 0.19,
+   "scheduling": 0.18
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "eebf2b1d1862f8f701912c6b": {
+  "kind": "auth",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "auth": 1.0,
+   "permissions_audit": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.87,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "89c966b4506139a82a2381e1": {
+  "kind": "notification",
+  "kind_confidence": 0.97,
+  "kind_probabilities": {
+   "notification": 0.97,
+   "reporting": 0.03,
+   "auth": 0.0
+  },
+  "tentative": 0.03,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "55eee35861308e96d0ff5419": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.97,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "cc5c6364f9911d615d03fea8": {
+  "kind": "payment",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "payment": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "527b4b40ff4213f36a47515d": {
+  "kind": "scheduling",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "scheduling": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.11,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "8a256838e33c62c1f3ba4890": {
+  "kind": "notification",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "notification": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "166964c7eafb710be8932873": {
+  "kind": "reporting",
+  "kind_confidence": 0.85,
+  "kind_probabilities": {
+   "reporting": 0.86,
+   "permissions_audit": 0.04,
+   "mobile_app": 0.04
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "ca25d614274141ab8d768537": {
+  "kind": "auth",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "auth": 1.0,
+   "permissions_audit": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "892e400da0f0086d5077dbb6": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "d052720e735f09b267425078": {
+  "kind": "scheduling",
+  "kind_confidence": 0.99,
+  "kind_probabilities": {
+   "scheduling": 0.99,
+   "reporting": 0.01,
+   "auth": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "4fe6cd8a19641b982169e2e5": {
+  "kind": "permissions_audit",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "permissions_audit": 1.0,
+   "auth": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.12,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "272d0ac8e2fa5941b9cfd7bb": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.1,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "e1e3eab103ea2cd5ed9c6060": {
+  "kind": "reporting",
+  "kind_confidence": 0.9,
+  "kind_probabilities": {
+   "reporting": 0.91,
+   "mobile_app": 0.04,
+   "external_integration": 0.03
+  },
+  "tentative": 0.12,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "9e17ca618e32aab8f8367480": {
+  "kind": "mobile_app",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "mobile_app": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.94,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "e3b51555030b84166bd99d5c": {
+  "kind": "external_integration",
+  "kind_confidence": 0.71,
+  "kind_probabilities": {
+   "external_integration": 0.73,
+   "notification": 0.27,
+   "auth": 0.0
+  },
+  "tentative": 0.12,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "91ca3409e20cd6cfcef41e17": {
+  "kind": "external_integration",
+  "kind_confidence": 0.99,
+  "kind_probabilities": {
+   "external_integration": 0.99,
+   "payment": 0.01,
+   "auth": 0.0
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "0599684b6c0e9a1cd1fdcce6": {
+  "kind": "external_integration",
+  "kind_confidence": 0.57,
+  "kind_probabilities": {
+   "external_integration": 0.61,
+   "payment": 0.35,
+   "scheduling": 0.03
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "5d7e3a07e421e9fd0817bd65": {
+  "kind": "auth",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "auth": 1.0,
+   "permissions_audit": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.03,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "228c772372783378920c783c": {
+  "kind": "scheduling",
+  "kind_confidence": 0.98,
+  "kind_probabilities": {
+   "scheduling": 0.98,
+   "reporting": 0.02,
+   "auth": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "92b5571316a21f2289aa18b7": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "da876ab05929b086c9c9682b": {
+  "kind": "external_integration",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "external_integration": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.87,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "9d42429ae4b377a8a5aed028": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "748197a17eaf4d6c56a56640": {
+  "kind": "external_integration",
+  "kind_confidence": 0.95,
+  "kind_probabilities": {
+   "external_integration": 0.95,
+   "payment": 0.05,
+   "auth": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "bea26afb2dc6a0c7b37fb6b6": {
+  "kind": "permissions_audit",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "permissions_audit": 1.0,
+   "auth": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "b339653b1d63764fcc740578": {
+  "kind": "external_integration",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "external_integration": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "3a58d7bdc506b36b653635aa": {
+  "kind": "offline_sync",
+  "kind_confidence": 0.91,
+  "kind_probabilities": {
+   "offline_sync": 0.92,
+   "mobile_app": 0.08,
+   "auth": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "0a518db77ad179bf6fde274c": {
+  "kind": "notification",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "notification": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.11,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "095b8389d80717155bb4d906": {
+  "kind": "external_integration",
+  "kind_confidence": 0.98,
+  "kind_probabilities": {
+   "external_integration": 0.98,
+   "notification": 0.02,
+   "auth": 0.0
+  },
+  "tentative": 0.14,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "17571d2315cc03927d0dea62": {
+  "kind": "scheduling",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "scheduling": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "cdca3e1cd5af0839e5215247": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "eef4abd45fc630cf7c079627": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "beca40cab8d6903d7c7fedaf": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "164b6c67078f5fa959315978": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "25643ae79447975e717386b0": {
+  "kind": "data_import",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "data_import": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "6ffd0e6c39c0347a873b53db": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.91,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ }
+}

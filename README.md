@@ -68,12 +68,51 @@ against a component taxonomy (auth, scheduling, offline, notifications, import, 
 ("có thể cần", "cần xem xét", "TBD", …) produces scope questions; missing platform/data-quality/API-docs information
 produces add-on questions. Answers accumulate across versions.
 
+## AI reader (Jev) — optional, measured, with fallback
+
+Scoping a brief is a chain of small judgements per clause: *what kind of work is this?* and *has the client
+committed to it?*. These go to [Jev](https://docs.typesafe.ai) (TypeSafe's System One decision model: typed
+answers with calibrated probabilities, no generated text). Hours, simulation and learning stay in code.
+
+- Questions are in English, clauses stay in their original language (independent tests found this keeps accuracy).
+- Rules + Jev are combined conservatively: Jev's kind is used when the rules recognise nothing; when Jev sees a
+  kind the rules missed, the app **asks the user** instead of silently adding hours; a clause is tentative if
+  either reader says so (Jev threshold 0.7).
+- Readings are cached per clause (`datasets/jev_cache/` ships readings for the sample briefs), so re-estimates
+  and clarifications cost nothing and stay consistent. A credit floor and an hourly call cap protect the
+  balance; any error falls back to rules. Provider keys: `JEVSTATION_API_KEY` (jevstation.com, an independent
+  reseller — brief text passes through it, so use demo briefs only), `TYPESAFE_API_KEY`, `AI_GATEWAY_API_KEY`.
+
+Held-out check (`datasets/eval/clause_labels_v1.json`: 31 new clauses, hand-labelled before any model ran;
+results in `datasets/eval/reader_results_v1_heldout.json`, reproduce with `scripts/evaluate_readers.py`):
+
+| Reader | Primary kind found | Tentative clauses caught | False "tentative" |
+| --- | --- | --- | --- |
+| Rules only | 23/31 | 2/6 | 0 |
+| Jev only (jev-1.13.0) | 23/31 | 6/6 | 0 |
+| **Rules + Jev, as shipped** | **24/31** (+4 offered as questions) | **6/6** | 0 |
+
+The set exposed two rule bugs (Vietnamese "ai" = *who* read as AI; "số điện thoại" read as a mobile app),
+fixed afterwards — so later runs on this set are no longer strictly held-out (`reader_results_latest.json`).
+A free open model (Laya) was also tried on 12 clauses and rejected (7/12 kinds, missed both tentative clauses).
+
+## Other features
+
+- **Edit the work list**: change hours or names, remove or add items; edits persist across later versions
+  (clarifications and re-estimates) and QA hours follow the new total.
+- **Deliverables**: plain-language proposal (Markdown) at the chosen confidence, rate and team size, and an
+  Excel-ready CSV of the work list (`/export/proposal.md`, `/export/wbs.csv`).
+- **Timeline** respects the critical path: adding people cannot beat the longest chain of dependent work.
+- **Learning per project type**: the bias multiplier is learned per type and partially pooled towards the
+  workspace-wide one, so a few completed projects of one type shift that type without swinging the others.
+- Brief upload from `.txt`, `.md` or `.csv`.
+
 ## Methodological limitations
 
 1. Per-component hour templates are **engine priors (assumptions)**, not fitted to data. Only the workspace's own actuals can validate them.
 2. SiP is one UK company's maintenance/enhancement work (2004–2014); its error distribution may not transfer to other teams or greenfield projects.
 3. Feature-level ratios have a long right tail (two packages overran 6–14×); P99 of the forecast is therefore very wide. This is shown, not hidden.
-4. Clause classification is rule-based; it catches omissions structurally (every clause is kept) but can mislabel a component.
+4. Clause classification (rules, optionally + Jev) can mislabel a component; every clause is still kept, so nothing is silently dropped. The held-out reader set has 31 clauses — small.
 5. Old test runs wrote fake projects into `data/parallax_store.json`. `python scripts/clean_test_artifacts.py` lists them; `--apply` removes them with a backup.
 
 ## Next steps (priority order)

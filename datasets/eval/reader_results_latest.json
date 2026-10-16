@@ -1,0 +1,496 @@
+{
+  "labels": "datasets/eval/clause_labels_v1.json",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 31,
+      "primary_kind_found": 23,
+      "kind_recall_pct": 67.5,
+      "kind_precision_pct": 79.4,
+      "tentative_correct": 27,
+      "tentative_caught": "2/6",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 31,
+      "primary_kind_found": 23,
+      "kind_recall_pct": 60.0,
+      "kind_precision_pct": 77.4,
+      "tentative_correct": 31,
+      "tentative_caught": "6/6",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 31,
+      "primary_kind_found": 28,
+      "kind_recall_pct": 82.5,
+      "kind_precision_pct": 75.0,
+      "tentative_correct": 31,
+      "tentative_caught": "6/6",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 31,
+      "primary_kind_found": 24,
+      "kind_recall_pct": 70.0,
+      "kind_precision_pct": 80.0,
+      "tentative_correct": 31,
+      "tentative_caught": "6/6",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 4
+    }
+  ],
+  "details": [
+    {
+      "text": "Khách hàng đăng ký tài khoản bằng số điện thoại và mã OTP gửi qua SMS.",
+      "expected": [
+        "auth",
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "auth",
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Quản lý viên muốn xem doanh thu từng chi nhánh theo tuần và theo tháng.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.14
+    },
+    {
+      "text": "Nếu còn ngân sách thì làm thêm phần tích điểm cho khách thân thiết.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": true,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 0.47,
+      "jev_tentative": 0.95
+    },
+    {
+      "text": "Khách tự chọn khung giờ trống để đặt lịch cắt tóc trên website.",
+      "expected": [
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.13
+    },
+    {
+      "text": "Gửi email nhắc khách trước giờ hẹn 2 tiếng.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Thanh toán online qua VNPay và Momo, có xuất hóa đơn điện tử.",
+      "expected": [
+        "payment",
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "file_export",
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Phần chatbot trả lời tự động thì anh vẫn đang phân vân, để sau tính.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": true,
+      "rules": [
+        "ai_assistant"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.97
+    },
+    {
+      "text": "Nhân viên kho quét mã vạch bằng điện thoại để nhập hàng, kể cả khi mất sóng.",
+      "expected": [
+        "mobile_app",
+        "offline_sync",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import",
+        "mobile_app"
+      ],
+      "rules_tentative": false,
+      "jev": "offline_sync",
+      "jev_confidence": 0.97,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Đồng bộ đơn hàng với phần mềm kế toán MISA mỗi cuối ngày.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Admin phân quyền cho từng nhân viên theo phòng ban.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Tìm kiếm sản phẩm theo tên, mã và khoảng giá.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 0.66,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Hệ thống phải phục vụ được khoảng 2.000 người dùng cùng lúc vào giờ cao điểm.",
+      "expected": [
+        "performance"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 0.28,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Đơn nghỉ phép cần trưởng phòng duyệt trước khi chuyển sang nhân sự.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 0.79,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Xuất danh sách học viên ra file Excel.",
+      "expected": [
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "file_export"
+      ],
+      "rules_tentative": false,
+      "jev": "file_export",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Có lẽ sẽ cần bản đồ hiển thị vị trí shipper theo thời gian thực, chưa chắc.",
+      "expected": [
+        "maps_location"
+      ],
+      "tentative": true,
+      "rules": [
+        "maps_location"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.47,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Import toàn bộ dữ liệu khách hàng cũ từ file Excel của phòng kinh doanh.",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import"
+      ],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Giáo viên tạo đề thi trắc nghiệm, học sinh làm bài và xem điểm ngay.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.85,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Người dùng có thể đổi mật khẩu và ảnh đại diện.",
+      "expected": [
+        "auth",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "auth"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Tùy chọn: cho khách đăng nhập bằng Facebook.",
+      "expected": [
+        "auth"
+      ],
+      "tentative": true,
+      "rules": [
+        "auth"
+      ],
+      "rules_tentative": true,
+      "jev": "auth",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.87
+    },
+    {
+      "text": "The system must send a weekly summary email to each manager.",
+      "expected": [
+        "notification",
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 0.97,
+      "jev_tentative": 0.03
+    },
+    {
+      "text": "We might also want a simple dashboard for marketing later on.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": true,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": true,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.97
+    },
+    {
+      "text": "Customers can pay by credit card through Stripe.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Bac si xem lich kham trong ngay va ho so benh nhan.",
+      "expected": [
+        "scheduling",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.11
+    },
+    {
+      "text": "Gui thong bao day khi co don hang moi.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Trợ lý AI tóm tắt nội dung cuộc họp từ file ghi âm.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": false,
+      "rules": [
+        "ai_assistant"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Phân ca làm việc cho nhân viên bán hàng theo tuần.",
+      "expected": [
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Khách hàng theo dõi tiến độ sửa chữa xe của mình qua trang web.",
+      "expected": [
+        "workflow_approval",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.9,
+      "jev_tentative": 0.12
+    },
+    {
+      "text": "Nếu kịp thì giai đoạn này làm luôn app cho iPhone.",
+      "expected": [
+        "mobile_app"
+      ],
+      "tentative": true,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "mobile_app",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.94
+    },
+    {
+      "text": "Lưu lại lịch sử ai đã sửa hồ sơ nào và lúc nào.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.12
+    },
+    {
+      "text": "Nhân viên chụp ảnh hóa đơn, hệ thống tự đọc số tiền và ngày tháng.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1
+    },
+    {
+      "text": "Kết nối với Zalo OA để chăm sóc khách hàng.",
+      "expected": [
+        "external_integration",
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration",
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 0.71,
+      "jev_tentative": 0.12
+    }
+  ]
+}
