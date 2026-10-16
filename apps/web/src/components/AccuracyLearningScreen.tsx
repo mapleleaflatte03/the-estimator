@@ -1,26 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
-import type { ActualsResult, BenchmarkReport, EstimateVersion, HistoricalCase, ReaderEvaluation, ReaderSummary } from '../types';
-import { fetchHistoricalCases, fetchReaderEvaluation } from '../api';
+import type { ActualsResult, EstimateVersion, HistoricalCase } from '../types';
+import { fetchHistoricalCases } from '../api';
 import { PROJECT_TYPES, card, hours } from '../ui';
+import { GroupedBars } from './charts';
 
-const READER_NAMES: Partial<Record<ReaderSummary['reader'], string>> = {
-  rules: 'Chỉ luật từ khóa',
-  jev: 'Chỉ AI (Jev)',
-  shipped: 'Luật + AI (đang dùng)',
-};
 const typeLabel = (t: string) => PROJECT_TYPES.find((p) => p.value === t)?.label.toLowerCase() ?? t;
 
 interface AccuracyLearningScreenProps {
   version: EstimateVersion;
   onRecordActuals: (actualHours: number, reasons: string[]) => Promise<ActualsResult>;
-  onRunBenchmark: () => Promise<BenchmarkReport>;
   onReestimate: () => Promise<void>;
+  onOpenEvidence: () => void;
   isLoading: boolean;
 }
 
 const pct = (v: number) => `${Math.abs(Math.round(v))}%`;
-const hours1 = (v: number) => `${v.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} giờ`;
 const diffText = (actual: number, estimate: number) => {
   const d = ((actual - estimate) / estimate) * 100;
   if (Math.abs(d) < 1) return 'đúng bằng dự toán';
@@ -30,8 +25,8 @@ const diffText = (actual: number, estimate: number) => {
 export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
   version,
   onRecordActuals,
-  onRunBenchmark,
   onReestimate,
+  onOpenEvidence,
   isLoading,
 }) => {
   const [actualHours, setActualHours] = useState('');
@@ -40,14 +35,8 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState<HistoricalCase[]>([]);
-  const [report, setReport] = useState<BenchmarkReport | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [readerEval, setReaderEval] = useState<ReaderEvaluation | null>(null);
 
   useEffect(() => {
-    fetchReaderEvaluation()
-      .then(setReaderEval)
-      .catch((err) => console.error('Error fetching reader evaluation:', err));
     fetchHistoricalCases()
       .then(setCompleted)
       .catch((err) => console.error('Error fetching completed projects:', err));
@@ -69,23 +58,10 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
     }
   };
 
-  const runCheck = async () => {
-    setChecking(true);
-    try {
-      setReport(await onRunBenchmark());
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setChecking(false);
-    }
-  };
 
   const adjust = result
     ? (result.calibration.type_multiplier_after / result.calibration.type_multiplier_before - 1) * 100
     : 0;
-  const holdout = report?.sip.holdout;
-  const curve = report?.sip.learning_curve.points ?? [];
-  const rollingWins = curve.filter((p) => p.rolling_mae < p.frozen_mae).length;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
@@ -173,6 +149,28 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
         {completed.length === 0 ? (
           <p className="text-slate-600 dark:text-slate-400">Chưa có dự án nào được nhập giờ thực tế.</p>
         ) : (
+          <>
+          <div className="mb-5">
+            <GroupedBars
+              series={[
+                { key: 'est', label: 'Dự toán', tone: 'primary' },
+                { key: 'act', label: 'Thực tế', tone: 'attention' },
+              ]}
+              groups={completed.slice(-6).map((c) => {
+                const top = Math.max(c.actual_hours, c.estimated_p50_hours ?? 0, 1);
+                return {
+                  key: c.case_id,
+                  label: c.title,
+                  values: [
+                    ...(c.estimated_p50_hours
+                      ? [{ series: 'est', value: c.estimated_p50_hours / top, display: hours(c.estimated_p50_hours) }]
+                      : []),
+                    { series: 'act', value: c.actual_hours / top, display: hours(c.actual_hours) },
+                  ],
+                };
+              })}
+            />
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
@@ -200,101 +198,20 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 
-      <details className={`${card} p-6`}>
-        <summary className="font-bold cursor-pointer">Có thể tin dự toán này đến đâu?</summary>
-        <div className="mt-3 space-y-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-          <p>
-            Cách tính được kiểm tra trên dữ liệu thật của một công ty phần mềm (hơn 10.000 công việc, 2004–2014): học từ các năm
-            trước, rồi so với kết quả thực tế của các năm sau.
-          </p>
-          {!report ? (
-            <button
-              type="button"
-              onClick={runCheck}
-              disabled={checking}
-              className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold hover:border-indigo-400 cursor-pointer disabled:opacity-50"
-            >
-              {checking ? 'Đang kiểm tra…' : 'Chạy kiểm tra'}
-            </button>
-          ) : (
-            holdout && (
-              <ul className="list-disc pl-5 space-y-1">
-                <li>
-                  Trên {holdout.n_test.toLocaleString('vi-VN')} công việc chưa từng thấy, sai lệch trung bình giảm từ{' '}
-                  {hours1(holdout.baseline.mae)} xuống {hours1(holdout.calibrated.mae)} mỗi công việc (giảm{' '}
-                  {pct(((holdout.calibrated.mae - holdout.baseline.mae) / holdout.baseline.mae) * 100)}) so với ước lượng ban đầu của người làm.
-                </li>
-                {holdout.calibrated.interval_coverage != null && (
-                  <li>Kết quả thực tế nằm trong khoảng dao động dự báo ở {Math.round(holdout.calibrated.interval_coverage)}% số trường hợp.</li>
-                )}
-                {curve.length > 0 && (
-                  <li>
-                    Khi được học thêm dữ liệu mới mỗi năm, kết quả tốt hơn so với không học thêm ở {rollingWins}/{curve.length} năm.
-                  </li>
-                )}
-                {report.in_app.status === 'ok' && report.in_app.uncalibrated_mae != null && report.in_app.calibrated_mae != null && (
-                  <li>
-                    Với các dự án của bạn: sai lệch trung bình {hours(report.in_app.uncalibrated_mae)} →{' '}
-                    {hours(report.in_app.calibrated_mae)} sau khi điều chỉnh.
-                  </li>
-                )}
-                <li>
-                  Lưu ý: số giờ cho từng loại công việc vẫn là ước tính ban đầu, sẽ sát dần khi bạn nhập giờ thực tế của nhiều dự án
-                  hơn.
-                </li>
-              </ul>
-            )
-          )}
-          {readerEval?.held_out && (
-            <div className="space-y-2 pt-2">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Đọc mô tả chính xác đến đâu?</h3>
-              <p>
-                Thử trên {readerEval.held_out.summary[0]?.n_clauses} câu yêu cầu mới (đáp án gán tay trước khi chạy, không có trong các
-                ví dụ mẫu):
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th scope="col" className="py-1.5 pr-3 font-semibold">Cách đọc</th>
-                      <th scope="col" className="py-1.5 px-3 font-semibold text-right">Đúng loại việc chính</th>
-                      <th scope="col" className="py-1.5 pl-3 font-semibold text-right">Nhận ra yêu cầu chưa chốt</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {readerEval.held_out.summary
-                      .filter((r) => READER_NAMES[r.reader])
-                      .map((r) => (
-                      <tr key={r.reader} className={r.reader === 'shipped' ? 'font-semibold' : ''}>
-                        <td className="py-1.5 pr-3">{READER_NAMES[r.reader]}</td>
-                        <td className="py-1.5 px-3 text-right">
-                          {r.primary_kind_found}/{r.n_clauses}
-                          {!!r.primary_kind_suggested_as_question && ` (+${r.primary_kind_suggested_as_question} qua câu hỏi)`}
-                        </td>
-                        <td className="py-1.5 pl-3 text-right">{r.tentative_caught}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Khi AI gợi ý thêm một loại việc mà luật không thấy, hệ thống hỏi bạn thay vì tự cộng giờ.
-                {readerEval.status.configured ? '' : ' Hiện AI chưa được bật trên máy chủ này, chỉ dùng kết quả đã lưu sẵn.'}
-              </p>
-            </div>
-          )}
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Nguồn dữ liệu:{' '}
-            <a href="https://github.com/Derek-Jones/SiP_dataset" target="_blank" rel="noreferrer" className="underline">
-              SiP dataset
-            </a>{' '}
-            (CC BY-NC-ND 4.0).
-          </p>
+      <button
+        type="button"
+        onClick={onOpenEvidence}
+        className={`${card} w-full p-5 text-left hover:border-indigo-300 dark:hover:border-indigo-700 cursor-pointer`}
+      >
+        <div className="font-bold">Có thể tin dự toán này đến đâu? →</div>
+        <div className="text-sm text-slate-600 dark:text-slate-400">
+          Xem kết quả kiểm chứng trên dữ liệu thật: AI đọc mô tả, học từ giờ thực tế, nhật ký từng lần thử.
         </div>
-      </details>
+      </button>
     </div>
   );
 };

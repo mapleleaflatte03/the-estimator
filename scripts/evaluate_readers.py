@@ -6,11 +6,16 @@ Readers:
   hybrid - what the app ships: rules plus Jev's kind when Jev is confident,
            tentative if either reader says so
 
-Usage: python scripts/evaluate_readers.py   (needs JEVSTATION_API_KEY or TYPESAFE_API_KEY
-for clauses that are not yet in datasets/jev_cache/; cached clauses cost nothing).
+Usage:
+  python scripts/evaluate_readers.py --labels datasets/eval/clause_labels_v2.json --tag round2 --note "..."
+Needs JEVSTATION_API_KEY or TYPESAFE_API_KEY for clauses not yet in datasets/jev_cache/ (cached ones are free);
+--rules-only never calls the API. Every run is appended to datasets/eval/journal.jsonl.
 """
+import argparse
+import hashlib
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -73,10 +78,28 @@ def score(name, rows):
     }
 
 
+def rules_version() -> str:
+    """Fingerprint of the rule reader, so journal entries show which rules produced a result."""
+    import parallax.extractor as ex
+
+    return hashlib.sha256(Path(ex.__file__).read_bytes()).hexdigest()[:10]
+
+
 def main() -> int:
-    labels = json.loads((ROOT / "datasets" / "eval" / "clause_labels_v1.json").read_text(encoding="utf-8"))["clauses"]
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--labels", default="datasets/eval/clause_labels_v1.json")
+    ap.add_argument("--tag", default="latest")
+    ap.add_argument("--note", default="")
+    ap.add_argument("--rules-only", action="store_true")
+    args = ap.parse_args()
+    labels_path = ROOT / args.labels
+    labels = json.loads(labels_path.read_text(encoding="utf-8"))["clauses"]
     reader = JevReader(cache_path=SHIPPED_CACHE)
+    if args.rules_only:
+        reader.url = None
     readings = reader.read([c["text"] for c in labels])
+    if args.rules_only:
+        return rules_only_report(args, labels)
     rows = {"rules": [], "jev": [], "hybrid": []}
     details = []
     for c in labels:
@@ -97,18 +120,45 @@ def main() -> int:
                         "rules": sorted(r_kinds), "rules_tentative": r_tent,
                         "jev": j.kind, "jev_confidence": j.kind_confidence, "jev_tentative": j.tentative})
     results = {
-        "labels": "datasets/eval/clause_labels_v1.json",
+        "labels": args.labels,
+        "tag": args.tag,
+        "rules_version": rules_version(),
         "model": next(iter(readings.values())).model,
         "thresholds": {"kind_confidence_min": KIND_CONFIDENCE_MIN, "tentative_min": TENTATIVE_MIN},
         "summary": summarise(details, rows),
         "details": details,
     }
-    # The first (truly held-out) run is kept in reader_results_v1_heldout.json.
-    out = ROOT / "datasets" / "eval" / "reader_results_latest.json"
+    out = ROOT / "datasets" / "eval" / f"reader_results_{args.tag}.json"
     out.write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    journal(args, results["summary"], results["model"])
     for s in results["summary"]:
         print(s)
     print("Jev status:", reader.status())
+    return 0
+
+
+def journal(args, summary, model) -> None:
+    entry = {
+        "date": datetime.now(timezone(timedelta(hours=7))).isoformat(timespec="minutes"),
+        "tag": args.tag,
+        "labels": args.labels,
+        "rules_version": rules_version(),
+        "model": model,
+        "summary": summary,
+        "note": args.note,
+    }
+    with open(ROOT / "datasets" / "eval" / "journal.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def rules_only_report(args, labels) -> int:
+    rows = []
+    for c in labels:
+        r_kinds, r_tent = rules_reading(c["text"])
+        rows.append((r_kinds, set(c["kinds"]), c["kinds"], r_tent, c["tentative"]))
+    summary = [score("rules", rows)]
+    journal(args, summary, None)
+    print(summary[0])
     return 0
 
 

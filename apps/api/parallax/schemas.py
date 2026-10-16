@@ -246,6 +246,17 @@ class CalibrationObservation(BaseModel):
         return math.log(self.actual_hours / self.uncalibrated_p50)
 
 
+class FeedbackEvent(BaseModel):
+    """A user's reaction to something the AI reader proposed (used to adapt suggestions)."""
+
+    event: str  # "ai_suggestion" (answered an AI kind question) | "ai_item_removed"
+    component: str
+    accepted: bool
+    project_id: str
+    version_id: str
+    at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class CalibrationState(BaseModel):
     """Bias multiplier learned from this workspace's own recorded actuals."""
 

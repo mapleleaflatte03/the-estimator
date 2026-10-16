@@ -1,0 +1,490 @@
+{
+  "labels": "datasets/eval/clause_labels_v2.json",
+  "tag": "round2_dev_after_fixes",
+  "rules_version": "7ffca8bc41",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 30,
+      "primary_kind_found": 28,
+      "kind_recall_pct": 84.6,
+      "kind_precision_pct": 89.2,
+      "tentative_correct": 30,
+      "tentative_caught": "5/5",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 30,
+      "primary_kind_found": 19,
+      "kind_recall_pct": 51.3,
+      "kind_precision_pct": 66.7,
+      "tentative_correct": 29,
+      "tentative_caught": "4/5",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 30,
+      "primary_kind_found": 29,
+      "kind_recall_pct": 87.2,
+      "kind_precision_pct": 79.1,
+      "tentative_correct": 30,
+      "tentative_caught": "5/5",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 30,
+      "primary_kind_found": 29,
+      "kind_recall_pct": 87.2,
+      "kind_precision_pct": 89.5,
+      "tentative_correct": 30,
+      "tentative_caught": "5/5",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 0
+    }
+  ],
+  "details": [
+    {
+      "text": "Bên mình cần chỗ cho khách để lại đánh giá 1–5 sao sau mỗi đơn hàng.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.56,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Lễ tân tra cứu nhanh bệnh nhân theo số CCCD hoặc số điện thoại.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.5,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Tự động gửi SMS nhắc lịch tiêm chủng trước 1 ngày.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Chủ nhà đăng tin cho thuê kèm ảnh và vị trí trên bản đồ.",
+      "expected": [
+        "data_management",
+        "maps_location"
+      ],
+      "tentative": false,
+      "rules": [
+        "maps_location"
+      ],
+      "rules_tentative": false,
+      "jev": "mobile_app",
+      "jev_confidence": 0.48,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Học viên thanh toán học phí qua chuyển khoản QR VietQR.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Báo cáo tồn kho theo từng kho và từng nhóm hàng, xuất ra Excel được.",
+      "expected": [
+        "reporting",
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "file_export",
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.86,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Hiện tại bên em chưa chắc có cần đồng bộ với phần mềm KiotViet không.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": true,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": true,
+      "jev": "external_integration",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Ứng dụng cho tài xế chạy trên Android, dùng được cả khi mất 4G.",
+      "expected": [
+        "mobile_app",
+        "offline_sync"
+      ],
+      "tentative": false,
+      "rules": [
+        "mobile_app",
+        "offline_sync"
+      ],
+      "rules_tentative": false,
+      "jev": "offline_sync",
+      "jev_confidence": 0.55,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Quản lý duyệt chi phí trên 5 triệu, dưới thì kế toán tự duyệt.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 0.96,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Chatbot trên fanpage trả lời câu hỏi về giá phòng.",
+      "expected": [
+        "ai_assistant",
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "ai_assistant"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1
+    },
+    {
+      "text": "Phân quyền: nhân viên chỉ xem được khách hàng của mình.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Giai đoạn 2 mới làm phần tích hợp với Shopee.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": true,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": true,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.41
+    },
+    {
+      "text": "Đăng nhập một lần bằng tài khoản Microsoft 365 của công ty.",
+      "expected": [
+        "auth"
+      ],
+      "tentative": false,
+      "rules": [
+        "auth"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Hệ thống cần chịu được 10.000 đơn/giờ trong dịp Tết.",
+      "expected": [
+        "performance"
+      ],
+      "tentative": false,
+      "rules": [
+        "performance"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.47,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Lưu vết mọi lần chỉnh sửa giá sản phẩm.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Nhập danh mục thuốc từ file Excel của Bộ Y tế.",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import"
+      ],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Xếp lịch phòng họp, tránh trùng giờ.",
+      "expected": [
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Nếu được thì thêm dashboard cho ban giám đốc xem doanh số.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": true,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": true,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.94
+    },
+    {
+      "text": "khach hang tu tao don va theo doi trang thai giao hang",
+      "expected": [
+        "data_management",
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 0.75,
+      "jev_tentative": 0.1
+    },
+    {
+      "text": "Gợi ý sản phẩm phù hợp dựa trên lịch sử mua hàng bằng AI.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": false,
+      "rules": [
+        "ai_assistant"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.34
+    },
+    {
+      "text": "Định vị nhân viên thị trường khi check-in tại cửa hàng.",
+      "expected": [
+        "maps_location",
+        "mobile_app"
+      ],
+      "tentative": false,
+      "rules": [
+        "maps_location"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.41,
+      "jev_tentative": 0.11
+    },
+    {
+      "text": "Gửi email hóa đơn điện tử cho khách sau khi thanh toán.",
+      "expected": [
+        "notification",
+        "payment"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration",
+        "notification",
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 0.6,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Tìm kiếm hồ sơ ứng viên theo kỹ năng, kinh nghiệm và mức lương mong muốn.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 0.65,
+      "jev_tentative": 0.13
+    },
+    {
+      "text": "Có thể khách sẽ muốn thêm ví MoMo, cái này để sau.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": true,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": true,
+      "jev": "payment",
+      "jev_confidence": 0.98,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Quản lý hợp đồng thuê: ngày bắt đầu, kết thúc, tiền cọc.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.8,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Gửi thông báo đẩy cho phụ huynh khi học sinh vắng mặt.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Kết nối máy chấm công vân tay để lấy dữ liệu giờ vào ra.",
+      "expected": [
+        "external_integration",
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Người dùng có thể lọc sản phẩm theo màu và kích cỡ.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.65,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Phần quản trị cho admin khóa hoặc mở tài khoản người dùng.",
+      "expected": [
+        "permissions_audit",
+        "auth"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 0.57,
+      "jev_tentative": 0.12
+    },
+    {
+      "text": "Chưa quyết định có làm app iOS hay chỉ làm web.",
+      "expected": [
+        "mobile_app"
+      ],
+      "tentative": true,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": true,
+      "jev": "mobile_app",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.96
+    }
+  ]
+}

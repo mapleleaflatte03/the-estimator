@@ -54,6 +54,12 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
     return totals;
   }, [version.wbs]);
   const grandTotal = Object.values(roleTotals).reduce((a, b) => a + b, 0) || 1;
+  const reqTotals = groups.map(({ req, items }) => (req.in_scope === false ? 0 : items.reduce((t, w) => t + itemHours(w), 0)));
+  const maxReq = Math.max(...reqTotals, 1);
+  const biggestFeature = groups.reduce(
+    (best, g, i) => (g.req.req_id !== 'REQ-00' && reqTotals[i] > (best.h ?? -1) ? { id: g.req.req_id, h: reqTotals[i] } : best),
+    { id: '', h: -1 as number },
+  ).id;
   const featureCount = groups.filter((g) => g.req.req_id !== 'REQ-00' && g.req.in_scope !== false).length;
   const editCount =
     Object.keys(version.manual_edits?.overrides ?? {}).length +
@@ -185,13 +191,20 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                   <h2 className="font-bold leading-snug">{req.req_id === 'REQ-00' ? req.title : text}</h2>
                   {req.req_id === 'REQ-00' && <p className="text-sm text-slate-600 dark:text-slate-400">{req.description}</p>}
                   {note && (
-                    <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-cyan-300">
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
                       <Sparkles className="w-3.5 h-3.5" /> {note}
                     </p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  {!excluded && <span className="font-bold whitespace-nowrap">{hours(total)}</span>}
+                  {!excluded && (
+                    <span className={`whitespace-nowrap ${req.req_id === biggestFeature ? 'text-xl font-extrabold text-indigo-700 dark:text-indigo-300' : 'font-bold'}`}>
+                      {hours(total)}
+                    </span>
+                  )}
+                  {req.req_id === biggestFeature && !excluded && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">Tốn nhiều giờ nhất</span>
+                  )}
                   {excluded && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">Đã bỏ</span>}
                   {!excluded && req.status === 'assumed' && req.req_id !== 'REQ-00' && (
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100">
@@ -201,6 +214,16 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                 </div>
               </div>
 
+              {!excluded && total > 0 && (
+                <div className="mt-2 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden" aria-hidden="true">
+                  <div
+                    className={`h-full rounded-full ${
+                      req.req_id === 'REQ-00' ? 'bg-slate-400' : req.status === 'assumed' ? 'bg-amber-500' : 'bg-indigo-600 dark:bg-indigo-400'
+                    }`}
+                    style={{ width: `${(total / maxReq) * 100}%` }}
+                  />
+                </div>
+              )}
               {items.length > 0 && (
                 <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
                   {items.map((w) => {

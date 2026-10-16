@@ -277,10 +277,28 @@ export interface ReaderSummary {
   primary_kind_suggested_as_question?: number;
 }
 
+export interface JournalEntry {
+  date: string;
+  tag: string;
+  labels: string;
+  rules_version: string;
+  model: string | null;
+  note: string;
+  summary: (Partial<ReaderSummary> & Record<string, unknown>)[];
+}
+
+export interface FeedbackSummary {
+  answered: number;
+  accepted: number;
+  by_component: { component: string; answered: number; accepted: number; acceptance: number; muted: boolean }[];
+}
+
 export interface ReaderEvaluation {
   held_out?: { note?: string; model: string; summary: ReaderSummary[] };
   latest?: { model: string; summary: ReaderSummary[] };
   status: { configured: boolean; provider: string | null; available: boolean; credits_remaining: number | null; cached_clauses: number };
+  feedback?: FeedbackSummary;
+  journal?: JournalEntry[];
 }
 
 export interface SystemStatus {

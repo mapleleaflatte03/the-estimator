@@ -22,11 +22,15 @@ from .schemas import (
     CalibrationState,
     EstimateVersion,
     EvaluationRun,
+    FeedbackEvent,
     Project,
 )
 from .storage import StorageRepository
 
 MULTIPLIER_BOUNDS = (0.5, 2.0)
+# An AI suggestion kind is muted once users answered it at least this often and rarely accept it.
+SUPPRESS_MIN_ANSWERS = 3
+SUPPRESS_MAX_ACCEPTANCE = 0.3
 logger = logging.getLogger(__name__)
 
 
@@ -113,7 +117,28 @@ class ParallaxService:
             systemic_ratio_pool=self._systemic_pool(),
             readings=self._readings(project),
             manual_edits=manual_edits,
+            ai_suppressed=self.suppressed_ai_kinds(),
         )
+
+    def feedback_summary(self) -> dict:
+        by_comp: dict[str, dict] = {}
+        for e in self.repo.list_feedback():
+            row = by_comp.setdefault(e.component, {"component": e.component, "answered": 0, "accepted": 0})
+            row["answered"] += 1
+            row["accepted"] += int(e.accepted)
+        for row in by_comp.values():
+            # Laplace-smoothed acceptance so one answer cannot mute a kind.
+            row["acceptance"] = round((row["accepted"] + 1) / (row["answered"] + 2), 3)
+            row["muted"] = row["answered"] >= SUPPRESS_MIN_ANSWERS and row["acceptance"] < SUPPRESS_MAX_ACCEPTANCE
+        rows = sorted(by_comp.values(), key=lambda r: -r["answered"])
+        return {
+            "answered": sum(r["answered"] for r in rows),
+            "accepted": sum(r["accepted"] for r in rows),
+            "by_component": rows,
+        }
+
+    def suppressed_ai_kinds(self) -> set[str]:
+        return {r["component"] for r in self.feedback_summary()["by_component"] if r["muted"]}
 
     def create_project(
         self,
@@ -158,6 +183,13 @@ class ParallaxService:
             raise ValueError(f"Unknown clarification question {question_id}")
         # Answers accumulate across versions; a later answer overrides an earlier one.
         answers = {**parent.clarification_answers, question_id: answer}
+        if question_id.endswith("-AI"):
+            req_id = question_id[len("CLAR-"):-len("-AI")]
+            req = next((r for r in parent.requirements if r.req_id == req_id), None)
+            comp = (req.ai_reading or {}).get("suggested_component") if req else None
+            if comp:
+                self.repo.add_feedback([FeedbackEvent(event="ai_suggestion", component=comp, accepted=answer,
+                                                      project_id=project_id, version_id=parent.version_id)])
         version = self.repo.add_version(self._build_version(project, answers))
         project.status = "clarified"
         self.repo.save_project(project)
@@ -180,6 +212,14 @@ class ParallaxService:
         unknown = [i for i in (edits.get("overrides") or {}) if i not in known and not i.startswith("USER-")]
         if unknown:
             raise ValueError(f"Unknown work items: {', '.join(unknown[:5])}")
+        removed = set(edits.get("removed") or []) - set(parent.manual_edits.get("removed") or [])
+        events = []
+        for req in parent.requirements:
+            comp = (req.ai_reading or {}).get("added_component")
+            if comp and any(i.startswith(f"{req.req_id}-{comp.upper()}-") for i in removed):
+                events.append(FeedbackEvent(event="ai_item_removed", component=comp, accepted=False,
+                                            project_id=project_id, version_id=parent.version_id))
+        self.repo.add_feedback(events)
         return self.repo.add_version(self._build_version(project, dict(parent.clarification_answers), edits))
 
     def record_actuals(
@@ -363,6 +403,7 @@ class ParallaxService:
             },
             "reference_class_projects": len(self.repo.list_historical_cases()),
             "ai_reader": self.reader.status(),
+            "ai_feedback": self.feedback_summary(),
             "last_benchmark": (
                 {"run_id": last.run_id, "created_at": last.created_at, "metrics": last.metrics}
                 if last

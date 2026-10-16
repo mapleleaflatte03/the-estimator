@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-17T00:46+07:00",
+  "tag": "promise_split_before",
+  "labels": "PROMISE_exp (external)",
+  "rules_version": "7ffca8bc41",
+  "model": null,
+  "summary": [
+    {
+      "reader": "rules",
+      "dev_even_projects": {
+        "n_requirements": 577,
+        "retention_pct": 67.6,
+        "performance_recall_pct": 10.3,
+        "performance_false_alarms": "0/519",
+        "security_recall_pct": 33.3,
+        "security_false_alarms": "22/505",
+        "false_tentative": "4/577"
+      },
+      "test_odd_projects": {
+        "n_requirements": 392,
+        "retention_pct": 72.7,
+        "performance_recall_pct": 3.2,
+        "performance_false_alarms": "0/361",
+        "security_recall_pct": 54.7,
+        "security_false_alarms": "15/339",
+        "false_tentative": "0/392"
+      }
+    }
+  ],
+  "note": "PROMISE split by project parity, rules BEFORE English fixes"
+}

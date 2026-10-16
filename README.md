@@ -92,6 +92,24 @@ results in `datasets/eval/reader_results_v1_heldout.json`, reproduce with `scrip
 | Jev only (jev-1.13.0) | 23/31 | 6/6 | 0 |
 | **Rules + Jev, as shipped** | **24/31** (+4 offered as questions) | **6/6** | 0 |
 
+Round 2 (30 new Vietnamese clauses, varied domains/styles, `clause_labels_v2.json`): rules 23/30 kinds and
+1/5 tentative; shipped rules+Jev 24/30 (+1 via a question) and **5/5** tentative, no false alarms. Across both
+rounds the rules alone caught 3/11 uncommitted requirements; with Jev **11/11**.
+
+Rule improvements are always measured on data not used to derive them:
+
+| Check (held-out part) | Before | After |
+| --- | --- | --- |
+| Round 3, 25 Vietnamese clauses written before the fixes: primary kind | 17/25 | **23/25** |
+| Round 3: tentative caught | 3/4 | **4/4** |
+| PROMISE_exp odd-numbered projects (392 real English requirements): kept as requirements | 72.7% | **100%** |
+| PROMISE_exp odd projects: performance requirements recognised | 3.2% | **51.6%** (3/361 false alarms) |
+| PROMISE_exp odd projects: security requirements recognised | 54.7% | **77.4%** |
+
+Every run is appended to `datasets/eval/journal.jsonl` (date, data, rule fingerprint, model, results, note) and
+shown in the app's **Kiểm chứng** tab. In the app, answers to AI suggestions and removals of AI-added work are
+recorded; a suggestion kind answered ≥ 3 times with < 30% acceptance is muted automatically.
+
 The set exposed two rule bugs (Vietnamese "ai" = *who* read as AI; "số điện thoại" read as a mobile app),
 fixed afterwards — so later runs on this set are no longer strictly held-out (`reader_results_latest.json`).
 A free open model (Laya) was also tried on 12 clauses and rejected (7/12 kinds, missed both tentative clauses).

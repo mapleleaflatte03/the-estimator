@@ -66,48 +66,52 @@ class Component:
 
 T = Template
 COMPONENTS: tuple[Component, ...] = (
-    Component("auth", "Authentication", r"\bsso\b|single sign|oauth|saml|\bldap\b|okta|keycloak|dang nhap|xac thuc|\blogin\b|log in|sign[- ]?in|authenticat|mat khau|password|\b2fa\b|\bmfa\b|\botp\b",
+    Component("auth", "Authentication", r"\bsso\b|single sign|oauth|saml|\bldap\b|okta|keycloak|dang nhap|xac thuc|\blogin\b|log in|sign[- ]?in|authenticat|mat khau|password|\b2fa\b|\bmfa\b|\botp\b|log ?out|logged out|inactivity|session time",
               (T("BE", "Backend", "Authentication service & session/token management", 10, 18, 34),
                T("FE", "Frontend", "Login, logout & session-expiry flows", 6, 12, 22)), shared=True),
-    Component("rbac", "Roles & permissions", r"phan quyen|vai tro|\broles?\b|permission|rbac|quyen truy cap|access control|\badmin\b",
+    Component("rbac", "Roles & permissions", r"phan quyen|vai tro|\broles?\b|permission|rbac|quyen truy cap|access control|\badmin\b"
+              r"|(?<!un)authori[sz]ed (?:users?|personnel|staff)|\bonly (?:the |an? )?\w+(?: \w+)? (?:can|shall|will|may) (?:access|view|modify|edit|change|adjust|update)|privileges?|revoked?",
               (T("BE", "Backend", "Role/permission model & policy enforcement", 8, 14, 26),
                T("FE", "Frontend", "Role-aware UI & role administration", 6, 10, 18)), shared=True),
-    Component("audit", "Audit trail", r"audit|nhat ky|lich su thay doi|truy vet|activity log|change log|ghi nhan moi thay doi",
+    Component("audit", "Audit trail", r"audit|nhat ky|lich su (thay doi|chinh sua|sua|dang nhap|truy cap)|lich su ai|ai da (sua|duyet|xoa)|truy vet|luu vet|activity log|change log|ghi nhan moi thay doi",
               (T("BE", "Backend", "Audit trail capture, storage & query", 6, 10, 20),), shared=True),
-    Component("integration", "External integration", r"tich hop|integrat|\bapis?\b|webhook|dong bo (voi|tu|sang|du lieu (voi|tu|sang))|sync (with|to|from)|ket noi (voi|toi|den)|connector|\berp\b|\bsap\b|\bcrm\b|third[- ]party|ben thu ba|shopee|lazada|tiktok|shopify|woocommerce|salesforce|hubspot|zendesk|misa|odoo|haravan|quickbooks|xero",
+    Component("integration", "External integration", r"tich hop|integrat|hoa don dien tu|e-?invoice|\bapis?\b|webhook|dong bo (voi|tu|sang|du lieu (voi|tu|sang))|sync (with|to|from)|ket noi (voi|toi|den)|connector|\berp\b|\bsap\b|\bcrm\b|third[- ]party|ben thu ba|shopee|lazada|tiktok|shopify|woocommerce|salesforce|hubspot|zendesk|misa|odoo|haravan|quickbooks|xero",
               (T("RETRY", "Backend", "Retry, idempotency & reconciliation for external calls", 6, 12, 24),)),
-    Component("reporting", "Reporting & dashboards", r"bao cao|report|dashboard|bang dieu khien|thong ke|\bkpis?\b|bieu do|chart|analytics|gantt|doi soat",
+    Component("reporting", "Reporting & dashboards", r"bao cao|report|dashboard|bang dieu khien|thong ke|\bkpis?\b|bieu do|chart|analytics|gantt|doi soat|doanh thu|doanh so|loi nhuan|summary",
               (T("BE", "Backend", "Reporting queries & aggregation", 8, 16, 30),
                T("FE", "Frontend", "Dashboard, charts & report views", 10, 18, 34)), scales_with_breadth=True),
-    Component("export", "File export", r"\bxuat\b(?! hien| phat| xu| khau| sac)|export|tai xuong|download",
+    Component("export", "File export", r"\bxuat\b(?! hien| phat| xu| khau| sac| hoa don| kho)|export|tai xuong|download",
               (T("BE", "Backend", "Export generation (PDF/Excel/CSV)", 6, 12, 24),)),
-    Component("import", "Data import", r"(?<!dang )\bnhap\b(?! lieu| vien| hoc| mon)|import|\bupload\b|tai len|\bcsv\b",
+    Component("import", "Data import", r"(?<!dang )\bnhap\b(?! lieu| vien| hoc| mon| hang| kho)|import|\bupload\b|tai len|\bcsv\b",
               (T("BE", "Backend", "Import pipeline: parsing, validation & error report", 10, 18, 36),
                T("FE", "Frontend", "Upload & import review screen", 4, 8, 16))),
     Component("migration", "Data migration", r"migrat|chuyen doi du lieu|di chuyen du lieu|du lieu cu|du lieu lich su|legacy data|historical data",
               (T("BE", "Backend", "Legacy data mapping & migration scripts", 14, 26, 52),)),
-    Component("notification", "Notifications", r"thong bao|notif|gui email|email thong bao|send email|\bsms\b|push|nhac nho|reminder|canh bao|\balerts?\b|zalo oa",
+    Component("notification", "Notifications", r"thong bao|notif|gui (email|mail|tin nhan|ma)|email (thong bao|nhac|xac nhan|hoa don)|send .{0,40}emails?|\bsms\b|push|nhac nho|\bnhac (lich|hen)|reminder|canh bao|\balerts?\b|zalo oa|tin nhan|livechat|live chat",
               (T("BE", "Backend", "Notification service: templates, queue & delivery tracking", 8, 16, 30),), shared=True),
-    Component("scheduling", "Scheduling & dispatch", r"\blich\b(?! su)|lich trinh|calendar|schedul|dieu phoi|phan cong|dispatch|dat lich|booking|\bca lam|\bshifts?\b|roster",
+    Component("scheduling", "Scheduling & dispatch", r"(?<!nhac )\blich\b(?! su)|lich trinh|calendar|schedul|dieu phoi|phan cong|dispatch|dat lich|dat ban|dat phong|booking|\bca lam|\bshifts?\b|roster",
               (T("BE", "Backend", "Scheduling engine: availability, assignment rules & conflicts", 16, 30, 60),
                T("FE", "Frontend", "Calendar / dispatch board", 14, 26, 50)), scales_with_breadth=True),
-    Component("mobile", "Mobile client", r"mobile|di dong|(?<!so )dien thoai|android|\bios\b|smartphone|react native|flutter|\bpwa\b|may tinh bang|tablet",
+    Component("mobile", "Mobile client", r"mobile|di dong|(?<!so )dien thoai|android|\bios\b|iphone|ipad|\bapp\b(?! store| id)|smartphone|react native|flutter|\bpwa\b|may tinh bang|tablet",
               (T("FE", "Frontend", "Mobile client (cross-platform / PWA)", 24, 45, 90),), shared=True),
-    Component("offline", "Offline mode", r"offline|ngoai tuyen|mat ket noi|khong co mang|mat mang|no connectivity",
+    Component("offline", "Offline mode", r"offline|ngoai tuyen|mat ket noi|khong co mang|mat mang|mat song|mat (3g|4g|5g|wifi)|mang yeu|song yeu|no connectivity",
               (T("BE", "Backend", "Sync API with conflict resolution for offline edits", 12, 22, 44),
                T("FE", "Frontend", "Local storage & background sync queue", 12, 22, 44)), shared=True),
     Component("realtime", "Real-time updates", r"real[- ]?time|thoi gian thuc|tuc thoi|websocket|live update",
               (T("BE", "Backend", "Real-time event channel (WebSocket/SSE)", 8, 16, 32),
                T("FE", "Frontend", "Live UI updates", 4, 8, 16)), shared=True),
-    Component("performance", "Performance / load", r"\d[\d.,]*\s*(req|requests?|yeu cau|rps|tps)\b|chiu tai|tai cao|high load|concurren|dong thoi|flash sale|latency|do tre|throughput|nghen",
+    Component("performance", "Performance / load", r"\d[\d.,]*\s*(req|requests?|yeu cau|rps|tps)\b|\d[\d.,]*\s*(don|giao dich|luot|nguoi)\s*/\s*(giay|phut|gio|ngay)|chiu tai|chiu duoc|tai cao|high load|concurren|dong thoi|cung luc|cao diem|flash sale|latency|do tre|throughput|nghen"
+              r"|response time|load time|(?:within|under|less than|no (?:more|longer) than|at most|maximum of) \d[\d.,]* ?(?:ms|milliseconds?|seconds?|secs?|minutes?)"
+              r"|\d[\d.,]* (?:simultaneous|concurrent) (?:users|customers|sessions)|simultaneous users"
+              r"|(?:capable of|able to) (?:handl|support)\w* (?:up to |a maximum of )?\d[\d ,.]*(?:users|customers|transactions|requests)",
               (T("LOAD", "DevOps", "Load testing & performance tuning", 12, 24, 48),
                T("CACHE", "Backend", "Caching / queueing for peak load", 10, 20, 40)), shared=True),
-    Component("ai", "AI / LLM", r"tri tue nhan tao|chatbot|\bbot\b|\bllms?\b|\bgpt|openai|machine learning|hoc may|\bnlp\b|phan loai tu dong|\bocr\b|tro ly ao|tra loi tu dong",
+    Component("ai", "AI / LLM", r"tri tue nhan tao|chatbot|tu (dong )?doc|nhan dien|nhan dang|goi y (san pham|phu hop)|recommend|\bbot\b|\bllms?\b|\bgpt|openai|machine learning|hoc may|\bnlp\b|phan loai tu dong|\bocr\b|tro ly ao|tra loi tu dong",
               (T("BE", "Backend", "AI pipeline: prompts, guardrails, fallbacks & cost controls", 20, 36, 72),
                T("EVAL", "QA", "AI evaluation set & answer-quality metrics", 8, 16, 32)), shared=True),
     Component("rag", "Retrieval / knowledge base", r"\brag\b|retrieval|embedding|vector|knowledge base|tri thuc|semantic search|tuong dong ngu nghia",
               (T("BE", "Backend", "Document ingestion, chunking & vector index", 12, 24, 48),), shared=True),
-    Component("search", "Search & filtering", r"tim kiem|search|bo loc|\bfilters?\b|loc theo|full[- ]text",
+    Component("search", "Search & filtering", r"tim kiem|search|tra cuu|bo loc|\bloc\b|\bfilters?\b|full[- ]text",
               (T("BE", "Backend", "Search & filtering API with indexes", 6, 12, 24),
                T("FE", "Frontend", "Search & filter UI", 4, 8, 16)), shared=True),
     Component("payment", "Payments", r"thanh toan|payment|hoa don|invoice|billing|vi dien tu|stripe|vnpay|momo|paypal|zalopay|subscription",
@@ -125,9 +129,9 @@ COMPONENTS: tuple[Component, ...] = (
               (T("FE", "Frontend", "Embeddable web widget (isolated styles, auth handshake)", 10, 20, 40),), shared=True),
     Component("i18n", "Internationalization", r"da ngon ngu|multi[- ]?lang|\bi18n\b|localization|tieng anh va tieng viet",
               (T("FE", "Frontend", "Internationalization & translations", 6, 12, 24),), shared=True),
-    Component("security", "Security & compliance", r"bao mat|security|ma hoa|encrypt|gdpr|\bpci\b|hipaa|tuan thu|compliance|pen ?test|owasp",
+    Component("security", "Security & compliance", r"bao mat|security|ma hoa|encrypt|gdpr|\bpci\b|hipaa|tuan thu|compliance|pen ?test|owasp|secure|confidential|privacy|\bssl\b|\btls\b|https|unauthori[sz]ed|virus|malware|threats?\b|tamper|corrupt",
               (T("SEC", "QA", "Security hardening & review", 8, 16, 32),), shared=True),
-    Component("crud", "Data management", r"quan ly|manage|\btao\b|create|cap nhat|update|\bxoa\b|delete|chinh sua|\bedit|theo doi|\btrack|danh sach|\blists?\b|ho so|profile|nhap lieu|\bforms?\b|bieu mau|cho phep|\ballow",
+    Component("crud", "Data management", r"quan ly|manage|\btao\b|create|cap nhat|update|danh gia|\breviews?\b|\bratings?\b|binh luan|\bxoa\b|delete|chinh sua|\bedit|theo doi|\btrack|danh sach|\blists?\b|ho so|profile|nhap lieu|\bforms?\b|bieu mau|cho phep|\ballow",
               (T("BE", "Backend", "Domain model & CRUD API", 10, 18, 34),
                T("FE", "Frontend", "Management screens & forms", 10, 18, 34)), scales_with_breadth=True),
 )
@@ -170,9 +174,11 @@ _CHANNELS = ((r"email", "Email"), (r"\bsms\b", "SMS"), (r"\bzalo\b", "Zalo"), (r
              (r"\bslack\b", "Slack"), (r"telegram", "Telegram"))
 _REQUIREMENT_MARKERS = re.compile(
     r"\bcan\b|\bphai\b|yeu cau|cho phep|ho tro|mong muon|\bmuon\b|bat buoc|xay dung|phat trien|tich hop|"
-    r"\bmust\b|\bshould\b|\bneeds?\b|requir|\ballow|\bsupports?\b|\bwants?\b|\bbuild\b|\bdevelop"
+    r"\bmust\b|\bshould\b|\bshall\b|\bwill\b|\bha(?:s|ve) to\b|\bneeds?\b|requir|\ballow|\bsupports?\b|\bwants?\b|\bbuild\b|\bdevelop|\bable to\b"
 )
 _HEDGES = re.compile(
+    r"chua chac|chua ro|chua biet|chua quyet dinh|phan van|co le|co khi phai|bie?t dau|neu duoc|neu kip|neu con (ngan sach|thoi gian)|"
+    r"de sau|lam sau|tam thoi chua|uu tien thap|later on|for now|"
     r"can xem xet|xem xet kha nang|co the can|co the se|co the bo sung|neu can|neu co the|tuy chon|"
     r"giai doan sau|giai doan 2|sau nay|chua ro|chua xac dinh|chua chot|chua co tai lieu|chua co api|"
     r"du kien|kha nang cao|\boptional\b|nice to have|phase 2|later phase|\bmaybe\b|\bmight\b|possibly|"
@@ -529,6 +535,7 @@ def extract_scope_and_wbs(
     systemic_ratio_pool: Optional[Sequence[float]] = None,
     readings: Optional[dict[str, ClauseReading]] = None,
     manual_edits: Optional[dict] = None,
+    ai_suppressed: Optional[set[str]] = None,
 ) -> EstimateVersion:
     """Analyse the brief (and extra documents) into a validated EstimateVersion."""
     sources = {k: v for k, v in (source_docs or {}).items() if v and v.strip()}
@@ -562,7 +569,7 @@ def extract_scope_and_wbs(
             if not matched:
                 ai_component = candidate
                 matched = [candidate]
-            elif candidate not in matched:
+            elif candidate not in matched and candidate.key not in (ai_suppressed or set()):
                 ai_suggest = candidate
         if clause.is_title:
             continue

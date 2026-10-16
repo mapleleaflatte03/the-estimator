@@ -15,8 +15,9 @@ import { ScopeGraphScreen } from './components/ScopeGraphScreen';
 import { EstimationLabScreen } from './components/EstimationLabScreen';
 import { ClarificationScreen } from './components/ClarificationScreen';
 import { AccuracyLearningScreen } from './components/AccuracyLearningScreen';
+import { EvidenceScreen } from './components/EvidenceScreen';
 
-type Tab = 'intake' | 'scope' | 'estimation' | 'clarification' | 'accuracy';
+type Tab = 'intake' | 'scope' | 'estimation' | 'clarification' | 'accuracy' | 'evidence';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('intake');
@@ -135,6 +136,7 @@ export const App: React.FC = () => {
     { id: 'scope', label: 'Công việc' },
     { id: 'clarification', label: 'Câu hỏi', badge: openQuestions },
     { id: 'accuracy', label: 'Giờ thực tế' },
+    { id: 'evidence', label: 'Kiểm chứng' },
   ];
 
   const titleCounts = projects.reduce<Record<string, number>>((acc, p) => {
@@ -196,7 +198,7 @@ export const App: React.FC = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto py-2 scrollbar-none">
             {STEPS.map((step) => {
               const isActive = activeTab === step.id;
-              const isDisabled = step.id !== 'intake' && !currentVersion;
+              const isDisabled = step.id !== 'intake' && step.id !== 'evidence' && !currentVersion;
               return (
                 <button
                   key={step.id}
@@ -238,7 +240,6 @@ export const App: React.FC = () => {
           <EstimationLabScreen
             version={currentVersion}
             projectId={currentProject?.project_id ?? ''}
-            openQuestions={openQuestions}
             onGoToQuestions={() => setActiveTab('clarification')}
           />
         )}
@@ -255,11 +256,12 @@ export const App: React.FC = () => {
             key={currentProject.project_id}
             version={currentVersion}
             onRecordActuals={handleRecordActuals}
-            onRunBenchmark={runBenchmark}
             onReestimate={handleReestimate}
+            onOpenEvidence={() => setActiveTab('evidence')}
             isLoading={isLoading}
           />
         )}
+        {activeTab === 'evidence' && <EvidenceScreen onRunBenchmark={runBenchmark} />}
       </main>
     </div>
   );

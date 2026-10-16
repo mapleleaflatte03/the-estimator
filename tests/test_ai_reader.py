@@ -24,13 +24,13 @@ def test_rules_bug_fixes_vietnamese_ai_and_phone_number():
 
 
 def test_ai_kind_used_when_rules_find_nothing():
-    clause = "Hệ thống phải phục vụ khoảng 2.000 người cùng lúc vào giờ cao điểm."
+    clause = "Tính hoa hồng cho cộng tác viên theo bậc thang."
     rules_only = extract_scope_and_wbs("p", f"- {clause}")
     assert feature_reqs(rules_only)[0].components == ["generic"]
-    v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("performance")})
+    v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("data_management")})
     req = feature_reqs(v)[0]
-    assert req.components == ["performance"]
-    assert req.ai_reading["added_component"] == "performance"
+    assert req.components == ["crud"]
+    assert req.ai_reading["added_component"] == "crud"
     assert v.reader == "rules+jev" and v.reader_model == "jev-test"
 
 
@@ -49,7 +49,7 @@ def test_ai_extra_kind_becomes_question_not_hours():
 
 
 def test_ai_tentative_reading_creates_scope_question():
-    clause = "Nếu còn ngân sách thì làm thêm phần tích điểm cho khách thân thiết."
+    clause = "Phần tích điểm cho khách thân thiết thì để anh hỏi lại sếp."
     v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("data_management", tentative=0.95)})
     req = feature_reqs(v)[0]
     assert req.status.value == "assumed" and req.ai_reading["flagged_tentative"] is True
@@ -58,7 +58,7 @@ def test_ai_tentative_reading_creates_scope_question():
 
 
 def test_low_confidence_reading_is_ignored():
-    clause = "Hệ thống phải phục vụ khoảng 2.000 người cùng lúc."
+    clause = "Tính hoa hồng cho cộng tác viên theo bậc thang."
     v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("auth", conf=0.3, tentative=0.4)})
     req = feature_reqs(v)[0]
     assert req.components == ["generic"] and req.status.value == "confirmed"
@@ -105,3 +105,24 @@ def test_disabled_reader_never_calls(monkeypatch):
     monkeypatch.setenv("JEVSTATION_API_KEY", "x")
     r = JevReader()
     assert not r.configured and r.read(["anything"]) == {}
+
+
+def test_rejected_ai_suggestions_get_muted(tmp_path):
+    from parallax.service import ParallaxService
+    from parallax.storage import StorageRepository
+
+    clause = "Quản lý dự án: tạo dự án, gán người phụ trách, theo dõi tiến độ."
+    fake = FakeReader()
+    fake.cache[jev._cache_key(clause)] = jev.asdict(reading("scheduling"))
+    svc = ParallaxService(StorageRepository(tmp_path / "s.json"), reader=fake)
+    for i in range(3):
+        p = svc.create_project(f"P{i}", f"- {clause}")
+        v = svc.estimate_project(p.project_id)
+        q = next(q for q in v.clarifications if q.question_id.endswith("-AI"))
+        svc.answer_clarification(p.project_id, q.question_id, False)
+    summary = svc.feedback_summary()
+    assert summary["answered"] == 3 and summary["accepted"] == 0
+    assert summary["by_component"][0]["muted"] is True
+    p = svc.create_project("After", f"- {clause}")
+    v = svc.estimate_project(p.project_id)
+    assert not any(q.question_id.endswith("-AI") for q in v.clarifications), "muted kinds are no longer suggested"

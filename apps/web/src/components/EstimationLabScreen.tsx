@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Download, FileSpreadsheet, HelpCircle, Sparkles } from 'lucide-react';
-import type { EstimateVersion } from '../types';
+import type { EstimateVersion, WorkItem } from '../types';
 import { proposalUrl, wbsCsvUrl } from '../api';
-import { HOURS_PER_PERSON_WEEK, card, hours } from '../ui';
+import { HOURS_PER_PERSON_WEEK, card, hours, typicalHours } from '../ui';
+import { HBarList, RangeBar, type BarRow } from './charts';
 
 interface EstimationLabScreenProps {
   version: EstimateVersion;
   projectId: string;
-  openQuestions: number;
   onGoToQuestions: () => void;
 }
 
@@ -18,8 +18,10 @@ const X0 = 10;
 const X1 = 790;
 const Y_BASE = 150;
 const Y_TOP = 10;
+const itemHours = (w: WorkItem) => typicalHours(w.optimistic_hours, w.most_likely_hours, w.pessimistic_hours);
+const shortLabel = (t: string) => (t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t);
 
-export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ version, projectId, openQuestions, onGoToQuestions }) => {
+export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ version, projectId, onGoToQuestions }) => {
   const { forecast } = version;
   const [confidence, setConfidence] = useState(80);
   const [currency, setCurrency] = useState<Currency>('VND');
@@ -77,14 +79,44 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
     : '';
 
   const notes = version.critic_findings.filter((f) => !HIDDEN_NOTES.has(f.category));
+  const open = version.clarifications.filter((q) => q.answer == null);
+  const hoursAtStake = Math.round(open.reduce((s, q) => s + q.sensitivity_spread_hours, 0));
+
+  // Where the hours go: one bar per requirement, colour = state (uncertain / AI / foundation).
+  const breakdown: BarRow[] = useMemo(() => {
+    const byReq = new Map<string, number>();
+    version.wbs.forEach((w) => byReq.set(w.req_ids[0], (byReq.get(w.req_ids[0]) || 0) + itemHours(w)));
+    return version.requirements
+      .filter((r) => r.in_scope !== false && byReq.get(r.req_id))
+      .map((r): BarRow => {
+        const h = byReq.get(r.req_id) || 0;
+        const foundation = r.req_id === 'REQ-00';
+        const uncertain = r.status === 'assumed' && !foundation;
+        const ai = !!(r.ai_reading?.added_component || r.ai_reading?.flagged_tentative);
+        return {
+          key: r.req_id,
+          label: shortLabel(foundation ? r.title : (r.evidence[0]?.quote ?? r.title)),
+          value: h,
+          display: hours(h),
+          tone: foundation ? 'muted' : uncertain ? 'attention' : 'primary',
+          tag: uncertain ? { text: 'chưa chốt', tone: 'attention' } : ai ? { text: 'AI', tone: 'ai' } : undefined,
+        };
+      })
+      .sort((a, b) => b.value - a.value);
+  }, [version]);
+  const breakdownTotal = breakdown.reduce((s, r) => s + r.value, 0) || 1;
+  const topShare = breakdown[0] ? Math.round((breakdown[0].value / breakdownTotal) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn">
-      {openQuestions > 0 && (
-        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
-            <HelpCircle className="w-5 h-5 flex-shrink-0" />
-            <span>Còn {openQuestions} câu hỏi chưa trả lời. Trả lời để dự toán sát hơn.</span>
+    <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+      {open.length > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-amber-950 dark:text-amber-100">
+            <HelpCircle className="w-6 h-6 flex-shrink-0" />
+            <div>
+              <div className="font-bold">Còn {open.length} câu hỏi chưa trả lời</div>
+              <div className="text-sm">Khoảng {hours(hoursAtStake)} trong dự toán đang phụ thuộc vào câu trả lời.</div>
+            </div>
           </div>
           <button onClick={onGoToQuestions} className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm cursor-pointer">
             Trả lời ngay
@@ -92,24 +124,61 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         </div>
       )}
 
-      <section className={`${card} p-6 sm:p-8 text-center`}>
-        <p className="text-slate-600 dark:text-slate-400">Ước tính khối lượng công việc</p>
-        <p className="text-4xl sm:text-5xl font-extrabold tracking-tight mt-1">{hours(forecast.p50_hours)}</p>
-        {version.reader === 'rules+jev' && (
-          <p className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-cyan-300 mt-2">
-            <Sparkles className="w-3.5 h-3.5" /> Mô tả được đọc bằng luật + AI (Jev)
+      {/* Most important: the number, its range, and what it means for budget and time */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <section className={`${card} lg:col-span-3 p-6 sm:p-8 border-2 border-indigo-200 dark:border-indigo-900`}>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Ước tính khối lượng công việc</p>
+            {version.reader === 'rules+jev' && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300">
+                <Sparkles className="w-3.5 h-3.5" /> Đọc bằng luật + AI
+              </span>
+            )}
+          </div>
+          <p className="text-5xl sm:text-6xl font-extrabold tracking-tight text-indigo-700 dark:text-indigo-300 mt-1">{hours(forecast.p50_hours)}</p>
+          <RangeBar low={forecast.p10_hours} mid={forecast.p50_hours} high={forecast.p90_hours} plan={chosen} format={(n) => hours(n)} />
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            8/10 kịch bản rơi vào khoảng <strong>{hours(forecast.p10_hours)}</strong> – <strong>{hours(forecast.p90_hours)}</strong>.
+            {forecast.reference_class_p50 != null && ` Dự án cùng loại đã làm: khoảng ${hours(forecast.reference_class_p50)}.`}
           </p>
-        )}
-        <p className="text-slate-700 dark:text-slate-300 mt-3">
-          Thường dao động từ <strong>{hours(forecast.p10_hours)}</strong> đến <strong>{hours(forecast.p90_hours)}</strong>
-        </p>
-        {forecast.reference_class_p50 != null && (
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-            Các dự án cùng loại đã làm trước đây: khoảng {hours(forecast.reference_class_p50)}
-          </p>
-        )}
-      </section>
+        </section>
 
+        <section className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700">
+            <div className="text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">Nên dự trù ({confidence}% chắc chắn)</div>
+            <div className="text-3xl font-extrabold text-slate-900 dark:text-white">{hours(chosen)}</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">Chi phí</div>
+            <div className="text-2xl font-extrabold">{formatCost(cost)}</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">Thời gian · {people} người</div>
+            <div className="text-2xl font-extrabold">khoảng {Math.max(1, Math.ceil(weeks))} tuần</div>
+            {chainLimited && <div className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">Có chuỗi việc phải làm nối tiếp, thêm người không nhanh hơn.</div>}
+          </div>
+        </section>
+      </div>
+
+      {/* Where the hours go */}
+      {breakdown.length > 0 && (
+        <section className={`${card} p-6 space-y-4`}>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1">
+            <h2 className="text-lg font-bold">Giờ công đi vào đâu</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Phần lớn nhất chiếm <strong className="text-slate-900 dark:text-white">{topShare}%</strong> tổng giờ (chưa tính rủi ro)
+            </p>
+          </div>
+          <HBarList rows={breakdown} />
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-1 align-middle" /> chưa chốt ·
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-indigo-600 mx-1 align-middle" /> đã rõ ·
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-400 mx-1 align-middle" /> việc chung (chuẩn bị, kiểm thử)
+          </p>
+        </section>
+      )}
+
+      {/* Planning controls */}
       <section className={`${card} p-6 space-y-5`}>
         <div>
           <h2 className="text-lg font-bold">Lập kế hoạch</h2>
@@ -117,23 +186,27 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         </div>
 
         {hasChart && (
-          <svg viewBox="0 0 800 160" className="w-full h-28" aria-hidden="true">
+          <svg viewBox="0 0 800 175" className="w-full h-32" aria-hidden="true">
             <defs>
               <clipPath id="chosenClip">
-                <rect x="0" y="0" width={xOf(chosen)} height="160" />
+                <rect x="0" y="0" width={xOf(chosen)} height="175" />
               </clipPath>
             </defs>
             <path d={area} className="fill-slate-200 dark:fill-slate-800" />
-            <path d={area} className="fill-indigo-400/60 dark:fill-cyan-500/50" clipPath="url(#chosenClip)" />
-            <path d={line} fill="none" className="stroke-indigo-600 dark:stroke-cyan-400" strokeWidth="2" />
-            <line x1={xOf(chosen)} x2={xOf(chosen)} y1="0" y2={Y_BASE} className="stroke-indigo-700 dark:stroke-cyan-300" strokeWidth="2" />
+            <path d={area} className="fill-indigo-300/70 dark:fill-indigo-500/50" clipPath="url(#chosenClip)" />
+            <path d={line} fill="none" className="stroke-indigo-600 dark:stroke-indigo-300" strokeWidth="2" />
+            <line x1={xOf(forecast.p50_hours)} x2={xOf(forecast.p50_hours)} y1="0" y2={Y_BASE} className="stroke-indigo-800 dark:stroke-indigo-200" strokeDasharray="4 3" strokeWidth="1.5" />
+            <line x1={xOf(chosen)} x2={xOf(chosen)} y1="0" y2={Y_BASE} className="stroke-amber-500" strokeWidth="3" />
+            <text x={xOf(chosen)} y="170" textAnchor="middle" className="fill-amber-800 dark:fill-amber-300 text-[13px] font-bold">
+              {hours(chosen)}
+            </text>
           </svg>
         )}
 
         <div className="space-y-2">
           <label htmlFor="confidence" className="flex justify-between text-sm font-semibold">
             <span>Mức chắc chắn</span>
-            <span>{confidence}%</span>
+            <span className="text-amber-800 dark:text-amber-300">{confidence}%</span>
           </label>
           <input
             id="confidence"
@@ -143,7 +216,7 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
             step={5}
             value={confidence}
             onChange={(e) => setConfidence(Number(e.target.value))}
-            className="w-full accent-indigo-600 dark:accent-cyan-400 cursor-pointer"
+            className="w-full accent-amber-500 cursor-pointer"
           />
           <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
             <span>Vừa đủ</span>
@@ -151,99 +224,81 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/40">
-            <div className="text-sm text-slate-700 dark:text-slate-300">Nên dự trù</div>
-            <div className="text-2xl font-extrabold">{hours(chosen)}</div>
-          </div>
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900">
-            <label htmlFor="rate" className="text-sm text-slate-700 dark:text-slate-300 flex items-center justify-between">
-              <span>Chi phí</span>
-              <span className="flex gap-1">
-                {(['VND', 'USD'] as Currency[]).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCurrency(c)}
-                    aria-pressed={currency === c}
-                    className={`px-1.5 rounded text-xs font-bold cursor-pointer ${currency === c ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'}`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </span>
-            </label>
-            <div className="text-2xl font-extrabold">{formatCost(cost)}</div>
-            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 mt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
+            <span className="text-slate-700 dark:text-slate-300">Đơn giá mỗi giờ</span>
+            <span className="flex items-center gap-1">
               <input
-                id="rate"
                 type="number"
                 min={0}
+                aria-label="Đơn giá mỗi giờ"
                 value={rate[currency]}
                 onChange={(e) => setRate({ ...rate, [currency]: Number(e.target.value) || 0 })}
-                className="w-28 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a]"
+                className="w-28 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a] text-right"
               />
-              <span>{currency === 'VND' ? 'đ' : '$'} / giờ</span>
-            </div>
-          </div>
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900">
-            <label htmlFor="people" className="text-sm text-slate-700 dark:text-slate-300">
-              Thời gian với
-            </label>
-            <div className="text-2xl font-extrabold">khoảng {Math.max(1, Math.ceil(weeks))} tuần</div>
-            {chainLimited && (
-              <div className="text-xs text-amber-800 dark:text-amber-300 mt-1">Thêm người không nhanh hơn: có chuỗi việc phải làm nối tiếp.</div>
-            )}
-            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 mt-1">
-              <input
-                id="people"
-                type="number"
-                min={1}
-                max={20}
-                value={people}
-                onChange={(e) => setPeople(Math.max(1, Number(e.target.value) || 1))}
-                className="w-14 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a]"
-              />
-              <span>người làm</span>
-            </div>
-          </div>
+              {(['VND', 'USD'] as Currency[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCurrency(c)}
+                  aria-pressed={currency === c}
+                  className={`px-1.5 py-0.5 rounded text-xs font-bold cursor-pointer ${currency === c ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  {c}
+                </button>
+              ))}
+            </span>
+          </label>
+          <label htmlFor="people" className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
+            <span className="text-slate-700 dark:text-slate-300">Số người làm</span>
+            <input
+              id="people"
+              type="number"
+              min={1}
+              max={20}
+              value={people}
+              onChange={(e) => setPeople(Math.max(1, Number(e.target.value) || 1))}
+              className="w-16 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a] text-right"
+            />
+          </label>
         </div>
       </section>
 
-      <section className={`${card} p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
-        <div>
-          <h2 className="font-bold">Gửi cho khách hàng</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Báo giá dùng đúng mức chắc chắn, đơn giá và số người bạn đang chọn ở trên.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={proposalUrl(projectId, { confidence, rate: rate[currency], currency, people })}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm inline-flex items-center gap-1.5"
-          >
-            <Download className="w-4 h-4" /> Tải báo giá
-          </a>
-          <a
-            href={wbsCsvUrl(projectId)}
-            className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:border-indigo-400 font-bold text-sm inline-flex items-center gap-1.5"
-          >
-            <FileSpreadsheet className="w-4 h-4" /> Bảng công việc (Excel)
-          </a>
-        </div>
-      </section>
-
-      {notes.length > 0 && (
-        <section className={`${card} p-6 space-y-3`}>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-            Cần lưu ý
-          </h2>
-          <ul className="space-y-2 list-disc pl-5 text-slate-700 dark:text-slate-300">
-            {notes.map((f) => (
-              <li key={f.finding_id}>{f.claim}</li>
-            ))}
-          </ul>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {notes.length > 0 && (
+          <section className={`${card} p-5 space-y-2`}>
+            <h2 className="font-bold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              Cần lưu ý
+            </h2>
+            <ul className="space-y-1.5 list-disc pl-5 text-sm text-slate-700 dark:text-slate-300">
+              {notes.map((f) => (
+                <li key={f.finding_id}>{f.claim}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <section className={`${card} p-5 space-y-3 ${notes.length ? '' : 'md:col-span-2'}`}>
+          <div>
+            <h2 className="font-bold">Gửi cho khách hàng</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Theo đúng mức chắc chắn, đơn giá và số người đang chọn.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={proposalUrl(projectId, { confidence, rate: rate[currency], currency, people })}
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm inline-flex items-center gap-1.5"
+            >
+              <Download className="w-4 h-4" /> Tải báo giá
+            </a>
+            <a
+              href={wbsCsvUrl(projectId)}
+              className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:border-indigo-400 font-bold text-sm inline-flex items-center gap-1.5"
+            >
+              <FileSpreadsheet className="w-4 h-4" /> Bảng công việc (Excel)
+            </a>
+          </div>
         </section>
-      )}
+      </div>
 
       <details className="text-sm text-slate-600 dark:text-slate-400">
         <summary className="cursor-pointer font-semibold">Con số này được tính thế nào?</summary>

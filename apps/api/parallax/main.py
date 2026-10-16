@@ -180,6 +180,10 @@ def reader_evaluation():
             data = json.loads(path.read_text(encoding="utf-8"))
             out[key] = {k: data.get(k) for k in ("note", "model", "thresholds", "summary")}
     out["status"] = service.reader.status()
+    out["feedback"] = service.feedback_summary()
+    journal = ROOT_DIR / "datasets" / "eval" / "journal.jsonl"
+    out["journal"] = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines() if line.strip()] \
+        if journal.exists() else []
     return out
 
 

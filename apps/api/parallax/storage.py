@@ -15,6 +15,7 @@ from .schemas import (
     ActualWork,
     CalibrationState,
     EstimateVersion,
+    FeedbackEvent,
     EvaluationRun,
     HistoricalCase,
     Project,
@@ -32,6 +33,7 @@ class StorageRepository:
         self.actuals: dict[str, list[ActualWork]] = {}  # project_id -> list[ActualWork]
         self.evaluation_runs: list[EvaluationRun] = []
         self.calibration = CalibrationState()
+        self.feedback: list[FeedbackEvent] = []
         if self.data_path and self.data_path.exists():
             self._load()
 
@@ -137,6 +139,17 @@ class StorageRepository:
                 )
             return sorted(cases, key=lambda c: c.completed_at or datetime.min.replace(tzinfo=timezone.utc))
 
+    def add_feedback(self, events: list[FeedbackEvent]) -> None:
+        if not events:
+            return
+        with self.lock:
+            self.feedback.extend(events)
+            self._save()
+
+    def list_feedback(self) -> list[FeedbackEvent]:
+        with self.lock:
+            return list(self.feedback)
+
     def get_calibration(self) -> CalibrationState:
         with self.lock:
             return self.calibration.model_copy(deep=True)
@@ -174,6 +187,7 @@ class StorageRepository:
                 },
                 "evaluation_runs": [r.model_dump(mode="json") for r in self.evaluation_runs],
                 "calibration": self.calibration.model_dump(mode="json"),
+                "feedback": [e.model_dump(mode="json") for e in self.feedback],
             }
             tmp = self.data_path.with_suffix(".tmp")
             with open(tmp, "w", encoding="utf-8") as f:
@@ -197,6 +211,7 @@ class StorageRepository:
                 self.actuals[pid] = [ActualWork.model_validate(a) for a in a_list]
             for r_dict in payload.get("evaluation_runs", []):
                 self.evaluation_runs.append(EvaluationRun.model_validate(r_dict))
+            self.feedback = [FeedbackEvent.model_validate(e) for e in payload.get("feedback", [])]
             if payload.get("calibration"):
                 self.calibration = CalibrationState.model_validate(payload["calibration"])
         except Exception as exc:  # keep the API up, but never fail silently

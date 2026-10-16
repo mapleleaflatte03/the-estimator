@@ -610,5 +610,365 @@
   "tentative": 0.91,
   "model": "jev-1.13.0",
   "provider": "jevstation"
+ },
+ "3aad213b56b2626e451aba72": {
+  "kind": "reporting",
+  "kind_confidence": 0.56,
+  "kind_probabilities": {
+   "reporting": 0.6,
+   "mobile_app": 0.27,
+   "external_integration": 0.12
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "11fe9f44c4420eb1b8b9751f": {
+  "kind": "scheduling",
+  "kind_confidence": 0.5,
+  "kind_probabilities": {
+   "scheduling": 0.54,
+   "reporting": 0.17,
+   "external_integration": 0.12
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "22201b0e02afad63feda6929": {
+  "kind": "permissions_audit",
+  "kind_confidence": 0.96,
+  "kind_probabilities": {
+   "permissions_audit": 0.96,
+   "payment": 0.04,
+   "auth": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "a581f2ec84dd7abea7162752": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.1,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "d1aa319cd8c030a0e3b65dbe": {
+  "kind": "external_integration",
+  "kind_confidence": 0.99,
+  "kind_probabilities": {
+   "external_integration": 0.99,
+   "offline_sync": 0.01,
+   "auth": 0.0
+  },
+  "tentative": 0.96,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "3b71c44ce4a0c5a320ec2e3e": {
+  "kind": "offline_sync",
+  "kind_confidence": 0.55,
+  "kind_probabilities": {
+   "offline_sync": 0.59,
+   "mobile_app": 0.41,
+   "auth": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "017cf745cc9cf4bd9054bbc1": {
+  "kind": "notification",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "notification": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "0ee98f0fb206c012ab92ad03": {
+  "kind": "mobile_app",
+  "kind_confidence": 0.48,
+  "kind_probabilities": {
+   "mobile_app": 0.52,
+   "external_integration": 0.41,
+   "notification": 0.02
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "dc6454598df67bd31d85db49": {
+  "kind": "payment",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "payment": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "95a21e570eb6ac5af498ddf2": {
+  "kind": "reporting",
+  "kind_confidence": 0.86,
+  "kind_probabilities": {
+   "reporting": 0.87,
+   "file_export": 0.13,
+   "auth": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "f59b68f34e5585efdd380bb1": {
+  "kind": "permissions_audit",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "permissions_audit": 1.0,
+   "auth": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "830fb4f922078917590befe8": {
+  "kind": "external_integration",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "external_integration": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.41,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "9baf179cf84f3b15001957a3": {
+  "kind": "scheduling",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "scheduling": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "0deb383fe541f1850139e355": {
+  "kind": "reporting",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "reporting": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.94,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "eefec83bfda71ea628201a1e": {
+  "kind": "permissions_audit",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "permissions_audit": 1.0,
+   "auth": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.05,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "f714df5a13838b2d79b61b4f": {
+  "kind": "data_import",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "data_import": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "57e7145d94e9f25b49ec4879": {
+  "kind": "auth",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "auth": 1.0,
+   "permissions_audit": 0.0,
+   "reporting": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "5d2232fe0199d0ffa0800a29": {
+  "kind": "scheduling",
+  "kind_confidence": 0.47,
+  "kind_probabilities": {
+   "scheduling": 0.51,
+   "auth": 0.16,
+   "external_integration": 0.13
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "4991d268c27ab9c03ddd1e0d": {
+  "kind": "scheduling",
+  "kind_confidence": 0.41,
+  "kind_probabilities": {
+   "scheduling": 0.46,
+   "mobile_app": 0.22,
+   "auth": 0.18
+  },
+  "tentative": 0.11,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "3a33957c10fae6cac80dd85f": {
+  "kind": "notification",
+  "kind_confidence": 0.6,
+  "kind_probabilities": {
+   "notification": 0.63,
+   "payment": 0.37,
+   "auth": 0.0
+  },
+  "tentative": 0.07,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "096629676760e4a50fecbb4a": {
+  "kind": "external_integration",
+  "kind_confidence": 0.75,
+  "kind_probabilities": {
+   "external_integration": 0.77,
+   "mobile_app": 0.08,
+   "reporting": 0.06
+  },
+  "tentative": 0.1,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "7d3d1b3ff8a28ac6bd652941": {
+  "kind": "ai_assistant",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "ai_assistant": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.34,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "bd9e5c904467e91afdb5c866": {
+  "kind": "ai_assistant",
+  "kind_confidence": 0.65,
+  "kind_probabilities": {
+   "ai_assistant": 0.68,
+   "reporting": 0.26,
+   "data_import": 0.02
+  },
+  "tentative": 0.13,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "9ca7ce591e59096d6780b286": {
+  "kind": "payment",
+  "kind_confidence": 0.98,
+  "kind_probabilities": {
+   "payment": 0.98,
+   "external_integration": 0.02,
+   "auth": 0.0
+  },
+  "tentative": 0.96,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "90114b2d152120c1f3819299": {
+  "kind": "external_integration",
+  "kind_confidence": 0.99,
+  "kind_probabilities": {
+   "external_integration": 0.99,
+   "data_import": 0.01,
+   "auth": 0.0
+  },
+  "tentative": 0.06,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "c7f9341c922ca8feeb352308": {
+  "kind": "reporting",
+  "kind_confidence": 0.65,
+  "kind_probabilities": {
+   "reporting": 0.68,
+   "mobile_app": 0.2,
+   "external_integration": 0.09
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "1dd4631eeaa2ea16f53e9184": {
+  "kind": "scheduling",
+  "kind_confidence": 0.8,
+  "kind_probabilities": {
+   "scheduling": 0.82,
+   "payment": 0.18,
+   "auth": 0.0
+  },
+  "tentative": 0.09,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "24769e24d991c4eb63b0d2b6": {
+  "kind": "notification",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "notification": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.08,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "4c4857825e13dc05443959bc": {
+  "kind": "permissions_audit",
+  "kind_confidence": 0.57,
+  "kind_probabilities": {
+   "permissions_audit": 0.61,
+   "auth": 0.39,
+   "reporting": 0.0
+  },
+  "tentative": 0.12,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
+ },
+ "963a6b5af62c6409b22d3811": {
+  "kind": "mobile_app",
+  "kind_confidence": 1.0,
+  "kind_probabilities": {
+   "mobile_app": 1.0,
+   "auth": 0.0,
+   "permissions_audit": 0.0
+  },
+  "tentative": 0.96,
+  "model": "jev-1.13.0",
+  "provider": "jevstation"
  }
 }

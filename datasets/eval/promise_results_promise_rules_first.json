@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-17T00:45+07:00",
+  "tag": "promise_rules_first",
+  "labels": "PROMISE_exp (external)",
+  "rules_version": "7ffca8bc41",
+  "model": null,
+  "summary": [
+    {
+      "reader": "rules",
+      "n_requirements": 969,
+      "classes": {
+        "PE": 67,
+        "LF": 49,
+        "US": 85,
+        "A": 31,
+        "SE": 125,
+        "F": 444,
+        "FT": 18,
+        "SC": 22,
+        "PO": 12,
+        "O": 77,
+        "L": 15,
+        "MN": 24
+      },
+      "retention_pct": 69.7,
+      "performance_recall_pct": 7.9,
+      "performance_false_alarms": "0/880",
+      "security_recall_pct": 42.4,
+      "security_false_alarms": "37/844",
+      "false_tentative": "4/969"
+    }
+  ],
+  "note": "First PROMISE_exp run, rules as of round-2 fixes"
+}

@@ -1,0 +1,31 @@
+{
+  "description": "Round 3 held-out clause set for the rule reader. Written and labelled on 2026-10-17 AFTER the round-2 error analysis but BEFORE the resulting rule changes were coded, and never used to tune them. Checks whether rule fixes generalise to unseen sentences.",
+  "version": 3,
+  "clauses": [
+    {"text": "Cho phép khách hủy đơn trong vòng 30 phút sau khi đặt.", "kinds": ["data_management", "workflow_approval"], "tentative": false},
+    {"text": "Gửi mã giảm giá qua Zalo cho khách sinh nhật trong tháng.", "kinds": ["notification", "external_integration"], "tentative": false},
+    {"text": "Sếp muốn xem biểu đồ lợi nhuận theo quý.", "kinds": ["reporting"], "tentative": false},
+    {"text": "Tạm thời chưa cần phần tích hợp kế toán, nhưng có thể sau này sẽ làm.", "kinds": ["external_integration"], "tentative": true},
+    {"text": "Shipper cập nhật trạng thái đơn ngay trên điện thoại.", "kinds": ["mobile_app", "workflow_approval"], "tentative": false},
+    {"text": "Hệ thống chạy ổn với 500 người truy cập đồng thời.", "kinds": ["performance"], "tentative": false},
+    {"text": "Mỗi bác sĩ chỉ thấy hồ sơ bệnh nhân do mình phụ trách.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Đăng nhập bằng Google hoặc Apple ID.", "kinds": ["auth"], "tentative": false},
+    {"text": "Tải lên danh sách nhân viên từ file CSV có sẵn.", "kinds": ["data_import"], "tentative": false},
+    {"text": "Bộ lọc đơn hàng theo ngày, trạng thái và nhân viên phụ trách.", "kinds": ["search"], "tentative": false},
+    {"text": "Đặt bàn trước tại nhà hàng, chọn giờ và số người.", "kinds": ["scheduling"], "tentative": false},
+    {"text": "Có khi phải làm thêm tính năng đặt cọc online, tôi chưa rõ.", "kinds": ["payment"], "tentative": true},
+    {"text": "Xuất báo cáo công nợ ra PDF để gửi khách.", "kinds": ["reporting", "file_export"], "tentative": false},
+    {"text": "Thông báo cho kho khi tồn kho xuống dưới mức tối thiểu.", "kinds": ["notification"], "tentative": false},
+    {"text": "Ghi lại ai đã duyệt và duyệt lúc nào.", "kinds": ["permissions_audit", "workflow_approval"], "tentative": false},
+    {"text": "Trang web hiển thị các chi nhánh trên Google Maps.", "kinds": ["maps_location"], "tentative": false},
+    {"text": "AI phân loại email khiếu nại theo mức độ khẩn cấp.", "kinds": ["ai_assistant"], "tentative": false},
+    {"text": "Kết nối API của Giao Hàng Nhanh để tạo vận đơn.", "kinds": ["external_integration"], "tentative": false},
+    {"text": "Phiếu đề xuất mua hàng phải qua 2 cấp duyệt.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Nhân viên chấm công bằng app khi đến văn phòng, kể cả lúc mạng yếu.", "kinds": ["mobile_app", "offline_sync"], "tentative": false},
+    {"text": "Biết đâu sau này cần thêm phần livechat với khách.", "kinds": ["notification"], "tentative": true},
+    {"text": "Thanh toán bằng thẻ ATM nội địa qua cổng OnePay.", "kinds": ["payment", "external_integration"], "tentative": false},
+    {"text": "Học viên tra cứu điểm thi bằng mã số sinh viên.", "kinds": ["search"], "tentative": false},
+    {"text": "Lưu nhật ký đăng nhập của từng tài khoản.", "kinds": ["permissions_audit", "auth"], "tentative": false},
+    {"text": "Ưu tiên thấp: báo cáo hiệu suất nhân viên hàng tháng, làm nếu còn thời gian.", "kinds": ["reporting"], "tentative": true}
+  ]
+}
