@@ -120,6 +120,7 @@ class JevReader:
         self.last_error: Optional[str] = None
         self.call_times: list[float] = []
         self.calls_made = 0
+        self._dirty = False  # only write the cache file when a fresh reading was added
         disabled = os.environ.get("JEV_DISABLED") == "1"
         for path in () if disabled else (SHIPPED_CACHE, cache_path):
             if path and path.exists():
@@ -271,6 +272,7 @@ class JevReader:
                 self.credits_remaining = int(credits)
             for text, reading in results.items():
                 self.cache[_cache_key(text)] = asdict(reading)
+                self._dirty = True
             self.last_error = None
         return results
 
@@ -281,12 +283,15 @@ class JevReader:
             self.disabled_until = time.time() + backoff
 
     def _persist(self) -> None:
-        if not self.cache_path:
+        # Never rewrite the file without new readings: a disabled reader starts with an empty cache
+        # and would otherwise overwrite the shipped readings.
+        if not self.cache_path or not self._dirty:
             return
         try:
             self.cache_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self.cache_path.with_suffix(".tmp")
             tmp.write_text(json.dumps(self.cache, ensure_ascii=False, indent=1), encoding="utf-8")
             tmp.replace(self.cache_path)
+            self._dirty = False
         except OSError as exc:
             logger.warning("Could not persist Jev cache: %s", exc)

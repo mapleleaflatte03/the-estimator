@@ -107,6 +107,38 @@ def test_disabled_reader_never_calls(monkeypatch):
     assert not r.configured and r.read(["anything"]) == {}
 
 
+def test_disabled_reader_never_overwrites_cache_file(monkeypatch, tmp_path):
+    cache_file = tmp_path / "cache.json"
+    cache_file.write_text('{"k": {"kind": "auth"}}', encoding="utf-8")
+    monkeypatch.setenv("JEV_DISABLED", "1")
+    r = JevReader(cache_path=cache_file)
+    r.read(["a clause nobody has read"])
+    assert cache_file.read_text(encoding="utf-8") == '{"k": {"kind": "auth"}}'
+
+
+@pytest.mark.parametrize(
+    "text, tentative",
+    [
+        ("Anh chị đang cân nhắc có làm thêm app cho phụ huynh hay không.", True),
+        ("If budget allows, we would like a chatbot.", True),
+        ("Hệ thống cần nhắc lịch hẹn cho bệnh nhân.", False),  # "cần nhắc" (remind) folds like "cân nhắc"
+        ("Kiểm tra khách đã thanh toán hay không.", False),
+    ],
+)
+def test_round4_hedges(text, tentative):
+    from parallax.extractor import _HEDGES, fold
+
+    assert bool(_HEDGES.search(fold(text))) is tentative
+
+
+def test_round4_migration_and_search_patterns():
+    from parallax.extractor import _match_components
+
+    keys = {c.key for c in _match_components("Chuyển dữ liệu khách hàng từ file Excel cũ sang hệ thống mới.")}
+    assert "migration" in keys
+    assert "search" in {c.key for c in _match_components("Tìm hồ sơ ứng viên theo kỹ năng và mức lương.")}
+
+
 def test_rejected_ai_suggestions_get_muted(tmp_path):
     from parallax.service import ParallaxService
     from parallax.storage import StorageRepository

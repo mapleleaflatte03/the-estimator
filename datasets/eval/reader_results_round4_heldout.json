@@ -1,0 +1,267 @@
+{
+  "labels": "datasets/eval/clause_labels_v4.json",
+  "tag": "round4_heldout",
+  "rules_version": "2860f74a76",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 14,
+      "primary_kind_found": 13,
+      "kind_recall_pct": 87.5,
+      "kind_precision_pct": 77.8,
+      "tentative_correct": 12,
+      "tentative_caught": "2/4",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 14,
+      "primary_kind_found": 11,
+      "kind_recall_pct": 68.8,
+      "kind_precision_pct": 78.6,
+      "tentative_correct": 14,
+      "tentative_caught": "4/4",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 14,
+      "primary_kind_found": 14,
+      "kind_recall_pct": 93.8,
+      "kind_precision_pct": 68.2,
+      "tentative_correct": 14,
+      "tentative_caught": "4/4",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 14,
+      "primary_kind_found": 14,
+      "kind_recall_pct": 93.8,
+      "kind_precision_pct": 78.9,
+      "tentative_correct": 14,
+      "tentative_caught": "4/4",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 0
+    }
+  ],
+  "coverage": {
+    "clauses_labelled": 16,
+    "clauses_scored": 14,
+    "unread": [
+      "Tìm hồ sơ ứng viên theo kỹ năng, số năm kinh nghiệm và mức lương mong muốn.",
+      "Chưa chốt có cần phân quyền riêng cho từng chi nhánh hay dùng chung."
+    ],
+    "cached_before_run": 0,
+    "fresh_api_calls": 7,
+    "credits_remaining_after": 0
+  },
+  "details": [
+    {
+      "text": "Bệnh nhân đặt lịch khám qua website, chọn bác sĩ và khung giờ còn trống.",
+      "expected": [
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Có thể sau này cần thêm thanh toán qua VNPay, hiện chưa chắc.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": true,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": true,
+      "jev": "payment",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Tài xế gửi vị trí theo thời gian thực để bộ phận điều phối theo dõi trên bản đồ.",
+      "expected": [
+        "maps_location"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "maps_location",
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "mobile_app",
+      "jev_confidence": 0.65,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Nhân viên kho có thể quét mã vạch khi nhập hàng, kể cả lúc mất mạng.",
+      "expected": [
+        "offline_sync",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "offline_sync"
+      ],
+      "rules_tentative": false,
+      "jev": "offline_sync",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Anh chị đang cân nhắc có làm thêm app điện thoại cho phụ huynh hay không.",
+      "expected": [
+        "mobile_app"
+      ],
+      "tentative": true,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": false,
+      "jev": "mobile_app",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.94
+    },
+    {
+      "text": "Phiếu đề nghị tạm ứng phải qua trưởng phòng và kế toán trưởng duyệt.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 0.87,
+      "jev_tentative": 0.04
+    },
+    {
+      "text": "Đồng bộ hóa đơn sang phần mềm kế toán MISA vào cuối mỗi ngày.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration",
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "If budget allows, we would like a chatbot that answers staff questions from our policy PDFs.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": true,
+      "rules": [
+        "ai_assistant",
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.97
+    },
+    {
+      "text": "The system must handle 2,000 concurrent users during enrollment week.",
+      "expected": [
+        "performance"
+      ],
+      "tentative": false,
+      "rules": [
+        "performance"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 0.62,
+      "jev_tentative": 0.04
+    },
+    {
+      "text": "Xuat bao cao ton kho ra file Excel theo tung chi nhanh.",
+      "expected": [
+        "file_export",
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "file_export",
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "file_export",
+      "jev_confidence": 0.98,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Chuyển toàn bộ dữ liệu khách hàng từ file Excel cũ sang hệ thống mới (khoảng 40.000 dòng).",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.11
+    },
+    {
+      "text": "Giai đoạn 2 mới tính đến việc gửi thông báo đẩy cho khách.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": true,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": true,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.78
+    },
+    {
+      "text": "Ghi lại lịch sử ai đã sửa giá sản phẩm và sửa lúc nào.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Nhân viên đăng nhập bằng tài khoản Google của công ty.",
+      "expected": [
+        "auth"
+      ],
+      "tentative": false,
+      "rules": [
+        "auth"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1
+    }
+  ]
+}

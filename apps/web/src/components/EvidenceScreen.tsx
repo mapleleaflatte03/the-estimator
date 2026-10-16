@@ -21,6 +21,19 @@ const reader = (rows: Partial<ReaderSummary>[] | undefined, name: string) => row
 const promise = (e: JournalEntry | undefined) =>
   (e?.summary?.[0]?.test_odd_projects ?? null) as null | Record<string, number | string>;
 
+/** One-line result of a journal entry, in the same words as the charts. */
+const resultText = (e: JournalEntry): string => {
+  const odd = promise(e);
+  if (odd) return `giữ lại ${vn(odd.retention_pct)} · hiệu năng ${vn(odd.performance_recall_pct)} · bảo mật ${vn(odd.security_recall_pct)}`;
+  const first = e.summary?.[0];
+  if (first && 'mae_change_pct' in first) return `sai lệch ${String(first.mae_change_pct).replace('.', ',')}% (${first.baseline_mae} → ${first.calibrated_mae} giờ)`;
+  if (first && 'retention_pct' in first) return `giữ lại ${vn(first.retention_pct)}`;
+  const r = reader(e.summary, 'shipped') ?? reader(e.summary, 'rules');
+  if (!r) return '';
+  const who = r.reader === 'shipped' ? 'Luật + AI' : 'Chỉ luật';
+  return `${who}: loại việc ${r.primary_kind_found}/${r.n_clauses} · chưa chốt ${r.tentative_caught}`;
+};
+
 const Kpi: React.FC<{ tone: Tone; icon: React.ReactNode; value: string; label: string; sub: string }> = ({ tone, icon, value, label, sub }) => (
   <div className={`p-5 rounded-2xl border-2 ${TONE[tone].soft} border-current/10`}>
     <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${TONE[tone].text}`}>
@@ -60,9 +73,11 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const journal = ev.journal ?? [];
   const r1 = ev.held_out?.summary;
   const r2 = find(journal, 'round2')?.summary;
+  const r4 = find(journal, 'round4_heldout')?.summary;
   const rounds = [
     { key: 'r1', label: `Vòng 1 · ${reader(r1, 'rules')?.n_clauses ?? 0} câu`, rows: r1 },
     { key: 'r2', label: `Vòng 2 · ${reader(r2, 'rules')?.n_clauses ?? 0} câu`, rows: r2 },
+    { key: 'r4', label: `Vòng 4 (lần cuối) · ${reader(r4, 'rules')?.n_clauses ?? 0} câu`, rows: r4 },
   ].filter((r) => r.rows);
 
   const tentTotals = (name: string) =>
@@ -116,7 +131,8 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
 
   const holdout = bench?.sip.holdout;
   const sip = find(journal, 'sip_holdout')?.summary?.[0] as undefined | Record<string, number | string>;
-  const vnClauses = [r1, r2, r3After ? [r3After] : undefined].reduce((s, rows) => s + Number(reader(rows, 'rules')?.n_clauses ?? 0), 0);
+  const r4All = find(journal, 'round4_rules_before')?.summary;
+  const labelledClauses = [r1, r2, r3After ? [r3After] : undefined, r4All].reduce((s, rows) => s + Number(reader(rows, 'rules')?.n_clauses ?? 0), 0);
   const fb = ev.feedback;
 
   return (
@@ -310,6 +326,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
               <tr>
                 <th scope="col" className="py-1.5 pr-2 font-semibold">Thời gian</th>
                 <th scope="col" className="py-1.5 px-2 font-semibold">Lần chạy</th>
+                <th scope="col" className="py-1.5 px-2 font-semibold">Kết quả</th>
                 <th scope="col" className="py-1.5 pl-2 font-semibold">Ghi chú</th>
               </tr>
             </thead>
@@ -318,7 +335,8 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
                 <tr key={i}>
                   <td className="py-1.5 pr-2 whitespace-nowrap">{e.date.replace('T', ' ').slice(0, 16)}</td>
                   <td className="py-1.5 px-2 font-mono">{e.tag}</td>
-                  <td className="py-1.5 pl-2 text-slate-700 dark:text-slate-300">{e.note}</td>
+                  <td className="py-1.5 px-2 min-w-48 font-semibold tabular-nums text-slate-800 dark:text-slate-200">{resultText(e)}</td>
+                  <td className="py-1.5 pl-2 min-w-64 text-slate-700 dark:text-slate-300">{e.note}</td>
                 </tr>
               ))}
             </tbody>
@@ -326,7 +344,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-400 mt-3">
           Mô hình AI: {ev.held_out?.model ?? 'jev-1.13.0'} (Jev của TypeSafe, qua JevStation). Dữ liệu: SiP (CC BY-NC-ND 4.0), PROMISE_exp (Lima et
-          al., 2019). Mẫu tiếng Việt còn nhỏ ({vnClauses} câu), cần thêm dữ liệu thật để kết luận chắc chắn.
+          al., 2019). Bộ câu gán tay còn nhỏ ({labelledClauses} câu, chủ yếu tiếng Việt), cần thêm mô tả thật của khách để kết luận chắc chắn.
         </p>
       </details>
     </div>

@@ -91,24 +91,33 @@ def main() -> int:
     ap.add_argument("--tag", default="latest")
     ap.add_argument("--note", default="")
     ap.add_argument("--rules-only", action="store_true")
+    ap.add_argument("--allow-partial", action="store_true",
+                    help="score only the clauses Jev could read (e.g. credits ran out) and record how many were unread")
     args = ap.parse_args()
     labels_path = ROOT / args.labels
     labels = json.loads(labels_path.read_text(encoding="utf-8"))["clauses"]
     reader = JevReader(cache_path=SHIPPED_CACHE)
     if args.rules_only:
         reader.url = None
+    cached_before = sum(reader.cached(c["text"]) is not None for c in labels)
     readings = reader.read([c["text"] for c in labels])
     if args.rules_only:
         return rules_only_report(args, labels)
+    unread = [c["text"] for c in labels if c["text"] not in readings]
+    if unread and not args.allow_partial:
+        for text in unread:
+            print(f"!! no Jev reading for: {text}", file=sys.stderr)
+        return 1
+    labels = [c for c in labels if c["text"] in readings]
+    if not labels:
+        print("!! Jev read nothing:", reader.status(), file=sys.stderr)
+        return 1
     rows = {"rules": [], "jev": [], "hybrid": []}
     details = []
     for c in labels:
         expected = set(c["kinds"])
         r_kinds, r_tent = rules_reading(c["text"])
-        j = readings.get(c["text"])
-        if j is None:
-            print(f"!! no Jev reading for: {c['text']}", file=sys.stderr)
-            return 1
+        j = readings[c["text"]]
         j_kinds = set() if j.kind == "other" else {j.kind}
         h_kinds = set(r_kinds)
         if j.kind != "other" and j.kind_confidence >= KIND_CONFIDENCE_MIN:
@@ -126,18 +135,26 @@ def main() -> int:
         "model": next(iter(readings.values())).model,
         "thresholds": {"kind_confidence_min": KIND_CONFIDENCE_MIN, "tentative_min": TENTATIVE_MIN},
         "summary": summarise(details, rows),
+        "coverage": {
+            "clauses_labelled": len(labels) + len(unread),
+            "clauses_scored": len(labels),
+            "unread": unread,
+            "cached_before_run": cached_before,
+            "fresh_api_calls": reader.calls_made,
+            "credits_remaining_after": reader.credits_remaining,
+        },
         "details": details,
     }
     out = ROOT / "datasets" / "eval" / f"reader_results_{args.tag}.json"
     out.write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    journal(args, results["summary"], results["model"])
+    journal(args, results["summary"], results["model"], results["coverage"])
     for s in results["summary"]:
         print(s)
     print("Jev status:", reader.status())
     return 0
 
 
-def journal(args, summary, model) -> None:
+def journal(args, summary, model, coverage=None) -> None:
     entry = {
         "date": datetime.now(timezone(timedelta(hours=7))).isoformat(timespec="minutes"),
         "tag": args.tag,
@@ -147,6 +164,8 @@ def journal(args, summary, model) -> None:
         "summary": summary,
         "note": args.note,
     }
+    if coverage:
+        entry["coverage"] = {k: v for k, v in coverage.items() if k != "unread"}
     with open(ROOT / "datasets" / "eval" / "journal.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 

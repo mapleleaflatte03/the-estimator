@@ -85,7 +85,8 @@ COMPONENTS: tuple[Component, ...] = (
     Component("import", "Data import", r"(?<!dang )\bnhap\b(?! lieu| vien| hoc| mon| hang| kho)|import|\bupload\b|tai len|\bcsv\b",
               (T("BE", "Backend", "Import pipeline: parsing, validation & error report", 10, 18, 36),
                T("FE", "Frontend", "Upload & import review screen", 4, 8, 16))),
-    Component("migration", "Data migration", r"migrat|chuyen doi du lieu|di chuyen du lieu|du lieu cu|du lieu lich su|legacy data|historical data",
+    Component("migration", "Data migration", r"migrat|chuyen doi du lieu|di chuyen du lieu|du lieu cu|du lieu lich su|legacy data|historical data|"
+              r"sang he thong moi|tu (?:file|he thong|phan mem)\b.{0,25}\bcu\b",
               (T("BE", "Backend", "Legacy data mapping & migration scripts", 14, 26, 52),)),
     Component("notification", "Notifications", r"thong bao|notif|gui (email|mail|tin nhan|ma)|email (thong bao|nhac|xac nhan|hoa don)|send .{0,40}emails?|\bsms\b|push|nhac nho|\bnhac (lich|hen)|reminder|canh bao|\balerts?\b|zalo oa|tin nhan|livechat|live chat",
               (T("BE", "Backend", "Notification service: templates, queue & delivery tracking", 8, 16, 30),), shared=True),
@@ -111,7 +112,7 @@ COMPONENTS: tuple[Component, ...] = (
                T("EVAL", "QA", "AI evaluation set & answer-quality metrics", 8, 16, 32)), shared=True),
     Component("rag", "Retrieval / knowledge base", r"\brag\b|retrieval|embedding|vector|knowledge base|tri thuc|semantic search|tuong dong ngu nghia",
               (T("BE", "Backend", "Document ingestion, chunking & vector index", 12, 24, 48),), shared=True),
-    Component("search", "Search & filtering", r"tim kiem|search|tra cuu|bo loc|\bloc\b|\bfilters?\b|full[- ]text",
+    Component("search", "Search & filtering", r"tim kiem|\btim\b.{0,40}\btheo\b|search|tra cuu|bo loc|\bloc\b|\bfilters?\b|full[- ]text",
               (T("BE", "Backend", "Search & filtering API with indexes", 6, 12, 24),
                T("FE", "Frontend", "Search & filter UI", 4, 8, 16)), shared=True),
     Component("payment", "Payments", r"thanh toan|payment|hoa don|invoice|billing|vi dien tu|stripe|vnpay|momo|paypal|zalopay|subscription",
@@ -182,7 +183,9 @@ _HEDGES = re.compile(
     r"can xem xet|xem xet kha nang|co the can|co the se|co the bo sung|neu can|neu co the|tuy chon|"
     r"giai doan sau|giai doan 2|sau nay|chua ro|chua xac dinh|chua chot|chua co tai lieu|chua co api|"
     r"du kien|kha nang cao|\boptional\b|nice to have|phase 2|later phase|\bmaybe\b|\bmight\b|possibly|"
-    r"\btbd\b|to be (?:decided|confirmed|defined)|if possible|\bconsider"
+    r"\btbd\b|to be (?:decided|confirmed|defined)|if possible|\bconsider|"
+    # round 4 (dev): "đang cân nhắc", budget/time conditions in English
+    r"(?:dang|con|se) can nhac|can nhac (?:co|xem|viec)\b|if (?:the )?(?:budget|time) (?:allows|permits)|(?:budget|time) permitting"
 )
 _UNDOCUMENTED = re.compile(r"chua co tai lieu|chua co api|khong co api|no api|undocumented|no documentation")
 _HAS_DOCS = re.compile(r"tai lieu api|api doc|swagger|openapi|sandbox|rest api cong khai|public api")
