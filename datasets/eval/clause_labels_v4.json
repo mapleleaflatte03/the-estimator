@@ -1,0 +1,22 @@
+{
+  "description": "Round 4 held-out clause set for the final shipped reader (rules + Jev). Written by the developer in the style of real client briefs (Vietnamese with and without diacritics, English; clinic, logistics, school, HR, retail, finance) and labelled on 2026-10-17 BEFORE any reader (rules or Jev) was run on them. Never used to tune rules, prompts or thresholds before this run. Size limited to 16 clauses by the remaining Jev credits (2 clauses per credit).",
+  "version": 4,
+  "clauses": [
+    {"text": "Bệnh nhân đặt lịch khám qua website, chọn bác sĩ và khung giờ còn trống.", "kinds": ["scheduling"], "tentative": false},
+    {"text": "Có thể sau này cần thêm thanh toán qua VNPay, hiện chưa chắc.", "kinds": ["payment"], "tentative": true},
+    {"text": "Tài xế gửi vị trí theo thời gian thực để bộ phận điều phối theo dõi trên bản đồ.", "kinds": ["maps_location"], "tentative": false},
+    {"text": "Nhân viên kho có thể quét mã vạch khi nhập hàng, kể cả lúc mất mạng.", "kinds": ["offline_sync", "data_management"], "tentative": false},
+    {"text": "Anh chị đang cân nhắc có làm thêm app điện thoại cho phụ huynh hay không.", "kinds": ["mobile_app"], "tentative": true},
+    {"text": "Phiếu đề nghị tạm ứng phải qua trưởng phòng và kế toán trưởng duyệt.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Đồng bộ hóa đơn sang phần mềm kế toán MISA vào cuối mỗi ngày.", "kinds": ["external_integration"], "tentative": false},
+    {"text": "If budget allows, we would like a chatbot that answers staff questions from our policy PDFs.", "kinds": ["ai_assistant"], "tentative": true},
+    {"text": "The system must handle 2,000 concurrent users during enrollment week.", "kinds": ["performance"], "tentative": false},
+    {"text": "Xuat bao cao ton kho ra file Excel theo tung chi nhanh.", "kinds": ["file_export", "reporting"], "tentative": false},
+    {"text": "Chuyển toàn bộ dữ liệu khách hàng từ file Excel cũ sang hệ thống mới (khoảng 40.000 dòng).", "kinds": ["data_import"], "tentative": false},
+    {"text": "Giai đoạn 2 mới tính đến việc gửi thông báo đẩy cho khách.", "kinds": ["notification"], "tentative": true},
+    {"text": "Ghi lại lịch sử ai đã sửa giá sản phẩm và sửa lúc nào.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Nhân viên đăng nhập bằng tài khoản Google của công ty.", "kinds": ["auth"], "tentative": false},
+    {"text": "Tìm hồ sơ ứng viên theo kỹ năng, số năm kinh nghiệm và mức lương mong muốn.", "kinds": ["search"], "tentative": false},
+    {"text": "Chưa chốt có cần phân quyền riêng cho từng chi nhánh hay dùng chung.", "kinds": ["permissions_audit"], "tentative": true}
+  ]
+}
