@@ -150,9 +150,9 @@ export const App: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-[#f4f6fb] dark:bg-[#090d1a] text-slate-900 dark:text-slate-100 font-sans transition-colors">
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d1322]/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-2.5 flex-shrink-0">
             <img src="/parallax_logo.jpg" alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0" />
-            <span className="font-extrabold tracking-tight">PARALLAX</span>
+            <span className="font-extrabold tracking-tight max-[399px]:sr-only">PARALLAX</span>
           </div>
 
           <div className="flex items-center gap-2 min-w-0">
@@ -166,7 +166,7 @@ export const App: React.FC = () => {
                     const found = projects.find((p) => p.project_id === e.target.value);
                     if (found) selectProject(found);
                   }}
-                  className="bg-transparent font-semibold focus:outline-none cursor-pointer max-w-[110px] sm:max-w-[240px] truncate"
+                  className="bg-transparent font-semibold focus:outline-none cursor-pointer min-w-0 w-full max-w-[150px] sm:max-w-[240px] truncate"
                 >
                   {projects.map((p) => (
                     <option key={p.project_id} value={p.project_id} className="bg-white dark:bg-slate-900">
@@ -195,7 +195,7 @@ export const App: React.FC = () => {
         </div>
 
         <nav className="border-t border-slate-200/70 dark:border-slate-800" aria-label="Các bước">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto py-2 scrollbar-none">
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 grid grid-cols-3 gap-1 sm:flex sm:overflow-x-auto py-2 scrollbar-none">
             {STEPS.map((step) => {
               const isActive = activeTab === step.id;
               const isDisabled = step.id !== 'intake' && step.id !== 'evidence' && !currentVersion;
@@ -205,7 +205,7 @@ export const App: React.FC = () => {
                   disabled={isDisabled}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setActiveTab(step.id)}
-                  className={`px-3.5 py-2 rounded-xl text-sm whitespace-nowrap flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  className={`px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-sm whitespace-nowrap flex items-center justify-center sm:justify-start gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                     isActive
                       ? 'bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-cyan-300 font-bold'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'

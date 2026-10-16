@@ -98,7 +98,7 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               id="actual-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="VD: khách đổi yêu cầu giữa chừng"
+              placeholder="VD: khách đổi yêu cầu"
               className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0b0f1a] border border-slate-300 dark:border-slate-700 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
@@ -171,7 +171,33 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               })}
             />
           </div>
-          <div className="overflow-x-auto">
+          <ul className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+            {completed.map((c) => {
+              const d = c.estimated_p50_hours ? ((c.actual_hours - c.estimated_p50_hours) / c.estimated_p50_hours) * 100 : null;
+              return (
+                <li key={c.case_id} className="py-3 space-y-1.5">
+                  <div className="font-semibold break-words">{c.title}</div>
+                  <dl className="grid grid-cols-3 gap-2 tabular-nums">
+                    <div>
+                      <dt className="text-xs text-slate-600 dark:text-slate-400">Dự toán</dt>
+                      <dd>{c.estimated_p50_hours ? hours(c.estimated_p50_hours) : '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-600 dark:text-slate-400">Thực tế</dt>
+                      <dd className="font-semibold">{hours(c.actual_hours)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-600 dark:text-slate-400">Chênh lệch</dt>
+                      <dd className={`font-bold ${d != null && d > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                        {d == null ? '—' : `${d > 0 ? '+' : '−'}${pct(d)}`}
+                      </dd>
+                    </div>
+                  </dl>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                 <tr>

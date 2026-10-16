@@ -188,7 +188,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
             <section key={req.req_id} className={`${card} p-5 ${excluded ? 'opacity-60' : ''}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-bold leading-snug">{req.req_id === 'REQ-00' ? req.title : text}</h2>
+                  <h2 className="font-bold leading-snug break-words">{req.req_id === 'REQ-00' ? req.title : text}</h2>
                   {req.req_id === 'REQ-00' && <p className="text-sm text-slate-600 dark:text-slate-400">{req.description}</p>}
                   {note && (
                     <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
@@ -230,26 +230,33 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                     const removed = isRemoved(w.item_id);
                     const edited = !!version.manual_edits?.overrides?.[w.item_id] || w.basis?.includes('user');
                     return (
-                      <li key={w.item_id} className="py-2 flex items-center justify-between gap-3 text-sm">
-                        <span className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ROLE_COLORS[w.role] || 'bg-slate-400'}`} title={ROLE_LABELS[w.role]} />
+                      <li
+                        key={w.item_id}
+                        className={`py-2 flex gap-x-3 gap-y-1.5 text-sm ${editing ? 'flex-col sm:flex-row sm:items-start' : 'items-start justify-between'}`}
+                      >
+                        <span className="flex items-start gap-2 min-w-0 flex-1">
+                          <span
+                            className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${ROLE_COLORS[w.role] || 'bg-slate-400'}`}
+                            title={ROLE_LABELS[w.role]}
+                          />
                           {editing ? (
-                            <input
+                            <textarea
                               aria-label={`Tên công việc ${w.name}`}
                               defaultValue={draft.overrides[w.item_id]?.name ?? w.name}
                               onChange={(e) => setName(w.item_id, e.target.value)}
                               disabled={removed}
-                              className={`${inputClass} flex-1 min-w-0 ${removed ? 'line-through opacity-50' : ''}`}
+                              rows={Math.min(3, Math.max(1, Math.ceil((draft.overrides[w.item_id]?.name ?? w.name).length / 45)))}
+                              className={`${inputClass} flex-1 min-w-0 resize-y leading-snug field-sizing-content ${removed ? 'line-through opacity-50' : ''}`}
                             />
                           ) : (
-                            <span className="text-slate-800 dark:text-slate-200">
+                            <span className="min-w-0 break-words text-slate-800 dark:text-slate-200">
                               {w.name}
                               {edited && <span className="ml-1.5 text-xs text-slate-600 dark:text-slate-400">(đã chỉnh)</span>}
                             </span>
                           )}
                         </span>
                         {editing ? (
-                          <span className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="flex items-center gap-1.5 flex-shrink-0 pl-4 sm:pl-0">
                             <input
                               type="number"
                               min={1}
@@ -278,9 +285,9 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                     );
                   })}
                   {pendingAdds.map((a, i) => (
-                    <li key={`new-${i}`} className="py-2 flex items-center justify-between text-sm text-indigo-800 dark:text-cyan-300">
-                      <span>+ {a.name}</span>
-                      <span>{hours(a.hours)} (chưa lưu)</span>
+                    <li key={`new-${i}`} className="py-2 flex flex-wrap items-start justify-between gap-x-3 text-sm text-indigo-800 dark:text-cyan-300">
+                      <span className="min-w-0 break-words">+ {a.name}</span>
+                      <span className="whitespace-nowrap">{hours(a.hours)} (chưa lưu)</span>
                     </li>
                   ))}
                 </ul>

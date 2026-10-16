@@ -20,11 +20,13 @@ export const HBarList: React.FC<{ rows: BarRow[]; max?: number; emphasiseTop?: b
         const lead = emphasiseTop && i === 0;
         return (
           <li key={r.key}>
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className={`min-w-0 truncate ${lead ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`} title={r.label}>
-                {r.label}
+            <div className="flex items-start justify-between gap-3 text-sm">
+              <span className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className={`min-w-0 line-clamp-2 break-words ${lead ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`} title={r.label}>
+                  {r.label}
+                </span>
                 {r.tag && (
-                  <span className={`ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded ${TONE[r.tag.tone].soft} ${TONE[r.tag.tone].text}`}>{r.tag.text}</span>
+                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${TONE[r.tag.tone].soft} ${TONE[r.tag.tone].text}`}>{r.tag.text}</span>
                 )}
               </span>
               <span className={`whitespace-nowrap tabular-nums ${lead ? 'font-extrabold text-slate-900 dark:text-white' : 'font-semibold text-slate-700 dark:text-slate-300'}`}>
@@ -53,24 +55,33 @@ export const RangeBar: React.FC<{ low: number; mid: number; high: number; plan?:
   const hi = high * 1.05;
   const x = (v: number) => `${((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * 100}%`;
   return (
-    <div className="pt-3 pb-8" role="img" aria-label={`Khoảng dao động ${format(low)} đến ${format(high)}, ước tính ${format(mid)}`}>
-      <div className="relative h-3 rounded-full bg-slate-100 dark:bg-slate-800">
+    <div className="pt-2 space-y-2" role="img" aria-label={`Khoảng dao động ${format(low)} đến ${format(high)}, ước tính ${format(mid)}${plan != null ? `, dự trù ${format(plan)}` : ""}`}>
+      <div className="relative h-3 mx-0.5 rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
         <div className="absolute inset-y-0 rounded-full bg-indigo-200 dark:bg-indigo-900" style={{ left: x(low), right: `calc(100% - ${x(high)})` }} />
-        <div className="absolute -top-1 bottom-[-4px] w-1 rounded bg-indigo-700 dark:bg-indigo-300" style={{ left: x(mid) }} />
+        <div className="absolute -top-1 bottom-[-4px] w-1 -translate-x-1/2 rounded bg-indigo-700 dark:bg-indigo-300" style={{ left: x(mid) }} />
+        {plan != null && <div className="absolute -top-1.5 bottom-[-6px] w-1.5 -translate-x-1/2 rounded bg-amber-500" style={{ left: x(plan) }} />}
+      </div>
+      <div className="flex items-start justify-between gap-2 text-xs tabular-nums text-slate-600 dark:text-slate-400" aria-hidden="true">
+        <span className="min-w-0">
+          Thấp nhất
+          <br />
+          <b className="text-slate-800 dark:text-slate-200">{format(low)}</b>
+        </span>
+        <span className="min-w-0 text-right">
+          Cao nhất
+          <br />
+          <b className="text-slate-800 dark:text-slate-200">{format(high)}</b>
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-700 dark:text-slate-300" aria-hidden="true">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-1 h-3 rounded bg-indigo-700 dark:bg-indigo-300" /> Ước tính <b className="tabular-nums">{format(mid)}</b>
+        </span>
         {plan != null && (
-          <>
-            <div className="absolute -top-1.5 bottom-[-6px] w-1 rounded bg-amber-500" style={{ left: x(plan) }} />
-            <span className="absolute top-5 -translate-x-1/2 text-xs font-bold text-amber-800 dark:text-amber-300 whitespace-nowrap" style={{ left: x(plan) }}>
-              Dự trù {format(plan)}
-            </span>
-          </>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-3 rounded bg-amber-500" /> Dự trù <b className="tabular-nums">{format(plan)}</b>
+          </span>
         )}
-        <span className="absolute top-5 text-[11px] text-slate-600 dark:text-slate-400 whitespace-nowrap" style={{ left: x(low) }}>
-          {format(low)}
-        </span>
-        <span className="absolute top-5 -translate-x-full text-[11px] text-slate-600 dark:text-slate-400 whitespace-nowrap" style={{ left: x(high) }}>
-          {format(high)}
-        </span>
       </div>
     </div>
   );

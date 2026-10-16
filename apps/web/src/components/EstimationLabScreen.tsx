@@ -58,10 +58,13 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
   const teamWeeks = chosen / (people * HOURS_PER_PERSON_WEEK);
   const weeks = Math.max(teamWeeks, chainWeeks);
   const chainLimited = chainWeeks > teamWeeks;
-  const formatCost = (v: number) =>
-    currency === 'VND'
-      ? `${(v / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} triệu đồng`
-      : `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  const costParts = (v: number): [string, string] => {
+    if (currency === 'USD') return [`$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, ''];
+    if (v >= 1e9) return [(v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 2 }), 'tỷ đồng'];
+    return [(v / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }), 'triệu đồng'];
+  };
+  const [costValue, costUnit] = costParts(cost);
+  const num = (n: number) => Math.round(n).toLocaleString('vi-VN');
 
   const histogram = forecast.histogram || [];
   const hasChart = histogram.length > 1;
@@ -126,16 +129,19 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
 
       {/* Most important: the number, its range, and what it means for budget and time */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <section className={`${card} lg:col-span-3 p-6 sm:p-8 border-2 border-indigo-200 dark:border-indigo-900`}>
-          <div className="flex items-center justify-between gap-2">
+        <section className={`${card} min-w-0 lg:col-span-3 p-5 sm:p-8 border-2 border-indigo-200 dark:border-indigo-900 space-y-3`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Ước tính khối lượng công việc</p>
             {version.reader === 'rules+jev' && (
               <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300">
-                <Sparkles className="w-3.5 h-3.5" /> Đọc bằng luật + AI
+                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" /> Đọc bằng luật + AI
               </span>
             )}
           </div>
-          <p className="text-5xl sm:text-6xl font-extrabold tracking-tight text-indigo-700 dark:text-indigo-300 mt-1">{hours(forecast.p50_hours)}</p>
+          <p className="flex flex-wrap items-baseline gap-x-2 text-indigo-700 dark:text-indigo-300">
+            <span className="text-5xl sm:text-6xl font-extrabold tracking-tight tabular-nums">{num(forecast.p50_hours)}</span>
+            <span className="text-xl sm:text-2xl font-bold">giờ</span>
+          </p>
           <RangeBar low={forecast.p10_hours} mid={forecast.p50_hours} high={forecast.p90_hours} plan={chosen} format={(n) => hours(n)} />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             8/10 kịch bản rơi vào khoảng <strong>{hours(forecast.p10_hours)}</strong> – <strong>{hours(forecast.p90_hours)}</strong>.
@@ -143,18 +149,28 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
           </p>
         </section>
 
-        <section className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
-          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700">
+        <section className="min-w-0 lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+          <div className="min-w-0 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700">
             <div className="text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">Nên dự trù ({confidence}% chắc chắn)</div>
-            <div className="text-3xl font-extrabold text-slate-900 dark:text-white">{hours(chosen)}</div>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-slate-900 dark:text-white">
+              <span className="text-3xl font-extrabold tabular-nums">{num(chosen)}</span>
+              <span className="text-base font-bold">giờ</span>
+            </div>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
+          <div className="min-w-0 p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
             <div className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">Chi phí</div>
-            <div className="text-2xl font-extrabold">{formatCost(cost)}</div>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
+              <span className="text-2xl font-extrabold tabular-nums break-all">{costValue}</span>
+              {costUnit && <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{costUnit}</span>}
+            </div>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
+          <div className="min-w-0 p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
             <div className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">Thời gian · {people} người</div>
-            <div className="text-2xl font-extrabold">khoảng {Math.max(1, Math.ceil(weeks))} tuần</div>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">khoảng</span>
+              <span className="text-2xl font-extrabold tabular-nums">{Math.max(1, Math.ceil(weeks))}</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">tuần</span>
+            </div>
             {chainLimited && <div className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">Có chuỗi việc phải làm nối tiếp, thêm người không nhanh hơn.</div>}
           </div>
         </section>
@@ -170,11 +186,17 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
             </p>
           </div>
           <HBarList rows={breakdown} />
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-1 align-middle" /> chưa chốt ·
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-indigo-600 mx-1 align-middle" /> đã rõ ·
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-400 mx-1 align-middle" /> việc chung (chuẩn bị, kiểm thử)
-          </p>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+            <li className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" aria-hidden="true" /> chưa chốt
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" aria-hidden="true" /> đã rõ
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-400" aria-hidden="true" /> việc chung (chuẩn bị, kiểm thử)
+            </li>
+          </ul>
         </section>
       )}
 
@@ -186,21 +208,37 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         </div>
 
         {hasChart && (
-          <svg viewBox="0 0 800 175" className="w-full h-32" aria-hidden="true">
-            <defs>
-              <clipPath id="chosenClip">
-                <rect x="0" y="0" width={xOf(chosen)} height="175" />
-              </clipPath>
-            </defs>
-            <path d={area} className="fill-slate-200 dark:fill-slate-800" />
-            <path d={area} className="fill-indigo-300/70 dark:fill-indigo-500/50" clipPath="url(#chosenClip)" />
-            <path d={line} fill="none" className="stroke-indigo-600 dark:stroke-indigo-300" strokeWidth="2" />
-            <line x1={xOf(forecast.p50_hours)} x2={xOf(forecast.p50_hours)} y1="0" y2={Y_BASE} className="stroke-indigo-800 dark:stroke-indigo-200" strokeDasharray="4 3" strokeWidth="1.5" />
-            <line x1={xOf(chosen)} x2={xOf(chosen)} y1="0" y2={Y_BASE} className="stroke-amber-500" strokeWidth="3" />
-            <text x={xOf(chosen)} y="170" textAnchor="middle" className="fill-amber-800 dark:fill-amber-300 text-[13px] font-bold">
-              {hours(chosen)}
-            </text>
-          </svg>
+          <div>
+            <svg viewBox={`0 0 800 ${Y_BASE}`} preserveAspectRatio="none" className="w-full h-28 sm:h-36" aria-hidden="true">
+              <defs>
+                <clipPath id="chosenClip">
+                  <rect x="0" y="0" width={xOf(chosen)} height={Y_BASE} />
+                </clipPath>
+              </defs>
+              <path d={area} className="fill-slate-200 dark:fill-slate-800" />
+              <path d={area} className="fill-indigo-300/70 dark:fill-indigo-500/50" clipPath="url(#chosenClip)" />
+              <path d={line} fill="none" className="stroke-indigo-600 dark:stroke-indigo-300" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+              <line
+                x1={xOf(forecast.p50_hours)}
+                x2={xOf(forecast.p50_hours)}
+                y1="0"
+                y2={Y_BASE}
+                className="stroke-indigo-800 dark:stroke-indigo-200"
+                strokeDasharray="4 3"
+                strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke"
+              />
+              <line x1={xOf(chosen)} x2={xOf(chosen)} y1="0" y2={Y_BASE} className="stroke-amber-500" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+            </svg>
+            <div className="relative h-6" aria-hidden="true">
+              <span
+                className="absolute top-1 -translate-x-1/2 whitespace-nowrap text-xs font-bold tabular-nums text-amber-800 dark:text-amber-300"
+                style={{ left: `${Math.min(88, Math.max(12, (xOf(chosen) / 800) * 100))}%` }}
+              >
+                ▲ {hours(chosen)}
+              </span>
+            </div>
+          </div>
         )}
 
         <div className="space-y-2">
@@ -225,31 +263,35 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
-            <span className="text-slate-700 dark:text-slate-300">Đơn giá mỗi giờ</span>
-            <span className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
+            <label htmlFor="rate" className="text-slate-700 dark:text-slate-300">
+              Đơn giá mỗi giờ
+            </label>
+            <span className="flex items-center gap-1.5 min-w-0">
               <input
+                id="rate"
                 type="number"
                 min={0}
-                aria-label="Đơn giá mỗi giờ"
                 value={rate[currency]}
                 onChange={(e) => setRate({ ...rate, [currency]: Number(e.target.value) || 0 })}
-                className="w-28 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a] text-right"
+                className="w-28 min-w-0 px-2 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a] text-right tabular-nums"
               />
-              {(['VND', 'USD'] as Currency[]).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCurrency(c)}
-                  aria-pressed={currency === c}
-                  className={`px-1.5 py-0.5 rounded text-xs font-bold cursor-pointer ${currency === c ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'}`}
-                >
-                  {c}
-                </button>
-              ))}
+              <span role="group" aria-label="Đơn vị tiền" className="flex rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden">
+                {(['VND', 'USD'] as Currency[]).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCurrency(c)}
+                    aria-pressed={currency === c}
+                    className={`px-2.5 py-1.5 text-xs font-bold cursor-pointer ${currency === c ? 'bg-indigo-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </span>
             </span>
-          </label>
-          <label htmlFor="people" className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
+          </div>
+          <label htmlFor="people" className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
             <span className="text-slate-700 dark:text-slate-300">Số người làm</span>
             <input
               id="people"

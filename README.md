@@ -14,6 +14,20 @@ uvicorn parallax.main:app --port 8000       # API (store: data/parallax_store.js
 cd apps/web && npm install && npm run dev   # UI on :3000 (proxy target: $PARALLAX_API_URL, default :8000)
 ```
 
+### Use it yourself: bring your own AI key
+
+The app works fully **without any AI key** (rules reader + cached readings for the sample briefs). To let Jev read
+new briefs, clone the repo and put **your own** key in a git-ignored `.env` at the repo root (never commit it):
+
+```bash
+git clone https://github.com/mapleleaflatte03/the-estimator && cd the-estimator
+cp .env.example .env    # then set ONE of: TYPESAFE_API_KEY / JEVSTATION_API_KEY / AI_GATEWAY_API_KEY
+set -a && . ./.env && set +a && uvicorn parallax.main:app --app-dir apps/api --port 8000
+```
+
+Each person uses their own account and pays for their own usage under that provider's terms; the public demo
+uses the author's key with a small hourly cap and falls back to rules when its credits run out.
+
 ## Deploy (single service)
 
 `Dockerfile` builds the web UI and serves it from the FastAPI app (same origin, no proxy needed).

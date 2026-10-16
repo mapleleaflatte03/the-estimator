@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "project": {
+    "name": "web",
+    "productType": null,
+    "stack": [
+      "react",
+      "tailwind-v4",
+      "vite"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "src/index.css"
+    ],
+    "components": [],
+    "assets": [
+      "src/assets"
+    ],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "light-and-dark",
+    "colors": {
+      "--border-subtle": {
+        "value": "#1e293b",
+        "source": "src/index.css"
+      },
+      "--border-strong": {
+        "value": "#334155",
+        "source": "src/index.css"
+      },
+      "--text-muted": {
+        "value": "#94a3b8",
+        "source": "src/index.css"
+      },
+      "--primary": {
+        "value": "#6366f1",
+        "source": "src/index.css"
+      },
+      "--primary-light": {
+        "value": "rgba(99, 102, 241, 0.15)",
+        "source": "src/index.css"
+      },
+      "--primary-border": {
+        "value": "rgba(99, 102, 241, 0.35)",
+        "source": "src/index.css"
+      },
+      "--cyan-accent": {
+        "value": "#38bdf8",
+        "source": "src/index.css"
+      },
+      "--emerald-accent": {
+        "value": "#34d399",
+        "source": "src/index.css"
+      },
+      "--amber-accent": {
+        "value": "#fbbf24",
+        "source": "src/index.css"
+      },
+      "--rose-accent": {
+        "value": "#f43f5e",
+        "source": "src/index.css"
+      }
+    },
+    "typography": {
+      "--text-heading": {
+        "value": "#f8fafc",
+        "source": "src/index.css"
+      },
+      "--text-body": {
+        "value": "#e2e8f0",
+        "source": "src/index.css"
+      }
+    },
+    "spacing": {},
+    "radius": {},
+    "shadows": {
+      "--card-shadow": {
+        "value": "0 10px 30px -10px rgba(0, 0, 0, 0.6)",
+        "source": "src/index.css"
+      },
+      "--card-hover-shadow": {
+        "value": "0 20px 40px -10px rgba(99, 102, 241, 0.25)",
+        "source": "src/index.css"
+      }
+    },
+    "motion": {},
+    "density": "unknown"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [],
+  "evidence": [
+    {
+      "fact": "design.colorMode:light-and-dark",
+      "source": "src/index.css"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "src/index.css"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v4",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:vite",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-10-16T18:35:21.684Z"
+}
