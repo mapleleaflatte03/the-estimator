@@ -23,6 +23,33 @@ def test_rules_bug_fixes_vietnamese_ai_and_phone_number():
     assert "ai" in feature_reqs(v2)[0].components
 
 
+def test_scene_setting_sentence_is_not_a_module_until_jev_is_near_certain():
+    """Live bakery brief: the opening line became a CRUD module at confidence 0.74."""
+    scene = "We run three bakeries in Da Nang."
+    owner = "The owner should see all three shops."
+    manager = "A shop manager should see only their own shop."
+    brief = "\n".join([scene, owner, manager])
+    readings = {
+        scene: reading("data_management", 0.74),
+        owner: reading("reporting", 0.54),
+        manager: reading("permissions_audit", 1.0),
+    }
+    version = extract_scope_and_wbs("p", brief, readings=readings)
+    quotes = [r.evidence[0].quote for r in feature_reqs(version)]
+    assert scene not in quotes
+    assert "generic" not in {c for r in feature_reqs(version) for c in r.components}
+    rbac = [w for w in version.wbs if w.component == "rbac"]
+    assert len(rbac) == 2  # one shared backend line and one shared UI line
+    owner_req = next(r for r in feature_reqs(version) if owner in r.evidence[0].quote)
+    assert {w.req_ids[0] for w in rbac} == {owner_req.req_id}
+    manager_req = next(r for r in feature_reqs(version) if manager in r.evidence[0].quote)
+    assert all(manager_req.req_id in w.req_ids for w in rbac)
+    assert all(manager_req.req_id != w.req_ids[0] for w in rbac)
+
+    forced = extract_scope_and_wbs("p", scene, readings={scene: reading("data_management", 0.96)})
+    assert feature_reqs(forced)[0].components == ["crud"]
+
+
 def test_ai_kind_used_when_rules_find_nothing():
     clause = "Tính hoa hồng cho cộng tác viên theo bậc thang."
     rules_only = extract_scope_and_wbs("p", f"- {clause}")

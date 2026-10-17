@@ -74,6 +74,9 @@ COMPONENTS: tuple[Component, ...] = (
               # round 5 (dev): data visible only to one's own branch/department
               r"|chi (?:xem|thay|truy cap) duoc .{0,40}cua (?:chi nhanh|phong ban|bo phan|cua hang|kho) (?:minh|do)"
               r"|only (?:see|view|access) (?:their|its) own"
+              r"|see only (?:their|its|his|her) own"
+              r"|(?:see|sees|view|views) (?:all|every) (?:of )?(?:the |their )?(?:\w+ ){0,3}"
+              r"(?:shops?|stores?|branches?|clinics?|sites?|locations?|floors?|warehouses?|offices?|investors?|departments?)"
               r"|(?<!un)authori[sz]ed (?:users?|personnel|staff)|\bonly (?:the |an? )?\w+(?: \w+)? (?:can|shall|will|may) (?:access|view|modify|edit|change|adjust|update)|privileges?|revoked?",
               (T("BE", "Backend", "Role/permission model & policy enforcement", 8, 14, 26),
                T("FE", "Frontend", "Role-aware UI & role administration", 6, 10, 18)), shared=True),
@@ -655,7 +658,10 @@ def extract_scope_and_wbs(
                 ai_dropped = []  # nothing better to put in its place: keep what the rules found
         if reading and reading.component and reading.kind_confidence >= KIND_CONFIDENCE_MIN:
             candidate = COMPONENT_BY_KEY[reading.component]
-            if not matched:
+            # A line that is not a requirement stays context. Jev below the
+            # near-certain bar must not turn "we run three shops" into a module.
+            stands = clause.is_item or bool(_REQUIREMENT_MARKERS.search(folded))
+            if not matched and (stands or reading.kind_confidence >= AI_ADD_MIN):
                 ai_component = candidate
                 matched = [candidate]
             elif candidate not in matched and candidate.key not in (ai_suppressed or set()):
