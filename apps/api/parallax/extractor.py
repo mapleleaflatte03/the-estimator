@@ -21,6 +21,7 @@ from typing import Optional, Sequence
 from .estimation.engine import synthesize_forecast
 from .jev import KIND_CONFIDENCE_MIN, TENTATIVE_MIN, ClauseReading
 from .provenance import validate_evidence_against_sources
+from .risk import GROUP_LABELS, Adjustments
 from .schemas import (
     ClarificationQuestion,
     CriticFinding,
@@ -70,6 +71,9 @@ COMPONENTS: tuple[Component, ...] = (
               (T("BE", "Backend", "Authentication service & session/token management", 10, 18, 34),
                T("FE", "Frontend", "Login, logout & session-expiry flows", 6, 12, 22)), shared=True),
     Component("rbac", "Roles & permissions", r"phan quyen|vai tro|\broles?\b|permission|rbac|quyen truy cap|access control|\badmin\b"
+              # round 5 (dev): data visible only to one's own branch/department
+              r"|chi (?:xem|thay|truy cap) duoc .{0,40}cua (?:chi nhanh|phong ban|bo phan|cua hang|kho) (?:minh|do)"
+              r"|only (?:see|view|access) (?:their|its) own"
               r"|(?<!un)authori[sz]ed (?:users?|personnel|staff)|\bonly (?:the |an? )?\w+(?: \w+)? (?:can|shall|will|may) (?:access|view|modify|edit|change|adjust|update)|privileges?|revoked?",
               (T("BE", "Backend", "Role/permission model & policy enforcement", 8, 14, 26),
                T("FE", "Frontend", "Role-aware UI & role administration", 6, 10, 18)), shared=True),
@@ -88,7 +92,8 @@ COMPONENTS: tuple[Component, ...] = (
     Component("migration", "Data migration", r"migrat|chuyen doi du lieu|di chuyen du lieu|du lieu cu|du lieu lich su|legacy data|historical data|"
               r"sang he thong moi|tu (?:file|he thong|phan mem)\b.{0,25}\bcu\b",
               (T("BE", "Backend", "Legacy data mapping & migration scripts", 14, 26, 52),)),
-    Component("notification", "Notifications", r"thong bao|notif|gui (email|mail|tin nhan|ma)|email (thong bao|nhac|xac nhan|hoa don)|send .{0,40}emails?|\bsms\b|push|nhac nho|\bnhac (lich|hen)|reminder|canh bao|\balerts?\b|zalo oa|tin nhan|livechat|live chat",
+    Component("notification", "Notifications", r"thong bao|notif|gui (email|mail|tin nhan|ma)|email (thong bao|nhac|xac nhan|hoa don)|send .{0,40}emails?|\bsms\b|push|nhac nho|\bnhac (lich|hen)|reminder|canh bao|\balerts?\b|zalo oa|tin nhan|livechat|live chat"
+              r"|(?:get|gets|receive|receives) an? (?:email|e-mail|text)\b|\bemails? (?:at|on|when|whenever) ",
               (T("BE", "Backend", "Notification service: templates, queue & delivery tracking", 8, 16, 30),), shared=True),
     Component("scheduling", "Scheduling & dispatch", r"(?<!nhac )\blich\b(?! su)|lich trinh|calendar|schedul|dieu phoi|phan cong|dispatch|dat lich|dat ban|dat phong|booking|\bca lam|\bshifts?\b|roster",
               (T("BE", "Backend", "Scheduling engine: availability, assignment rules & conflicts", 16, 30, 60),
@@ -132,7 +137,7 @@ COMPONENTS: tuple[Component, ...] = (
               (T("FE", "Frontend", "Internationalization & translations", 6, 12, 24),), shared=True),
     Component("security", "Security & compliance", r"bao mat|security|ma hoa|encrypt|gdpr|\bpci\b|hipaa|tuan thu|compliance|pen ?test|owasp|secure|confidential|privacy|\bssl\b|\btls\b|https|unauthori[sz]ed|virus|malware|threats?\b|tamper|corrupt",
               (T("SEC", "QA", "Security hardening & review", 8, 16, 32),), shared=True),
-    Component("crud", "Data management", r"quan ly|manage|\btao\b|create|cap nhat|update|danh gia|\breviews?\b|\bratings?\b|binh luan|\bxoa\b|delete|chinh sua|\bedit|theo doi|\btrack|danh sach|\blists?\b|ho so|profile|nhap lieu|\bforms?\b|bieu mau|cho phep|\ballow",
+    Component("crud", "Data management", r"quan ly|manage|\btao\b|create|cap nhat|update|danh gia|\breviews?\b|\bratings?\b|binh luan|\bxoa\b|delete|chinh sua|\bedit|theo doi|\btrack|danh sach|\blists?\b|ho so|profile|nhap lieu|\bforms?\b|bieu mau|cho phep|\ballow|\benter(?:s|ing)? (?:their|the|an?|its)\b",
               (T("BE", "Backend", "Domain model & CRUD API", 10, 18, 34),
                T("FE", "Frontend", "Management screens & forms", 10, 18, 34)), scales_with_breadth=True),
 )
@@ -185,7 +190,10 @@ _HEDGES = re.compile(
     r"du kien|kha nang cao|\boptional\b|nice to have|phase 2|later phase|\bmaybe\b|\bmight\b|possibly|"
     r"\btbd\b|to be (?:decided|confirmed|defined)|if possible|\bconsider|"
     # round 4 (dev): "đang cân nhắc", budget/time conditions in English
-    r"(?:dang|con|se) can nhac|can nhac (?:co|xem|viec)\b|if (?:the )?(?:budget|time) (?:allows|permits)|(?:budget|time) permitting"
+    r"(?:dang|con|se) can nhac|can nhac (?:co|xem|viec)\b|if (?:the )?(?:budget|time) (?:allows|permits)|(?:budget|time) permitting|"
+    # round 5 (dev): "để xem ngân sách", "đang tính có nên", English time/uncertainty hedges
+    r"de xem (?:ngan sach|kinh phi|chi phi)|tuy (?:ngan sach|kinh phi)|dang tinh (?:co nen|xem)|"
+    r"if there'?s time|if time allows|down the line|not sure (?:yet )?(?:whether|if)|(?:we|they) may want"
 )
 _UNDOCUMENTED = re.compile(r"chua co tai lieu|chua co api|khong co api|no api|undocumented|no documentation")
 _HAS_DOCS = re.compile(r"tai lieu api|api doc|swagger|openapi|sandbox|rest api cong khai|public api")
@@ -297,6 +305,7 @@ _TEXT = {
         "c_qa": "Thời gian kiểm thử chiếm {share:.0f}% tổng.",
         "c_nfr": "Mô tả chưa nói về tốc độ, bảo mật hay nơi đặt máy chủ. Nên bổ sung.",
         "c_breadth": "“{title}” gồm {n} việc nhỏ nên được tính nhiều giờ hơn.",
+        "c_overrun": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%). Trên dữ liệu thật, những việc AI đánh giá như vậy vượt giờ hơn việc ít rủi ro khoảng {pct}%, đã cộng vào.",
     },
     "en": {
         "foundation": "Engineering foundation & delivery",
@@ -323,6 +332,7 @@ _TEXT = {
         "c_qa": "QA is {share:.0f}% of development hours (minimum threshold 15%).",
         "c_nfr": "The brief states no non-functional requirements (performance, security, hosting). Default assumptions may be wrong.",
         "c_breadth": "“{title}” lists {n} actions/objects; template hours scaled by {factor:.2f} for breadth.",
+        "c_overrun": "AI rates “{title}” as likely to take longer than it looks ({p}%). In real data, work rated like this overran about {pct}% more than low-risk work; added to the estimate.",
     },
 }
 
@@ -467,6 +477,8 @@ def _build_items(req_id: str, title: str, components: list[Component], systems: 
                     optimistic_hours=4, most_likely_hours=8, pessimistic_hours=16,
                     basis="Engine prior per channel beyond the first",
                 ))
+        for item in created:
+            item.component = comp.key
         if comp.shared and register:
             shared_items[comp.key] = created
         items.extend(created)
@@ -492,6 +504,50 @@ def _scale_to(item: WorkItem, hours: float) -> None:
     item.most_likely_hours = round(item.most_likely_hours * factor, 1) or 0.1
     item.pessimistic_hours = max(item.most_likely_hours, round(item.pessimistic_hours * factor, 1))
     item.optimistic_hours = min(item.optimistic_hours, item.most_likely_hours)
+
+
+def _multiply(item: WorkItem, factor: float) -> None:
+    item.optimistic_hours = max(0.1, round(item.optimistic_hours * factor, 1))
+    item.most_likely_hours = max(item.optimistic_hours, round(item.most_likely_hours * factor, 1))
+    item.pessimistic_hours = max(item.most_likely_hours, round(item.pessimistic_hours * factor, 1))
+
+
+def _apply_adjustments(drafts: list["_Draft"], items: list[WorkItem], adj: Optional[Adjustments], L: dict,
+                       critics: list[CriticFinding]) -> None:
+    """Record each requirement's unadjusted hours, then apply what was learned from real outcomes."""
+    owned: dict[str, list[WorkItem]] = {}
+    for item in items:
+        owned.setdefault(item.req_ids[0], []).append(item)
+    for d in drafts:
+        own = owned.get(d.req.req_id, [])
+        if not d.req.in_scope or not own:
+            continue
+        raw = sum(_pert_mean(i) for i in own)
+        d.req.estimated_hours_raw = round(raw, 1)
+        if adj is None:
+            continue
+        g = d.req.risk_group
+        group_factor = adj.group_factors[g] if g is not None else 1.0
+        for item in own:
+            comp_factor = adj.component_factors.get(item.component or "", 1.0)
+            factor = round(group_factor * comp_factor, 3)
+            if abs(factor - 1) < 0.005:
+                continue
+            _multiply(item, factor)
+            parts = []
+            if g is not None and abs(group_factor - 1) >= 0.005:
+                parts.append(f"overrun risk {GROUP_LABELS[g]} x{group_factor:.2f}")
+            if abs(comp_factor - 1) >= 0.005:
+                parts.append(f"{item.component} x{comp_factor:.2f} (learned from actuals)")
+            item.basis = f"{item.basis or 'Engine prior'}; " + ", ".join(parts)
+        d.req.adjustment_factor = round(sum(_pert_mean(i) for i in own) / raw, 3) if raw else None
+        p = (d.req.ai_reading or {}).get("overrun")
+        if g == 2 and p is not None:
+            critics.append(CriticFinding(
+                finding_id=f"CRITIC-{d.req.req_id}-OVERRUN", category="overrun_risk",
+                claim=L["c_overrun"].format(title=d.req.title, p=round(p * 100), pct=round((group_factor - 1) * 100)),
+                verified_by_evidence=True, supporting_evidence=d.req.evidence, action_taken="applied_to_wbs",
+            ))
 
 
 def _apply_overrides(items: list[WorkItem], overrides: dict) -> None:
@@ -539,6 +595,7 @@ def extract_scope_and_wbs(
     readings: Optional[dict[str, ClauseReading]] = None,
     manual_edits: Optional[dict] = None,
     ai_suppressed: Optional[set[str]] = None,
+    adjustments: Optional[Adjustments] = None,
 ) -> EstimateVersion:
     """Analyse the brief (and extra documents) into a validated EstimateVersion."""
     sources = {k: v for k, v in (source_docs or {}).items() if v and v.strip()}
@@ -613,10 +670,12 @@ def extract_scope_and_wbs(
                     "added_component": ai_component.key if ai_component else None,
                     "suggested_component": ai_suggest.key if ai_suggest else None,
                     "flagged_tentative": ai_tentative is not None,
+                    "overrun": reading.extra.get("overrun"),
                 }
                 if reading else None
             ),
             in_scope=not excluded,
+            risk_group=adjustments.group_of(reading.extra.get("overrun")) if adjustments and reading else None,
         )
         draft = _Draft(req=req, hedge=hedge, clause=clause)
         drafts.append(draft)
@@ -748,6 +807,7 @@ def extract_scope_and_wbs(
     for item in feature_items + [i for d in drafts for i in d.items]:
         seen.setdefault(item.item_id, item)
     feature_items = list(seen.values())
+    _apply_adjustments(drafts, feature_items, adjustments, L, critics)
     edits = manual_edits or {}
     if edits:
         feature_items = _apply_manual_edits(feature_items, edits, {"REQ-00", *(d.req.req_id for d in drafts)})

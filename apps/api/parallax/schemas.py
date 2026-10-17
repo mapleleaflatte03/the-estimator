@@ -31,6 +31,10 @@ class RequirementNode(BaseModel):
     components: list[str] = Field(default_factory=list)
     in_scope: bool = True
     ai_reading: Optional[dict] = None
+    # Hours of the work items this requirement owns, before learned adjustments (what actuals are compared with).
+    estimated_hours_raw: Optional[float] = None
+    risk_group: Optional[int] = None  # 0 low / 1 medium / 2 high: Jev's "takes longer than it looks", SiP thresholds
+    adjustment_factor: Optional[float] = None  # multiplier applied to this requirement's items
 
     @model_validator(mode="after")
     def confirmed_needs_evidence(self):
@@ -50,6 +54,7 @@ class WorkItem(BaseModel):
     pessimistic_hours: float = Field(gt=0, allow_inf_nan=False)
     assumption_id: Optional[str] = None
     basis: Optional[str] = None
+    component: Optional[str] = None
 
     @model_validator(mode="after")
     def check_three_point_order(self):
@@ -244,6 +249,26 @@ class CalibrationObservation(BaseModel):
         import math
 
         return math.log(self.actual_hours / self.uncalibrated_p50)
+
+
+class RequirementObservation(BaseModel):
+    """Actual hours of one finished requirement against its unadjusted estimate."""
+
+    project_id: str
+    version_id: str
+    req_id: str
+    components: list[str] = Field(default_factory=list)
+    risk_group: Optional[int] = None
+    overrun_probability: Optional[float] = None
+    estimated_hours: float = Field(gt=0)
+    actual_hours: float = Field(gt=0)
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @property
+    def log_ratio(self) -> float:
+        import math
+
+        return math.log(self.actual_hours / self.estimated_hours)
 
 
 class FeedbackEvent(BaseModel):

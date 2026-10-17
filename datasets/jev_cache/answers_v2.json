@@ -1,0 +1,930 @@
+{
+"04149aa5c337a45f33004314": {
+"answer": {
+"noul": 0.08
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"0dcbfa7224580338d7b4c994": {
+"answer": {
+"noul": 0.14
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"0de31941709e43c94f9e8e67": {
+"answer": {
+"choice": "permissions_audit",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"data_import": 0.0,
+"file_export": 0.0,
+"permissions_audit": 1.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"0dfc6a1cb6d3960e7775a487": {
+"answer": {
+"noul": 0.67
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"122bd9d1fe59ef8465d6006d": {
+"answer": {
+"choice": "data_import",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"data_import": 1.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"16fa9ace91b7f166a711cb1f": {
+"answer": {
+"noul": 0.71
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"186df17ec0bc889af95aa2fd": {
+"answer": {
+"noul": 0.66
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"1917b9e312d5176622a8706a": {
+"answer": {
+"noul": 0.06
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"1a7a929a6c6a3333ab8fe020": {
+"answer": {
+"noul": 0.76
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"1b67ef8324fda0f4ad5c2ed8": {
+"answer": {
+"noul": 0.66
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"1b7a7f183dfe7122ecb911f3": {
+"answer": {
+"noul": 0.97
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"1e5751dddc01982927ccdf24": {
+"answer": {
+"choice": "payment",
+"confidence": 0.31,
+"probabilities": {
+"external_integration": 0.13,
+"notification": 0.05,
+"payment": 0.37,
+"permissions_audit": 0.29,
+"scheduling": 0.11
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"1e7c442d57c372b730a7da0a": {
+"answer": {
+"noul": 0.45
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"1ea5a2b66f8ae1c2e44f43ec": {
+"answer": {
+"choice": "reporting",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"data_import": 0.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 1.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"2117833be9342088a6e586d3": {
+"answer": {
+"choice": "notification",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"file_export": 0.0,
+"notification": 1.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"228ad074f0d09411c0bd8823": {
+"answer": {
+"noul": 0.62
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"2af490da9d90317951a54c37": {
+"answer": {
+"choice": "scheduling",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 0.0,
+"scheduling": 1.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"2b5baaa60bff9e0319434706": {
+"answer": {
+"choice": "payment",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"file_export": 0.0,
+"payment": 1.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"2c4407a4b705a7641edbcf9b": {
+"answer": {
+"noul": 0.72
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"2ccf91ac795dd8c6b4d0d5e7": {
+"answer": {
+"noul": 0.78
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"2cfbdf4c4a473447093216f2": {
+"answer": {
+"noul": 0.78
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"31833d3caea26ff4873da5fd": {
+"answer": {
+"noul": 0.86
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"32769a03bdfcd5d77cfaa900": {
+"answer": {
+"noul": 0.06
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"36e35e19b8d4ed6bb1119d29": {
+"answer": {
+"noul": 0.67
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"3afe8967a8fc6c5c3b02d9f2": {
+"answer": {
+"noul": 0.53
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"495dc67a0bb4004aa221c6bb": {
+"answer": {
+"noul": 0.7
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"4a53d9ebb0f2381bb32c3173": {
+"answer": {
+"noul": 0.68
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"4ee21331b0f680eca731e9c4": {
+"answer": {
+"noul": 0.75
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"54093429ae7401db335fe962": {
+"answer": {
+"choice": "permissions_audit",
+"confidence": 0.55,
+"probabilities": {
+"ai_assistant": 0.38,
+"data_import": 0.01,
+"external_integration": 0.01,
+"mobile_app": 0.01,
+"permissions_audit": 0.59
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"54640e213e746d790cda27e2": {
+"answer": {
+"choice": "auth",
+"confidence": 1.0,
+"probabilities": {
+"auth": 1.0,
+"data_import": 0.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"55fae1823a61f303294d3c48": {
+"answer": {
+"noul": 0.96
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"57b75098202b3a15d42c7a21": {
+"answer": {
+"noul": 0.61
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"5b4682ce786b271a88f4fa2b": {
+"answer": {
+"choice": "external_integration",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"external_integration": 1.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"5e4a26391f2731fe68e80dc9": {
+"answer": {
+"noul": 0.52
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"5e525661baadac93cfda48d9": {
+"answer": {
+"noul": 0.48
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"66a406fba656f8c9b7634a27": {
+"answer": {
+"noul": 0.67
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"6efecd5c810aeda7cc7089e1": {
+"answer": {
+"noul": 0.76
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"7026b52b944e83c8e7d5a851": {
+"answer": {
+"noul": 0.72
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"73dccdfefc82bc04da9d183a": {
+"answer": {
+"choice": "scheduling",
+"confidence": 0.83,
+"probabilities": {
+"ai_assistant": 0.07,
+"data_import": 0.03,
+"mobile_app": 0.02,
+"reporting": 0.02,
+"scheduling": 0.84
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"76b7e3bae4af7dfe9f0babc7": {
+"answer": {
+"noul": 0.6
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"7940d586be176fe99e56a9d8": {
+"answer": {
+"choice": "external_integration",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"external_integration": 1.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"7c73141a114a57f387af8758": {
+"answer": {
+"noul": 0.08
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"7ca95d2276ffed44a331f146": {
+"answer": {
+"noul": 0.6
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"7f7e92cdea132adf2fe31aee": {
+"answer": {
+"choice": "mobile_app",
+"confidence": 0.92,
+"probabilities": {
+"auth": 0.0,
+"mobile_app": 0.93,
+"permissions_audit": 0.0,
+"reporting": 0.0,
+"scheduling": 0.07
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"81a358be0223154c7aa13832": {
+"answer": {
+"choice": "mobile_app",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"file_export": 0.0,
+"mobile_app": 1.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"87481a379b6fda056b877f70": {
+"answer": {
+"choice": "auth",
+"confidence": 0.92,
+"probabilities": {
+"auth": 0.93,
+"external_integration": 0.04,
+"payment": 0.03,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"8e5b2a64e7e992af9c7b649b": {
+"answer": {
+"choice": "external_integration",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"external_integration": 1.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"8fb5a8ae87650a81d63cfb9b": {
+"answer": {
+"noul": 0.77
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"908be639a4f677459f8db504": {
+"answer": {
+"choice": "ai_assistant",
+"confidence": 0.88,
+"probabilities": {
+"ai_assistant": 0.89,
+"external_integration": 0.05,
+"payment": 0.02,
+"permissions_audit": 0.01,
+"reporting": 0.03
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"9173b65cf885ff4320d5a2fe": {
+"answer": {
+"noul": 0.06
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"927fe1b71db06c5ec8b26540": {
+"answer": {
+"noul": 0.04
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"92b2c71767c3db7df1e55327": {
+"answer": {
+"noul": 0.53
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"96cf974c1f03cc0cd5615ac3": {
+"answer": {
+"noul": 0.59
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"97e34eb9e7687d187613afd9": {
+"answer": {
+"noul": 0.51
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"98f6b6ba5764ddb2e78f88a6": {
+"answer": {
+"noul": 0.96
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"9e8d87f74fa4d20415799dbc": {
+"answer": {
+"choice": "payment",
+"confidence": 0.95,
+"probabilities": {
+"auth": 0.0,
+"external_integration": 0.05,
+"payment": 0.95,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"a1a6297c8aff873bd501a95c": {
+"answer": {
+"choice": "notification",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"file_export": 0.0,
+"notification": 1.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"a41e17da7af721d93e08395c": {
+"answer": {
+"noul": 0.57
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"a472c6bccb4b4c34df14c65e": {
+"answer": {
+"noul": 0.08
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"a58da66803a9659c6bcbf004": {
+"answer": {
+"noul": 0.83
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"ab627cc0654b09012bcbacae": {
+"answer": {
+"noul": 0.79
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"ab9143162531e2fe4dfaf58c": {
+"answer": {
+"noul": 0.05
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"ac64104888be131490d7e41f": {
+"answer": {
+"noul": 0.15
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"af08247d0ffd7bfc250d06f9": {
+"answer": {
+"choice": "notification",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"file_export": 0.0,
+"notification": 1.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"b083d38ee076d934001837cb": {
+"answer": {
+"noul": 0.08
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"b436afafbdca22c544b1f516": {
+"answer": {
+"noul": 0.78
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"c168b7a506a3bd3dee0070b8": {
+"answer": {
+"noul": 0.96
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"c4f0d1b27f8cf286b0d1066f": {
+"answer": {
+"noul": 0.62
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"c5cdb87f336172abd220a25d": {
+"answer": {
+"noul": 0.48
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"c886b4b6b5c60e7f0d18492b": {
+"answer": {
+"noul": 0.75
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"ca2844e5ea7d2c19d5b6c34c": {
+"answer": {
+"choice": "file_export",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"data_import": 0.0,
+"file_export": 1.0,
+"permissions_audit": 0.0,
+"reporting": 0.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"cba6219579cb87a417c7db78": {
+"answer": {
+"noul": 0.06
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"cf2789264580260702376da0": {
+"answer": {
+"noul": 0.83
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"cf3c9f335b02e000465eca5c": {
+"answer": {
+"choice": "reporting",
+"confidence": 0.97,
+"probabilities": {
+"ai_assistant": 0.02,
+"auth": 0.0,
+"notification": 0.01,
+"permissions_audit": 0.0,
+"reporting": 0.97
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"d078356b6e0c4972b0534387": {
+"answer": {
+"noul": 0.9
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"d57fe8c77ad6b5a407c739b3": {
+"answer": {
+"noul": 0.04
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"dcfa9d70a7ba56e0383936b4": {
+"answer": {
+"noul": 0.95
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"dfc84a31c37353304c785172": {
+"answer": {
+"choice": "ai_assistant",
+"confidence": 0.47,
+"probabilities": {
+"ai_assistant": 0.51,
+"data_import": 0.17,
+"external_integration": 0.04,
+"reporting": 0.15,
+"scheduling": 0.09
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"e1608aa385194a0db93da890": {
+"answer": {
+"noul": 0.08
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"e1ac3cdf3675eadf9fdc58c0": {
+"answer": {
+"noul": 0.09
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"e7cd5b8fd3fb51b03743e39c": {
+"answer": {
+"noul": 0.09
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"ec10022bc51301f71f343e7d": {
+"answer": {
+"noul": 0.05
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"ed3432df798b6cc91029a9c3": {
+"answer": {
+"choice": "reporting",
+"confidence": 1.0,
+"probabilities": {
+"auth": 0.0,
+"data_import": 0.0,
+"file_export": 0.0,
+"permissions_audit": 0.0,
+"reporting": 1.0
+}
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "kind@v1"
+},
+"ed4bcaaece3e652566103f47": {
+"answer": {
+"noul": 0.72
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"ed530a5839826528b9d4b00e": {
+"answer": {
+"noul": 0.53
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+},
+"f1b0bf0a1200003d79590ffc": {
+"answer": {
+"noul": 0.55
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"f2f474f160a4e2bd2dbe9159": {
+"answer": {
+"noul": 0.5
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"f90b7b77212b457bca9d1a61": {
+"answer": {
+"noul": 0.86
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"faa83a250cb35db0aef97f82": {
+"answer": {
+"noul": 0.68
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"fc85a712f722d63f43751154": {
+"answer": {
+"noul": 0.59
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"fea04779974688fd9b2af308": {
+"answer": {
+"noul": 0.66
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "overrun@v1"
+},
+"fee32b96e92b953a37f703ea": {
+"answer": {
+"noul": 0.06
+},
+"model": "jev-1.13.0",
+"provider": "jevstation",
+"q": "tentative@v1"
+}
+}

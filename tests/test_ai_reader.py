@@ -64,40 +64,80 @@ def test_low_confidence_reading_is_ignored():
     assert req.components == ["generic"] and req.status.value == "confirmed"
 
 
+def fake_keys(*credits):
+    return [jev.JevKey(f"KEY_{i}", "fake", "http://fake", "jev", f"secret{i}", credits=c)
+            for i, c in enumerate(credits, start=1)]
+
+
 class FakeReader(JevReader):
-    def __init__(self, credits=50, **kw):
-        super().__init__(cache_path=None, **kw)
-        self.provider, self.url, self.key = "fake", "http://fake", "k"
+    """Simulates the JevStation API: <= 5 questions cost 1 credit, empty keys answer 402."""
+
+    def __init__(self, credits=(50,), answer_keys_style="single", **kw):
+        super().__init__(cache_path=None, keys=fake_keys(*credits), **kw)
         self.cache = {}
-        self.credits = credits
-        self.batches = []
+        self.bodies = []
+        self.style = answer_keys_style
 
-    def _call(self, batch):
-        self.batches.append(batch)
-        self.credits -= 1
-        self.credits_remaining = self.credits
-        out = {t: reading("reporting") for t in batch}
-        for t, r in out.items():
-            self.cache[jev._cache_key(t)] = jev.asdict(r)
-        return out
+    def _post(self, key, body):
+        if key.credits is not None and key.credits <= 0:
+            raise jev.JevError("HTTP 402: not enough credits", 402)
+        assert len(body["questions"]) <= jev.QUESTIONS_PER_CALL
+        self.bodies.append((key.name, body))
+        key.credits -= 1
+        answers = {}
+        for qkey, spec in body["questions"].items():
+            out_key = qkey if self.style == "single" else "broken_" + qkey
+            if spec["type"] == "choice":
+                answers[out_key] = {"type": "choice", "choice": "reporting", "confidence": 0.9,
+                                    "probabilities": {"reporting": 0.9}}
+            else:
+                answers[out_key] = {"type": "noul", "noul": 0.8 if qkey.endswith("overrun") else 0.1}
+        return {"model": "jev-test", "answers": answers, "credits": {"charged": 1, "remaining": key.credits}}
 
 
-def test_reader_caches_and_batches():
+def test_reader_packs_five_questions_per_call_and_caches():
     r = FakeReader()
     texts = [f"Báo cáo số {i}" for i in range(5)]
-    assert len(r.read(texts)) == 5
-    assert len(r.batches) == 3  # 2 + 2 + 1 clauses per call
+    out = r.read(texts)
+    assert len(out) == 5 and out[texts[0]].extra["overrun"] == 0.8
+    assert len(r.bodies) == 3  # 5 clauses x 3 questions = 15 questions = 3 calls of 5
+    assert all(len(b["questions"]) == 5 for _, b in r.bodies)
     r.read(texts)
-    assert len(r.batches) == 3, "cached clauses must not be re-sent"
+    assert len(r.bodies) == 3, "cached answers must not be re-sent"
+
+
+def test_new_question_only_costs_the_new_question():
+    r = FakeReader()
+    text = "Báo cáo doanh thu"
+    r.cache[jev._legacy_key(text)] = jev.asdict(reading("reporting"))  # old kind+tentative reading
+    r.read([text])
+    (_, body), = r.bodies
+    assert list(body["questions"]) == ["c0_overrun"]
+
+
+def test_pool_fails_over_to_next_key_when_one_is_empty():
+    r = FakeReader(credits=(0, 3))
+    out = r.read([f"x{i}" for i in range(5)])  # 3 calls needed
+    assert len(out) == 5
+    assert {name for name, _ in r.bodies} == {"KEY_2"}
+    assert r.keys[0].credits == 0 and r.keys[1].credits == 0
+    assert r.credits_charged == 3
 
 
 def test_reader_respects_credit_floor_and_hourly_cap():
-    low = FakeReader(credits=5, min_credits=4)
-    low.read(["a1", "a2", "a3", "a4", "a5", "a6"])
+    low = FakeReader(credits=(5,), min_credits=4)
+    low.read([f"a{i}" for i in range(6)])
     assert low.credits_remaining == 4 and not low.status()["available"]
     capped = FakeReader(max_calls_per_hour=1)
     capped.read(["b1", "b2", "b3", "b4"])
-    assert len(capped.batches) == 1
+    assert len(capped.bodies) == 1
+
+
+def test_reader_halts_when_paid_answers_cannot_be_parsed():
+    r = FakeReader(answer_keys_style="broken")
+    assert r.read([f"t{i}" for i in range(10)]) == {}
+    assert len(r.bodies) == 1, "a charged call with no usable answers must stop all further spending"
+    assert r.status()["halted"]
 
 
 def test_disabled_reader_never_calls(monkeypatch):
@@ -105,6 +145,33 @@ def test_disabled_reader_never_calls(monkeypatch):
     monkeypatch.setenv("JEVSTATION_API_KEY", "x")
     r = JevReader()
     assert not r.configured and r.read(["anything"]) == {}
+
+
+def test_key_pool_discovers_numbered_keys(monkeypatch):
+    monkeypatch.delenv("JEV_DISABLED", raising=False)
+    monkeypatch.setenv("JEVSTATION_API_KEY", "a")
+    monkeypatch.setenv("JEVSTATION_API_KEY_10", "c")
+    monkeypatch.setenv("JEVSTATION_API_KEY_2", "b")
+    monkeypatch.setenv("JEVSTATION_API_KEY_3", "b")  # duplicate secret counted once
+    names = [k.name for k in jev.discover_keys()]
+    assert names == ["JEVSTATION_API_KEY", "JEVSTATION_API_KEY_2", "JEVSTATION_API_KEY_10"]
+    assert all("secret" not in str(k.public()) for k in jev.discover_keys())
+
+
+def test_estimate_requires_ai_reader(monkeypatch, tmp_path):
+    from parallax.service import AIReaderUnavailable, ParallaxService
+    from parallax.storage import StorageRepository
+
+    monkeypatch.setenv("JEV_REQUIRED", "1")
+    svc = ParallaxService(StorageRepository(tmp_path / "s.json"), reader=FakeReader(credits=(0,)))
+    p = svc.create_project("P", "- Quản lý khách hàng.\n- Báo cáo doanh thu.")
+    with pytest.raises(AIReaderUnavailable, match="2/2"):
+        svc.estimate_project(p.project_id)
+    ok = ParallaxService(StorageRepository(tmp_path / "t.json"), reader=FakeReader())
+    p = ok.create_project("P", "- Quản lý khách hàng.\n- Báo cáo doanh thu.")
+    v = ok.estimate_project(p.project_id)
+    assert v.reader == "rules+jev"
+    assert all(r.ai_reading and r.ai_reading["overrun"] == 0.8 for r in v.requirements if r.req_id != "REQ-00")
 
 
 def test_disabled_reader_never_overwrites_cache_file(monkeypatch, tmp_path):
@@ -123,6 +190,13 @@ def test_disabled_reader_never_overwrites_cache_file(monkeypatch, tmp_path):
         ("If budget allows, we would like a chatbot.", True),
         ("Hệ thống cần nhắc lịch hẹn cho bệnh nhân.", False),  # "cần nhắc" (remind) folds like "cân nhắc"
         ("Kiểm tra khách đã thanh toán hay không.", False),
+        # round 5 (dev)
+        ("Chatbot trả lời câu hỏi giá dịch vụ thì để xem ngân sách đã.", True),
+        ("Ben em dang tinh co nen ket noi voi MISA khong.", True),
+        ("Down the line we may want to plug this into our ERP.", True),
+        ("Not sure yet whether we need a mobile app.", True),
+        ("Support agents can search returns by order number.", False),
+        ("Nhân viên có thể tìm bệnh nhân theo số điện thoại.", False),
     ],
 )
 def test_round4_hedges(text, tentative):
@@ -145,7 +219,8 @@ def test_rejected_ai_suggestions_get_muted(tmp_path):
 
     clause = "Quản lý dự án: tạo dự án, gán người phụ trách, theo dõi tiến độ."
     fake = FakeReader()
-    fake.cache[jev._cache_key(clause)] = jev.asdict(reading("scheduling"))
+    fake.cache[jev._legacy_key(clause)] = jev.asdict(reading("scheduling"))
+    fake.cache[jev._cache_key(clause, jev.OVERRUN_Q)] = {"answer": {"noul": 0.2}, "model": "jev-test"}
     svc = ParallaxService(StorageRepository(tmp_path / "s.json"), reader=fake)
     for i in range(3):
         p = svc.create_project(f"P{i}", f"- {clause}")

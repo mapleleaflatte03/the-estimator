@@ -1,7 +1,7 @@
 {
   "brief_id": "GOLDEN-05",
   "title": "Phần mềm quản lý chuỗi nha khoa",
-  "project_type": "healthcare",
+  "project_type": "internal_tool",
   "brief_text": "Dự án: phần mềm quản lý chuỗi phòng khám nha khoa (4 chi nhánh).\n- Lễ tân đặt lịch hẹn cho bệnh nhân theo bác sĩ, ghế nha và khung giờ trống.\n- Bệnh nhân nhận tin nhắn Zalo nhắc lịch trước 24 giờ.\n- Bác sĩ ghi hồ sơ điều trị theo từng răng, kèm ảnh X-quang.\n- Thu ngân lập hóa đơn và nhận thanh toán qua mã QR VNPay.\n- Mỗi chi nhánh chỉ xem được bệnh nhân của chi nhánh mình, quản lý chuỗi xem được tất cả.\n- Báo cáo doanh thu theo bác sĩ và theo dịch vụ hằng tháng.\n- Chuyển dữ liệu bệnh nhân từ phần mềm cũ (khoảng 25.000 hồ sơ).\n- Có lẽ năm sau mới làm app cho bệnh nhân tự đặt lịch.\n- Ben em dang tinh co nen ket noi voi phan mem ke toan MISA khong.\n- Nhân viên có thể tìm bệnh nhân theo số điện thoại hoặc tên.\n- Kho vật tư cảnh báo khi thuốc tê hoặc vật liệu sắp hết.\n- Chatbot trả lời câu hỏi giá dịch vụ trên fanpage thì để xem ngân sách đã.",
   "expected_confirmed_quotes": [
     "đặt lịch hẹn",

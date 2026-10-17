@@ -25,6 +25,13 @@ def result(entry: dict) -> str:
                 f"P10–P90 coverage {first.get('interval_coverage')}%")
     if "retention_pct" in first:
         return f"retention {first['retention_pct']}%, false tentative {first['false_tentative']}"
+    if "spearman_log_ratio" in first:
+        return "<br>".join(f"{r['question']}: Spearman {r['spearman_log_ratio']}, AUC {r['auc_overrun_25pct']}"
+                           for r in entry["summary"])
+    if first.get("reader") == "human":
+        return "<br>".join(f"{r['reader']}: MAE {r['mae']} h, PRED(25) {r['pred_25']}%, "
+                           f"P10–P90 {r['coverage_p10_p90'] if r['coverage_p10_p90'] is not None else '—'}"
+                           for r in entry["summary"])
     parts = []
     for r in entry["summary"]:
         if r["reader"] in ("rules", "jev", "shipped"):

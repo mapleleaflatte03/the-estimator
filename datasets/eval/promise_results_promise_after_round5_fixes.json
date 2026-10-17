@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-17T14:03+07:00",
+  "tag": "promise_after_round5_fixes",
+  "labels": "PROMISE_exp (external)",
+  "rules_version": "dd175964ab",
+  "model": null,
+  "summary": [
+    {
+      "reader": "rules",
+      "dev_even_projects": {
+        "n_requirements": 577,
+        "retention_pct": 100.0,
+        "performance_recall_pct": 56.9,
+        "performance_false_alarms": "8/519",
+        "security_recall_pct": 63.9,
+        "security_false_alarms": "26/505",
+        "false_tentative": "4/577"
+      },
+      "test_odd_projects": {
+        "n_requirements": 392,
+        "retention_pct": 100.0,
+        "performance_recall_pct": 51.6,
+        "performance_false_alarms": "3/361",
+        "security_recall_pct": 77.4,
+        "security_false_alarms": "17/339",
+        "false_tentative": "0/392"
+      }
+    }
+  ],
+  "note": "Regression check after round-5 rule fixes."
+}

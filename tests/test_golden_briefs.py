@@ -22,6 +22,8 @@ def load_golden_brief(filename: str) -> dict:
         "golden_brief_2_ecommerce_sync.json",
         "golden_brief_3_ai_rag_support.json",
         "golden_brief_4_field_service.json",
+        "golden_brief_5_dental_chain.json",
+        "golden_brief_6_returns_portal.json",
     ],
 )
 def test_golden_brief_extraction_and_provenance(fixture_name):

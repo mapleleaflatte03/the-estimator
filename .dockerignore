@@ -11,3 +11,6 @@ docs
 tests
 scripts
 *.zip
+.env
+.env.*
+.venv-win

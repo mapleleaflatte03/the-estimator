@@ -5,3 +5,14 @@ services:
     plan: free
     healthCheckPath: /health
     autoDeploy: true
+    envVars:
+      # Jev keys are secrets: set them in the Render dashboard (never in this file).
+      # Any number of keys can be added as JEVSTATION_API_KEY, JEVSTATION_API_KEY_2, ... JEVSTATION_API_KEY_N.
+      - key: JEVSTATION_API_KEY
+        sync: false
+      - key: JEVSTATION_API_KEY_2
+        sync: false
+      - key: JEVSTATION_API_KEY_3
+        sync: false
+      - key: JEV_MAX_CALLS_PER_HOUR
+        value: "120"

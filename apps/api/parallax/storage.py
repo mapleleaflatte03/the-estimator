@@ -19,6 +19,7 @@ from .schemas import (
     EvaluationRun,
     HistoricalCase,
     Project,
+    RequirementObservation,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class StorageRepository:
         self.evaluation_runs: list[EvaluationRun] = []
         self.calibration = CalibrationState()
         self.feedback: list[FeedbackEvent] = []
+        self.requirement_observations: list[RequirementObservation] = []
         if self.data_path and self.data_path.exists():
             self._load()
 
@@ -150,6 +152,18 @@ class StorageRepository:
         with self.lock:
             return list(self.feedback)
 
+    def set_requirement_observations(self, project_id: str, observations: list[RequirementObservation]) -> None:
+        """Replace a project's per-requirement actuals (the latest record of a project wins)."""
+        with self.lock:
+            self.requirement_observations = [
+                o for o in self.requirement_observations if o.project_id != project_id
+            ] + list(observations)
+            self._save()
+
+    def list_requirement_observations(self) -> list[RequirementObservation]:
+        with self.lock:
+            return list(self.requirement_observations)
+
     def get_calibration(self) -> CalibrationState:
         with self.lock:
             return self.calibration.model_copy(deep=True)
@@ -188,6 +202,7 @@ class StorageRepository:
                 "evaluation_runs": [r.model_dump(mode="json") for r in self.evaluation_runs],
                 "calibration": self.calibration.model_dump(mode="json"),
                 "feedback": [e.model_dump(mode="json") for e in self.feedback],
+                "requirement_observations": [o.model_dump(mode="json") for o in self.requirement_observations],
             }
             tmp = self.data_path.with_suffix(".tmp")
             with open(tmp, "w", encoding="utf-8") as f:
@@ -212,6 +227,9 @@ class StorageRepository:
             for r_dict in payload.get("evaluation_runs", []):
                 self.evaluation_runs.append(EvaluationRun.model_validate(r_dict))
             self.feedback = [FeedbackEvent.model_validate(e) for e in payload.get("feedback", [])]
+            self.requirement_observations = [
+                RequirementObservation.model_validate(o) for o in payload.get("requirement_observations", [])
+            ]
             if payload.get("calibration"):
                 self.calibration = CalibrationState.model_validate(payload["calibration"])
         except Exception as exc:  # keep the API up, but never fail silently

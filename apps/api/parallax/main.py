@@ -26,10 +26,12 @@ from .schemas import (
 )
 from . import empirical
 from .export import proposal_markdown, wbs_csv
-from .service import ParallaxService
+from .jev import load_dotenv
+from .service import AIReaderUnavailable, ParallaxService
 from .storage import StorageRepository
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+load_dotenv(ROOT_DIR / ".env")  # API keys live in a git-ignored .env; real env vars take precedence
 # PARALLAX_DATA_PATH lets tests and deployments use an isolated store.
 DATA_PATH = Path(os.environ.get("PARALLAX_DATA_PATH", ROOT_DIR / "data" / "parallax_store.json"))
 GOLDEN_DIR = ROOT_DIR / "datasets" / "golden_briefs"
@@ -57,6 +59,14 @@ class ActualWorkCreate(BaseModel):
     actual_hours: float = Field(gt=0)
     item_actuals: Optional[dict[str, float]] = None
     deviation_reasons: Optional[list[str]] = None
+    requirement_actuals: Optional[dict[str, float]] = None
+
+
+@app.exception_handler(AIReaderUnavailable)
+def ai_unavailable(_request, exc: AIReaderUnavailable):
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.get("/health", tags=["System"])
@@ -127,6 +137,8 @@ def estimate_project(project_id: str):
         return version
     except KeyError:
         raise HTTPException(status_code=404, detail="Project not found")
+    except AIReaderUnavailable:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -181,6 +193,9 @@ def reader_evaluation():
             out[key] = {k: data.get(k) for k in ("note", "model", "thresholds", "summary")}
     out["status"] = service.reader.status()
     out["feedback"] = service.feedback_summary()
+    study = ROOT_DIR / "datasets" / "eval" / "sip_jev_study.json"
+    out["sip_study"] = json.loads(study.read_text(encoding="utf-8")) if study.exists() else None
+    out["learning"] = service.adjustments().as_dict()
     journal = ROOT_DIR / "datasets" / "eval" / "journal.jsonl"
     out["journal"] = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines() if line.strip()] \
         if journal.exists() else []
@@ -214,6 +229,8 @@ def answer_clarification(project_id: str, payload: ClarificationAnswer):
         return new_version
     except KeyError:
         raise HTTPException(status_code=404, detail="Project not found")
+    except AIReaderUnavailable:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -226,6 +243,7 @@ def record_actuals(project_id: str, payload: ActualWorkCreate):
             actual_hours=payload.actual_hours,
             item_actuals=payload.item_actuals,
             deviation_reasons=payload.deviation_reasons,
+            requirement_actuals=payload.requirement_actuals,
         )
         return result
     except KeyError:

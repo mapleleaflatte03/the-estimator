@@ -1,0 +1,410 @@
+{
+  "labels": "datasets/eval/clause_labels_v5.json",
+  "tag": "round5_shipped_final",
+  "rules_version": "dd175964ab",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 24,
+      "primary_kind_found": 24,
+      "kind_recall_pct": 89.3,
+      "kind_precision_pct": 80.6,
+      "tentative_correct": 24,
+      "tentative_caught": "6/6",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 24,
+      "primary_kind_found": 18,
+      "kind_recall_pct": 64.3,
+      "kind_precision_pct": 75.0,
+      "tentative_correct": 24,
+      "tentative_caught": "6/6",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 24,
+      "primary_kind_found": 24,
+      "kind_recall_pct": 89.3,
+      "kind_precision_pct": 73.5,
+      "tentative_correct": 24,
+      "tentative_caught": "6/6",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 24,
+      "primary_kind_found": 24,
+      "kind_recall_pct": 89.3,
+      "kind_precision_pct": 80.6,
+      "tentative_correct": 24,
+      "tentative_caught": "6/6",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 0
+    }
+  ],
+  "coverage": {
+    "clauses_labelled": 24,
+    "clauses_scored": 24,
+    "unread": [],
+    "cached_before_run": 24,
+    "fresh_api_calls": 0,
+    "credits_remaining_after": null
+  },
+  "details": [
+    {
+      "text": "Lễ tân đặt lịch hẹn cho bệnh nhân theo bác sĩ, ghế nha và khung giờ trống.",
+      "expected": [
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Bệnh nhân nhận tin nhắn Zalo nhắc lịch trước 24 giờ.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Bác sĩ ghi hồ sơ điều trị theo từng răng, kèm ảnh X-quang.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 0.47,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Thu ngân lập hóa đơn và nhận thanh toán qua mã QR VNPay.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Mỗi chi nhánh chỉ xem được bệnh nhân của chi nhánh mình, quản lý chuỗi xem được tất cả.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Báo cáo doanh thu theo bác sĩ và theo dịch vụ hằng tháng.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Chuyển dữ liệu bệnh nhân từ phần mềm cũ (khoảng 25.000 hồ sơ).",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import",
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09
+    },
+    {
+      "text": "Có lẽ năm sau mới làm app cho bệnh nhân tự đặt lịch.",
+      "expected": [
+        "mobile_app",
+        "scheduling"
+      ],
+      "tentative": true,
+      "rules": [
+        "mobile_app",
+        "scheduling"
+      ],
+      "rules_tentative": true,
+      "jev": "mobile_app",
+      "jev_confidence": 0.92,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Ben em dang tinh co nen ket noi voi phan mem ke toan MISA khong.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": true,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": true,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.95
+    },
+    {
+      "text": "Nhân viên có thể tìm bệnh nhân theo số điện thoại hoặc tên.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.83,
+      "jev_tentative": 0.08
+    },
+    {
+      "text": "Kho vật tư cảnh báo khi thuốc tê hoặc vật liệu sắp hết.",
+      "expected": [
+        "notification",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration",
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.14
+    },
+    {
+      "text": "Chatbot trả lời câu hỏi giá dịch vụ trên fanpage thì để xem ngân sách đã.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": true,
+      "rules": [
+        "ai_assistant"
+      ],
+      "rules_tentative": true,
+      "jev": "ai_assistant",
+      "jev_confidence": 0.88,
+      "jev_tentative": 0.53
+    },
+    {
+      "text": "Customers start a return on our website by entering their order number and email.",
+      "expected": [
+        "data_management",
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 0.92,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Each return goes through requested, approved, picked up and refunded states.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 0.31,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Warehouse staff approve or reject returns after inspecting photos uploaded by the customer.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 0.55,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Refunds are issued automatically through Stripe once the item is received.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 0.95,
+      "jev_tentative": 0.04
+    },
+    {
+      "text": "Book the pickup with our courier through their API.",
+      "expected": [
+        "external_integration",
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Customers get an email at every status change.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification",
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "We'd love a dashboard showing return reasons by product, if there's time.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": true,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": true,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Support agents can search returns by customer name, order number or date.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.97,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Down the line we may want to plug this into our ERP.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": true,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": true,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.96
+    },
+    {
+      "text": "Single sign-on with our Microsoft accounts for staff.",
+      "expected": [
+        "auth"
+      ],
+      "tentative": false,
+      "rules": [
+        "auth"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.15
+    },
+    {
+      "text": "Export the monthly refunds list to CSV for finance.",
+      "expected": [
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import",
+        "data_management",
+        "file_export"
+      ],
+      "rules_tentative": false,
+      "jev": "file_export",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.04
+    },
+    {
+      "text": "Not sure yet whether we need a mobile app for the drivers.",
+      "expected": [
+        "mobile_app"
+      ],
+      "tentative": true,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": true,
+      "jev": "mobile_app",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.97
+    }
+  ]
+}

@@ -22,7 +22,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
 from parallax.extractor import _HEDGES, _match_components, fold  # noqa: E402
-from parallax.jev import KIND_CONFIDENCE_MIN, KIND_TO_COMPONENT, SHIPPED_CACHE, TENTATIVE_MIN, JevReader  # noqa: E402
+from parallax.jev import (  # noqa: E402
+    KIND_CONFIDENCE_MIN, KIND_Q, KIND_TO_COMPONENT, SHIPPED_CACHE, TENTATIVE_MIN, TENTATIVE_Q, JevReader, load_dotenv,
+)
 
 COMPONENT_TO_KIND = {v: k for k, v in KIND_TO_COMPONENT.items() if v}
 COMPONENT_TO_KIND.update({"audit": "permissions_audit", "security": "permissions_audit", "migration": "data_import",
@@ -96,9 +98,11 @@ def main() -> int:
     args = ap.parse_args()
     labels_path = ROOT / args.labels
     labels = json.loads(labels_path.read_text(encoding="utf-8"))["clauses"]
-    reader = JevReader(cache_path=SHIPPED_CACHE)
+    load_dotenv()
+    # Only the two judged questions are scored here; the overrun question is validated on SiP outcomes.
+    reader = JevReader(cache_path=SHIPPED_CACHE, questions=(KIND_Q, TENTATIVE_Q), max_calls_per_hour=None)
     if args.rules_only:
-        reader.url = None
+        reader.keys = []
     cached_before = sum(reader.cached(c["text"]) is not None for c in labels)
     readings = reader.read([c["text"] for c in labels])
     if args.rules_only:

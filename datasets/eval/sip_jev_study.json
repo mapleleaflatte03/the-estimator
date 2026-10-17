@@ -1,0 +1,117 @@
+{
+  "pilot": {
+    "seed": 20261017,
+    "size": 75,
+    "candidates": [
+      {
+        "question": "open_scope@v1",
+        "n": 75,
+        "spearman_log_ratio": 0.106,
+        "auc_overrun_25pct": 0.631,
+        "mean_p": 0.598
+      },
+      {
+        "question": "new_build@v1",
+        "n": 75,
+        "spearman_log_ratio": 0.302,
+        "auc_overrun_25pct": 0.595,
+        "mean_p": 0.437
+      },
+      {
+        "question": "coupling@v1",
+        "n": 75,
+        "spearman_log_ratio": 0.19,
+        "auc_overrun_25pct": 0.598,
+        "mean_p": 0.486
+      },
+      {
+        "question": "overrun@v1",
+        "n": 75,
+        "spearman_log_ratio": 0.297,
+        "auc_overrun_25pct": 0.678,
+        "mean_p": 0.68
+      }
+    ],
+    "chosen": "overrun@v1",
+    "reason": "Tie on Spearman (new_build 0.302 vs overrun 0.297); overrun has the higher AUC for >25% overruns (0.678 vs 0.595) and transfers to greenfield briefs, where nearly every clause is new_build. Decided on training data only."
+  },
+  "report": {
+    "question": "overrun@v1",
+    "population": "SiP Development tasks with estimate >= 20 h",
+    "train": "estimated before 2011-01-01 (579 tasks)",
+    "test": "estimated 2011-01-01 or later (219 tasks)",
+    "thresholds_from_train": [
+      0.66,
+      0.71
+    ],
+    "pooled_train_ratio_p50": 0.6714,
+    "groups_train": [
+      {
+        "group": 0,
+        "n_train": 222,
+        "ratio_p10": 0.071,
+        "ratio_p50": 0.59,
+        "ratio_p90": 2.088
+      },
+      {
+        "group": 1,
+        "n_train": 174,
+        "ratio_p10": 0.101,
+        "ratio_p50": 0.655,
+        "ratio_p90": 2.169
+      },
+      {
+        "group": 2,
+        "n_train": 183,
+        "ratio_p10": 0.141,
+        "ratio_p50": 0.779,
+        "ratio_p90": 2.389
+      }
+    ],
+    "groups_test": [
+      {
+        "group": 0,
+        "n_test": 110,
+        "test_ratio_p50": 0.647
+      },
+      {
+        "group": 1,
+        "n_test": 50,
+        "test_ratio_p50": 0.692
+      },
+      {
+        "group": 2,
+        "n_test": 59,
+        "test_ratio_p50": 0.952
+      }
+    ],
+    "spearman_test": 0.197,
+    "auc_overrun_25pct_test": 0.62,
+    "human_estimate": {
+      "n": 219,
+      "mae": 56.92,
+      "mdape": 62.8,
+      "pred_25": 23.7,
+      "coverage_p10_p90": null
+    },
+    "calibrated_size_only": {
+      "n": 219,
+      "mae": 52.11,
+      "mdape": 59.7,
+      "pred_25": 16.4,
+      "coverage_p10_p90": 76.3
+    },
+    "calibrated_with_jev": {
+      "n": 219,
+      "mae": 52.65,
+      "mdape": 59.9,
+      "pred_25": 19.6,
+      "coverage_p10_p90": 76.7
+    },
+    "mae_gain_vs_size_only_h": -0.54,
+    "mae_gain_95ci_h": [
+      -1.91,
+      0.73
+    ]
+  }
+}

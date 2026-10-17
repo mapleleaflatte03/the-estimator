@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from . import empirical
+from . import empirical, risk
 from .evaluation.benchmark import PredictionRecord, evaluate_predictions
 from .extractor import MODEL_TAG, clause_texts, extract_scope_and_wbs
 from .jev import JevReader
@@ -24,8 +25,13 @@ from .schemas import (
     EvaluationRun,
     FeedbackEvent,
     Project,
+    RequirementObservation,
 )
 from .storage import StorageRepository
+
+
+class AIReaderUnavailable(RuntimeError):
+    """The AI reader could not read every clause; estimates are not produced without it."""
 
 MULTIPLIER_BOUNDS = (0.5, 2.0)
 # An AI suggestion kind is muted once users answered it at least this often and rarely accept it.
@@ -71,13 +77,37 @@ class ParallaxService:
         self.reader = reader if reader is not None else JevReader(cache_path=cache)
 
     def _readings(self, project: Project) -> dict:
-        if not self.reader.configured and not self.reader.cache:
-            return {}
+        texts = list(dict.fromkeys(t.strip() for t in clause_texts(project.brief_text, project.documents) if t.strip()))
         try:
-            return self.reader.read(clause_texts(project.brief_text, project.documents))
-        except Exception as exc:  # never let the optional AI reader break estimation
-            logger.warning("AI reader failed, using rules only: %s", exc)
-            return {}
+            readings = self.reader.read(texts)
+        except Exception as exc:
+            logger.warning("AI reader failed: %s", exc)
+            readings = {}
+        missing = [t for t in texts if t not in readings]
+        if missing and self.jev_required:
+            status = self.reader.status()
+            if not status["configured"]:
+                reason = "chưa cấu hình khóa API Jev (JEVSTATION_API_KEY…)"
+            elif status.get("halted"):
+                reason = "bộ đọc đã tạm dừng để bảo vệ credit"
+            elif status["keys_usable"] == 0:
+                reason = "tất cả khóa Jev đã hết credit hoặc đang lỗi"
+            elif not status["available"]:
+                reason = "đã chạm giới hạn số lần gọi mỗi giờ"
+            else:
+                reason = status.get("last_error") or "Jev không trả lời"
+            raise AIReaderUnavailable(
+                f"AI Jev chưa đọc được {len(missing)}/{len(texts)} câu của mô tả ({reason}). "
+                "Dự toán cần AI đọc đủ mọi câu; hãy thử lại sau ít phút."
+            )
+        return readings
+
+    @property
+    def jev_required(self) -> bool:
+        return os.environ.get("JEV_REQUIRED", "1") != "0"
+
+    def adjustments(self) -> risk.Adjustments:
+        return risk.learn(self.repo.list_requirement_observations())
 
     @property
     def calibration_multiplier(self) -> float:
@@ -118,6 +148,7 @@ class ParallaxService:
             readings=self._readings(project),
             manual_edits=manual_edits,
             ai_suppressed=self.suppressed_ai_kinds(),
+            adjustments=self.adjustments(),
         )
 
     def feedback_summary(self) -> dict:
@@ -228,6 +259,7 @@ class ParallaxService:
         actual_hours: float,
         item_actuals: Optional[dict[str, float]] = None,
         deviation_reasons: Optional[list[str]] = None,
+        requirement_actuals: Optional[dict[str, float]] = None,
     ) -> dict:
         project = self.repo.get_project(project_id)
         if not project:
@@ -239,6 +271,24 @@ class ParallaxService:
         # Accuracy is judged against the estimate that was actually committed
         # (the latest version at completion time), never a post-hoc rewrite.
         baseline = versions[-1]
+        requirement_actuals = {k: float(v) for k, v in (requirement_actuals or {}).items() if v and float(v) > 0}
+        unknown = set(requirement_actuals) - {r.req_id for r in baseline.requirements}
+        if unknown:
+            raise ValueError(f"Unknown requirements: {', '.join(sorted(unknown)[:5])}")
+        req_obs = [
+            RequirementObservation(
+                project_id=project_id, version_id=baseline.version_id, req_id=req.req_id,
+                components=list(req.components), risk_group=req.risk_group,
+                overrun_probability=(req.ai_reading or {}).get("overrun"),
+                estimated_hours=req.estimated_hours_raw, actual_hours=requirement_actuals[req.req_id],
+            )
+            for req in baseline.requirements
+            if req.req_id in requirement_actuals and req.in_scope and req.estimated_hours_raw
+        ]
+        learning_before = self.adjustments()
+        if req_obs:
+            self.repo.set_requirement_observations(project_id, req_obs)
+        learning_after = self.adjustments()
         actual = ActualWork(
             actual_id=f"ACT-{uuid.uuid4().hex[:8].upper()}",
             project_id=project_id,
@@ -304,6 +354,11 @@ class ParallaxService:
                 "n_observations": len(observations),
                 "prior_strength": state.prior_strength,
                 "applies_to": "new estimates and re-estimates; existing versions stay unchanged",
+            },
+            "learning": {
+                "requirements_recorded": len(req_obs),
+                "before": learning_before.as_dict(),
+                "after": learning_after.as_dict(),
             },
         }
 
@@ -402,8 +457,10 @@ class ParallaxService:
                 "n_observations": len(self.repo.get_calibration().observations),
             },
             "reference_class_projects": len(self.repo.list_historical_cases()),
-            "ai_reader": self.reader.status(),
+            "ai_reader": {**self.reader.status(), "required": self.jev_required},
             "ai_feedback": self.feedback_summary(),
+            "learning": {**self.adjustments().as_dict(),
+                         "requirement_observations": len(self.repo.list_requirement_observations())},
             "last_benchmark": (
                 {"run_id": last.run_id, "created_at": last.created_at, "metrics": last.metrics}
                 if last
