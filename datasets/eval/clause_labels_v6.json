@@ -1,0 +1,19 @@
+{
+  "description": "Round 6 held-out clause set: every clause of GOLDEN-07 (investor onboarding for a private equity fund, the challenge host's domain), English. Written and labelled on 2026-10-17 BEFORE any reader (rules or Jev) was run on them; committed before the run. First held-out check of the round-5 rule fixes.",
+  "version": 6,
+  "clauses": [
+    {"text": "Limited partners complete subscription documents online and sign them electronically.", "kinds": ["data_management"], "tentative": false},
+    {"text": "Each subscription goes through draft, submitted, under review, approved and countersigned states.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "The compliance team reviews KYC/AML checks before a subscription can be approved.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Verify investor identity through our KYC provider's API.", "kinds": ["external_integration"], "tentative": false},
+    {"text": "Fund admins see every investor; investors see only their own documents.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Keep a full audit trail of who changed any investor's commitment amount.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Capital call notices are emailed to all investors with their pro-rata amounts.", "kinds": ["notification"], "tentative": false},
+    {"text": "A dashboard shows total commitments, called capital and outstanding amounts per fund.", "kinds": ["reporting"], "tentative": false},
+    {"text": "Import the existing investor list from the spreadsheet our fund administrator keeps (about 600 investors).", "kinds": ["data_import"], "tentative": false},
+    {"text": "We might also want a side-letter tracker later, depending on how the first close goes.", "kinds": ["data_management"], "tentative": true},
+    {"text": "Export the investor register to Excel for the auditors.", "kinds": ["file_export"], "tentative": false},
+    {"text": "Not decided yet whether investors need two-factor login.", "kinds": ["auth"], "tentative": true},
+    {"text": "Possibly an AI assistant that pre-fills subscription forms from uploaded passports, if the budget allows.", "kinds": ["ai_assistant"], "tentative": true}
+  ]
+}

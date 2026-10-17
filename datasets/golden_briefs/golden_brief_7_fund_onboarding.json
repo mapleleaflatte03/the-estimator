@@ -1,0 +1,18 @@
+{
+  "brief_id": "GOLDEN-07",
+  "title": "Investor onboarding portal for a private equity fund",
+  "project_type": "custom_software",
+  "brief_text": "Project: investor onboarding portal for a private equity fund.\n- Limited partners complete subscription documents online and sign them electronically.\n- Each subscription goes through draft, submitted, under review, approved and countersigned states.\n- The compliance team reviews KYC/AML checks before a subscription can be approved.\n- Verify investor identity through our KYC provider's API.\n- Fund admins see every investor; investors see only their own documents.\n- Keep a full audit trail of who changed any investor's commitment amount.\n- Capital call notices are emailed to all investors with their pro-rata amounts.\n- A dashboard shows total commitments, called capital and outstanding amounts per fund.\n- Import the existing investor list from the spreadsheet our fund administrator keeps (about 600 investors).\n- We might also want a side-letter tracker later, depending on how the first close goes.\n- Export the investor register to Excel for the auditors.\n- Not decided yet whether investors need two-factor login.\n- Possibly an AI assistant that pre-fills subscription forms from uploaded passports, if the budget allows.",
+  "expected_confirmed_quotes": [
+    "draft, submitted, under review, approved and countersigned",
+    "KYC provider's API",
+    "audit trail",
+    "about 600 investors"
+  ],
+  "expected_ambiguities": [
+    "side-letter tracker later",
+    "two-factor login undecided",
+    "AI pre-fill if budget allows"
+  ],
+  "min_wbs_items": 12
+}
