@@ -91,7 +91,8 @@ class FakeReader(JevReader):
                 answers[out_key] = {"type": "choice", "choice": "reporting", "confidence": 0.9,
                                     "probabilities": {"reporting": 0.9}}
             else:
-                answers[out_key] = {"type": "noul", "noul": 0.8 if qkey.endswith("overrun") else 0.1}
+                p = 0.8 if qkey.endswith("overrun") else 0.9 if "_needs_" in qkey else 0.1  # verification: confirm
+                answers[out_key] = {"type": "noul", "noul": p}
         return {"model": "jev-test", "answers": answers, "credits": {"charged": 1, "remaining": key.credits}}
 
 
@@ -174,6 +175,24 @@ def test_key_pool_discovers_numbered_keys(monkeypatch):
     names = [k.name for k in jev.discover_keys()]
     assert names == ["JEVSTATION_API_KEY", "JEVSTATION_API_KEY_2", "JEVSTATION_API_KEY_10"]
     assert all("secret" not in str(k.public()) for k in jev.discover_keys())
+
+
+def test_ai_verification_drops_rule_overmatch_and_offers_it_back():
+    clause = "Customers get an email at every status change."
+    r = reading("notification")
+    base = extract_scope_and_wbs("p", f"- {clause}", readings={clause: r})
+    assert "workflow" in feature_reqs(base)[0].components  # "status" keyword
+    r.extra["needs_workflow_approval"] = 0.1
+    v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: r})
+    req = feature_reqs(v)[0]
+    assert "workflow" not in req.components and "notification" in req.components
+    assert req.ai_reading["dropped_components"] == ["workflow"]
+    q = next(q for q in v.clarifications if q.question_id.endswith("-NOT-WORKFLOW"))
+    assert q.current_assumption is False and q.hours_if_true > 0
+    assert v.forecast.p50_hours < base.forecast.p50_hours
+    back = extract_scope_and_wbs("p", f"- {clause}", readings={clause: r}, clarification_answers={q.question_id: True})
+    assert "workflow" in feature_reqs(back)[0].components
+    assert back.forecast.p50_hours == pytest.approx(base.forecast.p50_hours, rel=0.02)
 
 
 def test_visitor_brings_own_key_through_api(monkeypatch):

@@ -343,13 +343,53 @@ done through TypeSafe directly, at a few cents in total.
 
 The interim result (section 16) and this final one agree, and the decision in section 17 stands.
 
+### 20. Jev verifies the kinds the rules propose (dev on rounds 1–6)
+
+Round 6 showed that the keyword rules add kinds a clause does not ask for: kind precision was 50%. Each extra kind
+adds hours.
+
+The fix: for every rule-proposed kind other than Jev's own, Jev now answers a yes/no question, "does the requirement
+itself ask for <kind>?". Kinds below a threshold are dropped from the estimate and offered back as a client question,
+so nothing disappears silently.
+
+On rounds 1–6 (139 clauses, already used, so this is **dev**; `scripts/verify_kinds_dev.py`, cost $0.0014):
+
+| Setting | Kind precision | Kind recall | Primary kind |
+| --- | --- | --- | --- |
+| no verification | 81.0% | 89.5% | 134/139 |
+| verify ≥ 0.4 | 88.0% | 90.1% | 135/139 |
+| verify ≥ 0.6 | 92.6% | 87.7% | 135/139 |
+
+0.4 was fixed (`VERIFY_MIN`) because precision improves without losing recall. It was committed together with the
+round-7 labels (`9779516`) before round 7 ran.
+
+### 21. Round 7: verification on new clauses (held-out)
+
+24 new clauses from two new sample briefs: an English-language centre written in Vietnamese, including one clause
+without diacritics, and a construction site-inspection app in English. Labels were committed in `9779516` before any
+run.
+
+| Reader | Primary kind | Kind precision | Kind recall | Tentative caught | False alarms |
+| --- | --- | --- | --- | --- | --- |
+| Rules (incl. round-5 fixes) | 15/24 | 72.0% | 56.2% | 4/4 | 0 |
+| Jev alone | 19/24 | 100% | 71.9% | 4/4 | 0 |
+| Shipped before (rules + Jev) | 16/24 (+3 as questions) | 73.1% | 59.4% | 4/4 | 0 |
+| **Shipped now (+ verification)** | **17/24** (+2 as questions) | **83.3%** | **62.5%** | **4/4** | 0 |
+
+- **Verification holds on held-out data:** kind precision rose by 10 points and nothing was lost.
+- **The round-5 hedge fixes generalised this time:** the rules caught 4/4 tentative clauses.
+- **Jev alone found more primary kinds than the shipped reader** in rounds 6 and 7, which are English-heavy. Across
+  all rounds the shipped reader is still ahead (rounds 1–2 favour rules). A language-aware policy is a candidate for
+  a future pre-registered round.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
 | --- | --- |
 | Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, SA 48.6 → 54.0%, Wilcoxon p = 3.2×10⁻⁶, P10–P90 coverage 82.0%. Production replay (1,391 tasks): SA 56.3 → 61.1%, p = 0.006, coverage 85.0% |
-| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4, 5 and 6: **23/24** tentative clauses caught vs **8/24** with rules alone, **0** false alarms |
-| The shipped reader finds the main kind of work | Rounds 1, 2, 4, 5 and 6: **95/112** vs 90/112 with rules alone |
+| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4, 5, 6 and 7: **27/28** tentative clauses caught vs **12/28** with rules alone, **0** false alarms |
+| The shipped reader finds the main kind of work | Rounds 1, 2, 4, 5, 6 and 7: **112/136** vs 105/136 with rules alone |
+| AI verification removes kinds the client did not ask for | Round 7: kind precision 73.1% → **83.3%**, recall 59.4% → 62.5% |
 | Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, all 2,032 issues): same direction, weak (AUC 0.535). No MAE gain anywhere, so it is a review flag, not extra hours |
 | Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
 
@@ -409,4 +449,5 @@ The interim result (section 16) and this final one agree, and the decision in se
 | 39 | 2026-10-17 14:56 | `round6_rules_before` | `f0608239a4` | — | rules: kind 10/13, tentative 2/3, false 0 | Round 6 (private-equity onboarding, 13 new clauses, labels committed in 60fbfe8 before the run). Rules incl. round-5 fixes: first held-out check of those fixes. |
 | 40 | 2026-10-17 16:54 | `itemlet_replication_final` | `` | jev-1.13.0 | read 2032/2032: high/low median ratio x1.128, Spearman 0.054, AUC 0.535<br>MAE raw 18.35 h → with SiP factors 19.54 h (gain CI [-1.45, -0.95]) | Independent replication on Itemlet (37 open-source Jira projects), SiP thresholds and factors unchanged, protocol committed before the run. Read 2032/2032 (random prefix). |
 | 41 | 2026-10-17 16:55 | `round6_heldout` | `f0608239a4` | jev-1.13.0 | rules: kind 10/13, tentative 2/3, false 0<br>jev: kind 13/13, tentative 3/3, false 0<br>shipped: kind 12/13, tentative 3/3, false 0 | Round 6 held-out: private-equity investor onboarding (challenge host's domain), 13 new clauses, labels committed in 60fbfe8 before any reader ran. Jev jev-1.13.0 via TypeSafe direct (same pinned model). (scored 13/13, API calls 2, credits left None) |
+| 42 | 2026-10-17 17:01 | `round7_heldout` | `b226aede6c` | jev-1.13.0 | rules: kind 15/24, tentative 4/4, false 0<br>jev: kind 19/24, tentative 4/4, false 0<br>shipped: kind 16/24, tentative 4/4, false 0 | Round 7 held-out: 24 new clauses (VI + EN), labels committed in 9779516 before any reader ran. First held-out test of AI verification of rule kinds (VERIFY_MIN 0.4 fixed on rounds 1-6). Jev jev-1.13.0 via TypeSafe. (scored 24/24, API calls 4, credits left None) |
 <!-- AUTO:journal:end -->

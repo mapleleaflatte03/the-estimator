@@ -23,6 +23,7 @@ export interface RequirementNode {
     suggested_component?: string | null;
     flagged_tentative: boolean;
     overrun?: number | null;
+    dropped_components?: string[];
   } | null;
   estimated_hours_raw?: number | null;
   risk_group?: number | null;

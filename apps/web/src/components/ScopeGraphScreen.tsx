@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pencil, Plus, Sparkles, Trash2, Undo2 } from 'lucide-react';
 import type { EstimateVersion, ManualEdits, RequirementNode, WorkItem } from '../types';
-import { KIND_LABELS, ROLE_COLORS, ROLE_LABELS, card, hours, typicalHours } from '../ui';
+import { COMPONENT_LABELS, KIND_LABELS, ROLE_COLORS, ROLE_LABELS, card, hours, typicalHours } from '../ui';
 
 interface ScopeGraphScreenProps {
   version: EstimateVersion;
@@ -18,6 +18,8 @@ const aiNotes = (req: RequirementNode): string[] => {
   if (a.flagged_tentative) notes.push(`AI: có vẻ khách chưa chốt (${Math.round(a.tentative * 100)}%)`);
   if (a.added_component) notes.push(`AI nhận ra: ${KIND_LABELS[a.kind] ?? a.kind}`);
   if (a.suggested_component) notes.push(`AI gợi ý thêm: ${KIND_LABELS[a.kind] ?? a.kind} (xem Câu hỏi)`);
+  if (a.dropped_components?.length)
+    notes.push(`AI bỏ phần từ khóa gợi ý nhưng câu không yêu cầu: ${a.dropped_components.map((c) => COMPONENT_LABELS[c] ?? c).join(', ')} (xem Câu hỏi)`);
   const f = req.adjustment_factor ?? 1;
   const learned = Math.abs(f - 1) >= 0.01 ? ` · ${f > 1 ? '+' : '−'}${Math.abs(Math.round((f - 1) * 100))}% giờ, học từ giờ thực tế của nhóm` : '';
   if (req.risk_group === 2 && a.overrun != null)

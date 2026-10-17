@@ -22,8 +22,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
 from parallax.extractor import _HEDGES, _match_components, fold  # noqa: E402
+from parallax.extractor import proposed_kinds  # noqa: E402
 from parallax.jev import (  # noqa: E402
-    KIND_CONFIDENCE_MIN, KIND_Q, KIND_TO_COMPONENT, SHIPPED_CACHE, TENTATIVE_MIN, TENTATIVE_Q, JevReader, load_dotenv,
+    KIND_CONFIDENCE_MIN, KIND_Q, KIND_TO_COMPONENT, SHIPPED_CACHE, TENTATIVE_MIN, TENTATIVE_Q, VERIFY_MIN, JevReader,
+    load_dotenv,
 )
 
 COMPONENT_TO_KIND = {v: k for k, v in KIND_TO_COMPONENT.items() if v}
@@ -55,7 +57,20 @@ def summarise(details, rows_by_reader):
     rows, suggested = shipped_rows(details)
     shipped = score("shipped", rows)
     shipped["primary_kind_suggested_as_question"] = suggested
-    return summary + [shipped]
+    out = summary + [shipped]
+    if any("verify" in d for d in details):
+        vrows, vsuggested = shipped_rows([{**d, "rules": d["rules_verified"]} for d in details])
+        verified = score("shipped+verify", vrows)
+        verified["primary_kind_suggested_as_question"] = vsuggested
+        out.append(verified)
+    return out
+
+
+def verified_rules(rules: set[str], d: dict) -> list[str]:
+    """Rule kinds Jev confirmed (VERIFY_MIN); mirrors the extractor, including its keep-all fallback."""
+    own = d["jev"] if d["jev"] != "other" and d["jev_confidence"] >= KIND_CONFIDENCE_MIN else None
+    kept = [k for k in rules if k == own or d["verify"].get(k, 1.0) >= VERIFY_MIN]
+    return sorted(kept if kept or own else rules)
 
 
 def score(name, rows):
@@ -93,6 +108,7 @@ def main() -> int:
     ap.add_argument("--tag", default="latest")
     ap.add_argument("--note", default="")
     ap.add_argument("--rules-only", action="store_true")
+    ap.add_argument("--verify", action="store_true", help="also score the shipped reader with AI verification of rule kinds")
     ap.add_argument("--allow-partial", action="store_true",
                     help="score only the clauses Jev could read (e.g. credits ran out) and record how many were unread")
     args = ap.parse_args()
@@ -116,6 +132,8 @@ def main() -> int:
     if not labels:
         print("!! Jev read nothing:", reader.status(), file=sys.stderr)
         return 1
+    if args.verify:
+        reader.verify(readings, {t: proposed_kinds(t) for t in readings})
     rows = {"rules": [], "jev": [], "hybrid": []}
     details = []
     for c in labels:
@@ -132,6 +150,9 @@ def main() -> int:
         details.append({"text": c["text"], "expected": c["kinds"], "tentative": c["tentative"],
                         "rules": sorted(r_kinds), "rules_tentative": r_tent,
                         "jev": j.kind, "jev_confidence": j.kind_confidence, "jev_tentative": j.tentative})
+        if args.verify:
+            details[-1]["verify"] = {k[len("needs_"):]: v for k, v in j.extra.items() if k.startswith("needs_")}
+            details[-1]["rules_verified"] = verified_rules(r_kinds, details[-1])
     results = {
         "labels": args.labels,
         "tag": args.tag,

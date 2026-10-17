@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
 from .estimation.engine import synthesize_forecast
-from .jev import KIND_CONFIDENCE_MIN, TENTATIVE_MIN, ClauseReading
+from .jev import COMPONENT_TO_KIND, KIND_CONFIDENCE_MIN, TENTATIVE_MIN, VERIFY_MIN, ClauseReading
 from .provenance import validate_evidence_against_sources
 from .risk import GROUP_LABELS, Adjustments
 from .schemas import (
@@ -158,6 +158,11 @@ def _match_components(text: str) -> list[Component]:
     return matched
 
 
+def proposed_kinds(text: str) -> set[str]:
+    """Reader kinds of the components the keyword rules match (what the AI is asked to verify)."""
+    return {COMPONENT_TO_KIND[c.key] for c in _match_components(text) if c.key in COMPONENT_TO_KIND}
+
+
 def clause_texts(brief_text: str, source_docs: Optional[dict[str, str]] = None) -> list[str]:
     """Clause texts the extractor will read (used to fetch AI readings up front)."""
     clauses = segment("brief.txt", brief_text)
@@ -291,6 +296,7 @@ _TEXT = {
         "q_ai_kind": "Phần “{title}” có cần thêm {kind} không?",
         "q_ai_kind_why": "AI nhận định câu này có liên quan tới {kind} (chắc chắn {p}%), nhưng dự toán hiện chưa tính phần đó.",
         "c_hedge_ai": "Phần “{title}” có vẻ chưa chốt: {hedge}. Hãy trả lời câu hỏi để chốt.",
+        "q_ai_drop_why": "Từ khóa gợi ý có {kind}, nhưng AI đọc câu này và cho rằng khách không yêu cầu phần đó ({p}% chắc chắn), nên dự toán chưa tính.",
         "q_platform": "Có cần làm riêng ứng dụng cho cả iPhone và Android không?",
         "q_platform_why": "Mô tả có nhắc điện thoại nhưng chưa nói loại máy. Hiện đang tính một ứng dụng dùng chung.",
         "q_dataq": "Dữ liệu cũ có cần làm sạch, sửa lỗi trước khi đưa vào không?",
@@ -319,6 +325,7 @@ _TEXT = {
         "q_ai_kind": "Does “{title}” also need {kind}?",
         "q_ai_kind_why": "AI reads this clause as involving {kind} ({p}% confident), which the estimate does not include yet.",
         "c_hedge_ai": "“{title}” looks uncommitted: {hedge}. Answer the question to settle it.",
+        "q_ai_drop_why": "Keywords suggested {kind}, but the AI reads this clause as not asking for it ({p}% sure), so it is not in the estimate.",
         "q_platform": "Are separate native apps required for both iOS and Android (instead of one cross-platform/PWA build)?",
         "q_platform_why": "The brief mentions mobile use but no platform. The estimate assumes a single cross-platform/PWA codebase.",
         "q_dataq": "Does imported/migrated data need cleansing, normalisation and de-duplication first?",
@@ -629,6 +636,18 @@ def extract_scope_and_wbs(
         reading = readings.get(clause.text.strip()) if readings else None
         ai_component = None  # AI kind used directly (rules found nothing)
         ai_suggest = None  # AI kind the rules missed, offered as a question instead of silently added
+        ai_dropped: list[Component] = []  # rule components the AI says the clause does not ask for
+        if reading and matched:
+            own = reading.kind if reading.kind_confidence >= KIND_CONFIDENCE_MIN else None
+            kept = []
+            for comp in matched:
+                kind = COMPONENT_TO_KIND.get(comp.key)
+                p = reading.extra.get(f"needs_{kind}") if kind and kind != own else None
+                (ai_dropped if p is not None and p < VERIFY_MIN else kept).append(comp)
+            if kept or (reading.component and own):
+                matched = kept
+            else:
+                ai_dropped = []  # nothing better to put in its place: keep what the rules found
         if reading and reading.component and reading.kind_confidence >= KIND_CONFIDENCE_MIN:
             candidate = COMPONENT_BY_KEY[reading.component]
             if not matched:
@@ -652,7 +671,8 @@ def extract_scope_and_wbs(
         if hedge is None and reading and reading.tentative >= TENTATIVE_MIN:
             ai_tentative = reading.tentative
             hedge = L["ai_hedge"].format(p=round(reading.tentative * 100))
-        components = matched or [GENERIC]
+        restored = [c for c in ai_dropped if answers.get(f"CLAR-{req_id}-NOT-{c.key.upper()}") is True]
+        components = [*matched, *restored] or [GENERIC]
         if any(c.key in ("performance", "security") for c in components):
             has_nfr = True
         evidence = [EvidenceSpan(source_doc=clause.doc, quote=clause.text, location=f"clause {clause.index + 1}")]
@@ -676,6 +696,7 @@ def extract_scope_and_wbs(
                     "suggested_component": ai_suggest.key if ai_suggest else None,
                     "flagged_tentative": ai_tentative is not None,
                     "overrun": reading.extra.get("overrun"),
+                    "dropped_components": [c.key for c in ai_dropped],
                 }
                 if reading else None
             ),
@@ -739,6 +760,26 @@ def extract_scope_and_wbs(
                 ))
                 if accepted:
                     draft.items.extend(suggested_items)
+
+        for comp in ai_dropped:
+            qid = f"CLAR-{req_id}-NOT-{comp.key.upper()}"
+            if comp in restored:
+                affected = [i for i in draft.items if i.component == comp.key]
+            else:
+                affected = _build_items(req_id, title, [comp], systems, folded, factor, breadth, shared_items,
+                                        register=False)
+            if not affected:
+                continue
+            kind_label = VI_COMPONENTS.get(comp.key, comp.label) if lang == "vi" else comp.label
+            p = reading.extra.get(f"needs_{COMPONENT_TO_KIND[comp.key]}", 0.0)
+            clarifications.append(ClarificationQuestion(
+                question_id=qid, assumption_id=f"ASSUMP-{req_id}-NOT-{comp.key.upper()}", evidence=evidence,
+                question_text=L["q_ai_kind"].format(title=title, kind=kind_label),
+                context_reason=L["q_ai_drop_why"].format(kind=kind_label, p=round((1 - p) * 100)),
+                hours_if_false=0.0, hours_if_true=round(sum(_pert_mean(i) for i in affected), 1),
+                affected_item_ids=[i.item_id for i in affected],
+                current_assumption=False, answer=answers.get(qid),
+            ))
 
         # --- clarification questions grounded in this clause ---------------
         if hedge:

@@ -1,0 +1,521 @@
+{
+  "labels": "datasets/eval/clause_labels_v7.json",
+  "tag": "round7_heldout",
+  "rules_version": "b226aede6c",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 24,
+      "primary_kind_found": 15,
+      "kind_recall_pct": 56.2,
+      "kind_precision_pct": 72.0,
+      "tentative_correct": 24,
+      "tentative_caught": "4/4",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 24,
+      "primary_kind_found": 19,
+      "kind_recall_pct": 71.9,
+      "kind_precision_pct": 100.0,
+      "tentative_correct": 24,
+      "tentative_caught": "4/4",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 24,
+      "primary_kind_found": 19,
+      "kind_recall_pct": 71.9,
+      "kind_precision_pct": 76.7,
+      "tentative_correct": 24,
+      "tentative_caught": "4/4",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 24,
+      "primary_kind_found": 16,
+      "kind_recall_pct": 59.4,
+      "kind_precision_pct": 73.1,
+      "tentative_correct": 24,
+      "tentative_caught": "4/4",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 3
+    },
+    {
+      "reader": "shipped+verify",
+      "n_clauses": 24,
+      "primary_kind_found": 17,
+      "kind_recall_pct": 62.5,
+      "kind_precision_pct": 83.3,
+      "tentative_correct": 24,
+      "tentative_caught": "4/4",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 2
+    }
+  ],
+  "coverage": {
+    "clauses_labelled": 24,
+    "clauses_scored": 24,
+    "unread": [],
+    "cached_before_run": 0,
+    "fresh_api_calls": 4,
+    "credits_remaining_after": null
+  },
+  "details": [
+    {
+      "text": "Học viên đăng ký khóa học và chọn lớp theo lịch còn chỗ.",
+      "expected": [
+        "scheduling",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "scheduling"
+      ],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.95,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": [
+        "scheduling"
+      ]
+    },
+    {
+      "text": "Giáo viên điểm danh trên điện thoại ngay trong giờ học.",
+      "expected": [
+        "data_management",
+        "mobile_app"
+      ],
+      "tentative": false,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": false,
+      "jev": "mobile_app",
+      "jev_confidence": 0.65,
+      "jev_tentative": 0.06,
+      "verify": {},
+      "rules_verified": [
+        "mobile_app"
+      ]
+    },
+    {
+      "text": "Phụ huynh nhận tin nhắn Zalo khi con vắng mặt.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06,
+      "verify": {},
+      "rules_verified": [
+        "notification"
+      ]
+    },
+    {
+      "text": "Thu học phí qua chuyển khoản và tự đối soát với sao kê ngân hàng.",
+      "expected": [
+        "payment",
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 0.89,
+      "jev_tentative": 0.06,
+      "verify": {
+        "reporting": 0.21
+      },
+      "rules_verified": []
+    },
+    {
+      "text": "Bao cao doanh thu va so hoc vien theo tung co so hang thang.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1,
+      "verify": {},
+      "rules_verified": [
+        "reporting"
+      ]
+    },
+    {
+      "text": "Quản lý chi nhánh chỉ xem được lớp của cơ sở mình.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.08,
+      "verify": {
+        "data_management": 0.56
+      },
+      "rules_verified": [
+        "data_management"
+      ]
+    },
+    {
+      "text": "Lưu lịch sử thay đổi điểm số, ai sửa và sửa lúc nào.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06,
+      "verify": {},
+      "rules_verified": [
+        "permissions_audit"
+      ]
+    },
+    {
+      "text": "Nhập danh sách học viên cũ từ file Excel.",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import",
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09,
+      "verify": {
+        "data_management": 0.81
+      },
+      "rules_verified": [
+        "data_import",
+        "data_management"
+      ]
+    },
+    {
+      "text": "Có thể sau này làm thêm bài kiểm tra trình độ online tự chấm điểm.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": true,
+      "rules": [],
+      "rules_tentative": true,
+      "jev": "other",
+      "jev_confidence": 0.51,
+      "jev_tentative": 0.95,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Tìm học viên theo tên, số điện thoại hoặc mã lớp.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "search",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": [
+        "search"
+      ]
+    },
+    {
+      "text": "Chưa chốt có cần app riêng cho học viên không.",
+      "expected": [
+        "mobile_app"
+      ],
+      "tentative": true,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": true,
+      "jev": "mobile_app",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.87,
+      "verify": {},
+      "rules_verified": [
+        "mobile_app"
+      ]
+    },
+    {
+      "text": "Giáo viên xuất bảng điểm ra file PDF để gửi phụ huynh.",
+      "expected": [
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "file_export"
+      ],
+      "rules_tentative": false,
+      "jev": "file_export",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.16,
+      "verify": {},
+      "rules_verified": [
+        "file_export"
+      ]
+    },
+    {
+      "text": "Inspectors fill in safety checklists on a tablet at the site, even without signal.",
+      "expected": [
+        "data_management",
+        "offline_sync",
+        "mobile_app"
+      ],
+      "tentative": false,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": false,
+      "jev": "offline_sync",
+      "jev_confidence": 0.89,
+      "jev_tentative": 0.11,
+      "verify": {
+        "mobile_app": 0.88
+      },
+      "rules_verified": [
+        "mobile_app"
+      ]
+    },
+    {
+      "text": "Each checklist item can have photos with GPS coordinates attached.",
+      "expected": [
+        "data_management",
+        "maps_location"
+      ],
+      "tentative": false,
+      "rules": [
+        "maps_location"
+      ],
+      "rules_tentative": false,
+      "jev": "maps_location",
+      "jev_confidence": 0.7,
+      "jev_tentative": 0.13,
+      "verify": {},
+      "rules_verified": [
+        "maps_location"
+      ]
+    },
+    {
+      "text": "Site managers approve or send back each inspection report.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "reporting",
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "workflow_approval",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1,
+      "verify": {
+        "reporting": 0.27,
+        "data_management": 0.69
+      },
+      "rules_verified": [
+        "data_management",
+        "workflow_approval"
+      ]
+    },
+    {
+      "text": "Open defects are assigned to a subcontractor with a due date.",
+      "expected": [
+        "workflow_approval",
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 0.41,
+      "jev_tentative": 0.1,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Subcontractors get an SMS when a defect is assigned to them.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09,
+      "verify": {},
+      "rules_verified": [
+        "notification"
+      ]
+    },
+    {
+      "text": "A weekly PDF report per project is generated for the client.",
+      "expected": [
+        "reporting",
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 0.85,
+      "jev_tentative": 0.11,
+      "verify": {},
+      "rules_verified": [
+        "reporting"
+      ]
+    },
+    {
+      "text": "Sync projects and subcontractors from our ERP every night.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.13,
+      "verify": {},
+      "rules_verified": [
+        "external_integration"
+      ]
+    },
+    {
+      "text": "Head office sees all projects; site managers only their own sites.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1,
+      "verify": {
+        "data_management": 0.5
+      },
+      "rules_verified": [
+        "data_management"
+      ]
+    },
+    {
+      "text": "We might add a client portal later so owners can view the reports themselves.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": true,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": true,
+      "jev": "reporting",
+      "jev_confidence": 0.75,
+      "jev_tentative": 0.98,
+      "verify": {},
+      "rules_verified": [
+        "reporting"
+      ]
+    },
+    {
+      "text": "Search past inspections by site, date or inspector.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "search",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.11,
+      "verify": {},
+      "rules_verified": [
+        "search"
+      ]
+    },
+    {
+      "text": "The system must handle 500 inspectors submitting at the same time at month end.",
+      "expected": [
+        "performance"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "performance",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.04,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "If budget allows, use AI to detect missing safety gear in the photos.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": true,
+      "rules": [
+        "ai_assistant",
+        "data_management"
+      ],
+      "rules_tentative": true,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.98,
+      "verify": {
+        "data_management": 0.16
+      },
+      "rules_verified": [
+        "ai_assistant"
+      ]
+    }
+  ]
+}

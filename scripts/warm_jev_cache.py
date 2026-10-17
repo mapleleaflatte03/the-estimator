@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
-from parallax.extractor import clause_texts  # noqa: E402
+from parallax.extractor import clause_texts, proposed_kinds  # noqa: E402
 from parallax.jev import QUESTIONS_PER_CALL, SHIPPED_ANSWERS, JevReader, load_dotenv  # noqa: E402
 
 
@@ -32,9 +32,10 @@ def main() -> int:
     todo = reader.missing(texts, reader.questions)
     calls = -(-len(todo) // QUESTIONS_PER_CALL)
     print(f"{len(texts)} clauses, {len(todo)} unanswered questions -> {calls} call(s) / credit(s)")
-    if args.dry_run or not todo:
+    if args.dry_run:
         return 0
     reader.ask(texts, reader.questions)
+    reader.verify(reader.read(texts), {t: proposed_kinds(t) for t in texts})  # same checks the app makes
     left = reader.missing(texts, reader.questions)
     print(f"answered {len(todo) - len(left)}/{len(todo)}; credits left {reader.credits_remaining}; "
           f"charged {reader.credits_charged}")

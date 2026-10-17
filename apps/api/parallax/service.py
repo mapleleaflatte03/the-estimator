@@ -15,7 +15,7 @@ from typing import Optional
 
 from . import empirical, risk
 from .evaluation.benchmark import PredictionRecord, evaluate_predictions
-from .extractor import MODEL_TAG, clause_texts, extract_scope_and_wbs
+from .extractor import MODEL_TAG, clause_texts, extract_scope_and_wbs, proposed_kinds
 from .jev import JevReader
 from .schemas import (
     ActualWork,
@@ -84,6 +84,10 @@ class ParallaxService:
         except Exception as exc:
             logger.warning("AI reader failed: %s", exc)
             readings = {}
+        try:
+            reader.verify(readings, {t: proposed_kinds(t) for t in readings})
+        except Exception as exc:  # verification only removes rule over-matches; never block on it
+            logger.warning("AI verification failed: %s", exc)
         missing = [t for t in texts if t not in readings]
         if missing and self.jev_required:
             status = reader.status()
