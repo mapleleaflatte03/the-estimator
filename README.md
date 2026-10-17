@@ -5,7 +5,7 @@ the questions to ask before quoting, and an hour range you can sign. Then enter 
 is more accurate.**
 
 Built for challenge 02 *The Estimator* of Anduin Cybernetics' *Agent in the Shell*.
-**Live:** https://the-estimator-9m6a.onrender.com · **Repo:** this one · **Full evaluation record:** [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md)
+**Live:** https://the-estimator-9m6a.onrender.com · **Repo:** this one · **Full evaluation record:** [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md) · **10-minute demo script:** [`docs/DEMO.md`](docs/DEMO.md)
 
 Every number below was measured on data that was **not** used to build or tune what it measures. Labels were committed
 before runs (the commits are in the history), and every run is in an append-only journal, including the runs where we
@@ -66,7 +66,7 @@ A 3-minute tour:
 git clone https://github.com/mapleleaflatte03/the-estimator && cd the-estimator
 python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
 cp .env.example .env          # JEVSTATION_API_KEY, JEVSTATION_API_KEY_2, ... or TYPESAFE_API_KEY
-pytest -q                     # 73 tests, no network, no credits
+pytest -q                     # 79 tests, no network, no credits
 uvicorn parallax.main:app --app-dir apps/api --port 8000
 cd apps/web && npm ci && npm run dev    # UI on :3000
 ```

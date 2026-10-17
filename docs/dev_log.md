@@ -1,5 +1,10 @@
 # PARALLAX AI — Nhật ký phát triển (Development Log)
 
+> **Lưu ý (17/10/2026):** đây là nhật ký của Day 0–1, giữ nguyên để làm lịch sử. Một số nội dung bên dưới đã được thay
+> thế: không còn "dự án lịch sử seed sẵn" (reference class chỉ gồm dự án có giờ thực tế thật), cú sốc lognormal giả định
+> đã được thay bằng phân phối thực nghiệm từ SiP, và AI Jev nay là bắt buộc. Trạng thái hiện tại và mọi kết quả đo được
+> nằm ở [`README.md`](../README.md) và [`EVALUATION_LOG.md`](EVALUATION_LOG.md).
+
 **Dự án**: PARALLAX AI — Evidence-Driven, Self-Calibrating Estimation Intelligence  
 **Thử thách**: Anduin Cybernetics · Agent in the Shell (15–19/10/2026)  
 **Tác giả**: Team Anduin / mapleleaflatte03  

@@ -312,7 +312,7 @@ _TEXT = {
         "c_nfr": "Mô tả chưa nói về tốc độ, bảo mật hay nơi đặt máy chủ. Nên bổ sung.",
         "c_breadth": "“{title}” gồm {n} việc nhỏ nên được tính nhiều giờ hơn.",
         "c_overrun": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%). Theo giờ thực tế nhóm bạn đã nhập, loại việc này vượt giờ hơn việc ít rủi ro khoảng {pct}%, đã cộng vào.",
-        "c_overrun_flag": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%). Nên để người có kinh nghiệm xem kỹ phần này. Số giờ chưa được cộng thêm, vì mức chênh mới được kiểm chứng ở một công ty; app sẽ tự học khi bạn nhập giờ thực tế theo từng yêu cầu.",
+        "c_overrun_flag": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%): nên để người có kinh nghiệm xem kỹ. Chưa cộng giờ cho tới khi giờ thực tế của nhóm bạn cho thấy cần.",
     },
     "en": {
         "foundation": "Engineering foundation & delivery",
@@ -341,7 +341,7 @@ _TEXT = {
         "c_nfr": "The brief states no non-functional requirements (performance, security, hosting). Default assumptions may be wrong.",
         "c_breadth": "“{title}” lists {n} actions/objects; template hours scaled by {factor:.2f} for breadth.",
         "c_overrun": "AI rates “{title}” as likely to take longer than it looks ({p}%). Your team's recorded actuals show such work overrunning about {pct}% more than low-risk work; added to the estimate.",
-        "c_overrun_flag": "AI rates “{title}” as likely to take longer than it looks ({p}%). Worth a senior review. Hours are not increased: the size of the effect held at one company but not at others; the app learns it once you record actual hours per requirement.",
+        "c_overrun_flag": "AI rates “{title}” as likely to take longer than it looks ({p}%): worth a senior review. No hours added until your team's actuals show it.",
     },
 }
 
@@ -628,6 +628,7 @@ def extract_scope_and_wbs(
     all_systems: list[str] = []
     perf_clause: Optional[Clause] = None
     has_nfr = False
+    asked_dropped: set[str] = set()
     seq = 0
 
     for clause in clauses:
@@ -767,6 +768,9 @@ def extract_scope_and_wbs(
 
         for comp in ai_dropped:
             qid = f"CLAR-{req_id}-NOT-{comp.key.upper()}"
+            if comp.shared and comp.key in asked_dropped:
+                continue  # one implementation serves every clause: ask the client once
+            asked_dropped.add(comp.key)
             if comp in restored:
                 affected = [i for i in draft.items if i.component == comp.key]
             else:

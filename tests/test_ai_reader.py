@@ -203,6 +203,18 @@ def test_ai_verification_drops_rule_overmatch_and_offers_it_back():
     assert back.forecast.p50_hours == pytest.approx(base.forecast.p50_hours, rel=0.02)
 
 
+def test_dropped_shared_component_is_asked_once_per_brief():
+    clauses = ["Each subscription goes through draft, submitted and approved states.",
+               "The compliance team reviews each subscription before approval."]
+    readings = {}
+    for c in clauses:
+        r = reading("workflow_approval")
+        r.extra["needs_payment"] = 0.05
+        readings[c] = r
+    v = extract_scope_and_wbs("p", "\n".join(f"- {c}" for c in clauses), readings=readings)
+    assert sum(q.question_id.endswith("-NOT-PAYMENT") for q in v.clarifications) == 1
+
+
 def test_visitor_brings_own_key_through_api(monkeypatch):
     from fastapi.testclient import TestClient
 
