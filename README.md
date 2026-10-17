@@ -172,7 +172,7 @@ TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet repli
    commercial version needs permission or another data source.
 3. The labelled clause sets were written by the developer, not taken from real client documents.
 4. JevStation is an independent reseller: brief text passes through it. Use TypeSafe directly for confidential work.
-5. The free hosting plan has no persistent disk: projects entered on the live site reset when the service restarts.
+5. The free hosting plan has no persistent disk: projects entered on the live site reset when the service restarts. The browser keeps the last brief, answers and actual hours, and can ask Jev to read that brief again.
 
 ## Roadmap
 

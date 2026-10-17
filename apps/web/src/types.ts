@@ -334,6 +334,7 @@ export interface JevKeyStatus {
 export interface ReaderStatus {
   configured: boolean;
   provider: string | null;
+  model?: string;
   available: boolean;
   credits_remaining: number | null;
   cached_clauses: number;

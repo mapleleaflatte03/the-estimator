@@ -3,6 +3,7 @@ import { PlusCircle, FolderOpen, Sun, Moon, Loader2, KeyRound } from 'lucide-rea
 import type { Project, EstimateVersion, ManualEdits } from './types';
 import {
   fetchProjects,
+  createProject,
   fetchVersions,
   estimateProject,
   answerClarification,
@@ -13,6 +14,7 @@ import {
   visitorKey,
 } from './api';
 import { JevKeyDialog } from './components/JevKeyDialog';
+import { loadSavedProject, saveProject, type SavedActuals, type SavedProject } from './recovery';
 import { IntakeScreen } from './components/IntakeScreen';
 import { ScopeGraphScreen } from './components/ScopeGraphScreen';
 import { EstimationLabScreen } from './components/EstimationLabScreen';
@@ -31,6 +33,8 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [keyDialog, setKeyDialog] = useState<{ open: boolean; reason?: string | null }>({ open: false });
+  const [orphan, setOrphan] = useState<SavedProject | null>(null);
+  const [savedActuals, setSavedActuals] = useState<{ id: string; actuals: SavedActuals } | null>(null);
   const [hasKey, setHasKey] = useState(() => !!visitorKey.get());
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -71,6 +75,9 @@ export const App: React.FC = () => {
       .then((list) => {
         if (cancelled) return;
         setProjects(list);
+        const saved = loadSavedProject();
+        const stillThere = saved != null && list.some((p) => p.project_id === saved.server_project_id);
+        setOrphan(saved && !stillThere ? saved : null);
         if (list.length > 0) selectProject(list[0]);
       })
       .catch((err) => console.error('Error fetching projects:', err));
@@ -78,6 +85,32 @@ export const App: React.FC = () => {
       cancelled = true;
     };
   }, [selectProject]);
+
+  useEffect(() => {
+    if (!currentProject || !currentVersion) return;
+    // A restart left a brief in this browser. Do not overwrite it with some other project the server still has.
+    if (orphan && orphan.brief_text !== currentProject.brief_text) return;
+    const prev = loadSavedProject();
+    saveProject({
+      title: currentProject.title,
+      project_type: currentProject.project_type,
+      brief_text: currentProject.brief_text,
+      documents: currentProject.documents,
+      server_project_id: currentProject.project_id,
+      answers: Object.entries(currentVersion.clarification_answers).map(([question_id, answer]) => ({
+        question_id,
+        answer,
+      })),
+      edits: currentVersion.manual_edits ?? null,
+      actuals:
+        savedActuals?.id === currentProject.project_id
+          ? savedActuals.actuals
+          : prev?.server_project_id === currentProject.project_id
+            ? (prev.actuals ?? null)
+            : null,
+      saved_at: new Date().toISOString(),
+    });
+  }, [currentProject, currentVersion, savedActuals, orphan]);
 
   const withBusy = async (message: string, work: () => Promise<void>) => {
     setIsLoading(true);
@@ -94,7 +127,8 @@ export const App: React.FC = () => {
   };
 
   const handleProjectCreated = (newProj: Project) =>
-    withBusy('AI Jev đang đọc từng câu của mô tả (khoảng 10–30 giây với mô tả mới)…', async () => {
+    withBusy('AI Jev đang đọc từng câu của mô tả (khoảng 20 giây với mô tả mới)…', async () => {
+      setOrphan(null);
       setProjects((prev) => [newProj, ...prev]);
       setCurrentProject(newProj);
       const v1 = await estimateProject(newProj.project_id);
@@ -131,11 +165,62 @@ export const App: React.FC = () => {
   const handleRecordActuals = async (hoursSpent: number, reasons: string[], perRequirement?: Record<string, number>) => {
     if (!currentProject) throw new Error('Chưa chọn dự án');
     const result = await recordActuals(currentProject.project_id, hoursSpent, reasons, perRequirement);
+    setSavedActuals({ id: currentProject.project_id, actuals: { hours: hoursSpent, reasons, perRequirement } });
     setProjects((prev) =>
       prev.map((p) => (p.project_id === currentProject.project_id ? { ...p, status: 'actuals_recorded' } : p)),
     );
     return result;
   };
+
+  const handleRestore = () =>
+    withBusy('Đang đọc lại mô tả bằng Jev và khôi phục dự án trên máy này…', async () => {
+      const saved = loadSavedProject();
+      if (!saved) {
+        setOrphan(null);
+        return;
+      }
+      const project = await createProject({
+        title: saved.title,
+        project_type: saved.project_type,
+        brief_text: saved.brief_text,
+        documents: saved.documents,
+      });
+      let version = await estimateProject(project.project_id);
+      const skipped: string[] = [];
+      for (const item of saved.answers) {
+        try {
+          version = await answerClarification(project.project_id, item.question_id, item.answer);
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 400) {
+            skipped.push(item.question_id);
+            continue;
+          }
+          throw err;
+        }
+      }
+      const edits = saved.edits;
+      const hasEdits = !!edits && (
+        (edits.removed?.length ?? 0) > 0
+        || (edits.added?.length ?? 0) > 0
+        || Object.keys(edits.overrides ?? {}).length > 0
+      );
+      if (hasEdits && edits) version = await updateWbs(project.project_id, edits);
+      if (saved.actuals) {
+        await recordActuals(project.project_id, saved.actuals.hours, saved.actuals.reasons, saved.actuals.perRequirement);
+        setSavedActuals({ id: project.project_id, actuals: saved.actuals });
+        project.status = 'actuals_recorded';
+      }
+      const vList = await fetchVersions(project.project_id);
+      setProjects((prev) => [project, ...prev.filter((p) => p.project_id !== project.project_id)]);
+      setCurrentProject(project);
+      setVersions(vList.length ? vList : [version]);
+      setCurrentVersion(vList.length ? vList[vList.length - 1] : version);
+      setOrphan(null);
+      setActiveTab('estimation');
+      if (skipped.length) {
+        alert(`Đã khôi phục dự toán. ${skipped.length} câu trả lời không còn khớp câu hỏi mới và được bỏ qua.`);
+      }
+    });
 
   const openQuestions = currentVersion?.clarifications.filter((q) => q.answer == null).length ?? 0;
 
@@ -250,6 +335,22 @@ export const App: React.FC = () => {
           <div role="status" className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-100 text-sm font-semibold flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" />
             <span>{statusMessage}</span>
+          </div>
+        )}
+
+        {orphan && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100">
+            <p className="text-sm font-semibold">
+              Máy chủ vừa khởi động lại và quên dự án «{orphan.title}». Bản mô tả vẫn nằm trong trình duyệt này.
+            </p>
+            <button
+              type="button"
+              onClick={handleRestore}
+              disabled={isLoading}
+              className="mt-3 px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer"
+            >
+              Đọc lại bằng Jev và khôi phục
+            </button>
           </div>
         )}
 

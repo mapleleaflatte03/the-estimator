@@ -508,7 +508,8 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
           {st.configured
             ? `${st.keys_usable ?? 0}/${st.keys_total ?? 0} khóa dùng được${st.credits_remaining != null ? ` · còn khoảng ${st.credits_remaining} lượt (mỗi lượt 5 câu hỏi)` : ''} · ${st.cached_clauses} câu trả lời đã lưu, đọc lại không tốn phí.`
             : 'Chưa cấu hình khóa Jev: app chỉ tính được các mô tả mẫu đã đọc sẵn.'}{' '}
-          {st.required !== false && 'Mỗi dự toán đều phải được AI đọc đủ mọi câu.'}
+          {st.required !== false && 'Mỗi dự toán đều phải được AI đọc đủ mọi câu.'}{' '}
+          Mô hình đang gọi: {st.model ?? 'jev-1.13.0'}.
         </p>
         {st.halted && <p className="text-sm text-rose-700 dark:text-rose-400">Đã tạm dừng để bảo vệ credit: {st.halted}</p>}
       </section>

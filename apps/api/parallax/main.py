@@ -6,10 +6,11 @@ adversarial review, what-if active clarification, and actuals calibration.
 from __future__ import annotations
 import json
 import os
+import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -38,6 +39,37 @@ GOLDEN_DIR = ROOT_DIR / "datasets" / "golden_briefs"
 WEB_DIST = Path(os.environ.get("PARALLAX_WEB_DIST", ROOT_DIR / "apps" / "web" / "dist"))
 repo = StorageRepository(data_path=DATA_PATH)
 service = ParallaxService(repository=repo)
+
+# One shared clock of estimate attempts per visitor. Render's proxy would otherwise
+# make every judge look like the same client, so the left-most forwarded address is used.
+_estimate_hits: dict[str, list[float]] = {}
+
+
+def _visitor_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded.strip():
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def enforce_estimate_limit(request: Request) -> None:
+    """Cap how often one visitor can ask Jev to read a brief. 0 disables the cap (tests)."""
+    limit = int(os.environ.get("ESTIMATE_IP_LIMIT_PER_HOUR", "24"))
+    if limit <= 0:
+        return
+    now = time.time()
+    ip = _visitor_ip(request)
+    recent = [t for t in _estimate_hits.get(ip, []) if now - t < 3600]
+    if len(recent) >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"Đã đủ {limit} lần đọc mô tả từ địa chỉ này trong một giờ. "
+                "Các mô tả mẫu vẫn mở được; hãy thử lại sau."
+            ),
+        )
+    recent.append(now)
+    _estimate_hits[ip] = recent
 
 app = FastAPI(
     title="PARALLAX AI — Estimation Intelligence API",
@@ -145,7 +177,8 @@ def get_project(project_id: str):
 
 
 @app.post("/api/v1/projects/{project_id}/estimate", response_model=EstimateVersion, tags=["Estimation"])
-def estimate_project(project_id: str, response: Response, reader=Depends(visitor_reader)):
+def estimate_project(project_id: str, request: Request, response: Response, reader=Depends(visitor_reader)):
+    enforce_estimate_limit(request)
     try:
         version = service.estimate_project(project_id, reader=reader)
         _report_visitor_credits(response, reader)
@@ -159,8 +192,9 @@ def estimate_project(project_id: str, response: Response, reader=Depends(visitor
 
 
 @app.put("/api/v1/projects/{project_id}/wbs", response_model=EstimateVersion, tags=["Estimation"])
-def update_wbs(project_id: str, payload: ManualEdits, reader=Depends(visitor_reader)):
+def update_wbs(project_id: str, payload: ManualEdits, request: Request, reader=Depends(visitor_reader)):
     """Replace the user's WBS edits (hours, names, removed and added items) and re-estimate."""
+    enforce_estimate_limit(request)
     try:
         return service.update_wbs(project_id, payload.model_dump(exclude_none=True), reader=reader)
     except KeyError:
@@ -237,7 +271,8 @@ def get_version(project_id: str, version_id: str):
 
 
 @app.post("/api/v1/projects/{project_id}/clarify", response_model=EstimateVersion, tags=["Clarification"])
-def answer_clarification(project_id: str, payload: ClarificationAnswer, reader=Depends(visitor_reader)):
+def answer_clarification(project_id: str, payload: ClarificationAnswer, request: Request, reader=Depends(visitor_reader)):
+    enforce_estimate_limit(request)
     try:
         new_version = service.answer_clarification(
             project_id=project_id,

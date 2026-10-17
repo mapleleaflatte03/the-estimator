@@ -188,3 +188,4 @@ def test_reader_evaluation_endpoint():
     names = [s["reader"] for s in data["held_out"]["summary"]]
     assert names == ["rules", "jev", "hybrid", "shipped"]
     assert data["status"]["configured"] is False  # tests never call a paid provider
+    assert data["status"]["model"] == "jev-1.13.0"

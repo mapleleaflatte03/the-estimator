@@ -74,7 +74,7 @@ Point at the four cards at the top, then the charts:
 - **What didn't work.**
   > "We had the AI judge 'will this take longer than it looks' on 798 real tasks. It ranks risk, but it did not make
   > hour estimates more accurate, and on 2,032 issues from 37 other organisations the effect was weak. So the app
-  > flags those clauses for review instead of inflating hours. We publish the failures too: the journal has 43 runs."
+  > flags those clauses for review instead of inflating hours. We publish the failures too: the journal has 48 runs."
 
 ## 8:30 – 10:00 · Architecture and close
 

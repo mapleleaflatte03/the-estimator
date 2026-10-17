@@ -16,3 +16,5 @@ services:
         sync: false
       - key: JEV_MAX_CALLS_PER_HOUR
         value: "120"
+      - key: ESTIMATE_IP_LIMIT_PER_HOUR
+        value: "24"

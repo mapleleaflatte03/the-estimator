@@ -334,6 +334,7 @@ class JevReader:
         return {
             "configured": self.configured,
             "provider": self.provider,
+            "model": self.keys[0].model if self.keys else JEV_MODEL,
             "available": self._can_call(),
             "credits_remaining": self.credits_remaining,
             "keys_total": len(self.keys),
