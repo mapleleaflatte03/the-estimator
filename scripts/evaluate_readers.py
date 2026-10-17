@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT / "apps" / "api"))
 from parallax.extractor import _HEDGES, _match_components, fold  # noqa: E402
 from parallax.extractor import proposed_kinds  # noqa: E402
 from parallax.jev import (  # noqa: E402
-    KIND_CONFIDENCE_MIN, KIND_Q, KIND_TO_COMPONENT, SHIPPED_CACHE, TENTATIVE_MIN, TENTATIVE_Q, VERIFY_MIN, JevReader,
+    AI_ADD_MIN, KIND_CONFIDENCE_MIN, KIND_Q, KIND_TO_COMPONENT, SHIPPED_CACHE, TENTATIVE_MIN, TENTATIVE_Q, VERIFY_MIN, JevReader,
     load_dotenv,
 )
 
@@ -38,14 +38,18 @@ def rules_reading(text: str) -> tuple[set[str], bool]:
     return kinds, bool(_HEDGES.search(fold(text)))
 
 
-def shipped_rows(details):
-    """What the app does: Jev's kind is used only when rules found nothing; otherwise it is asked as a question."""
+def shipped_rows(details, add_min=None):
+    """What the app does: Jev's kind is used when rules found nothing (or, with add_min, when Jev is at least that
+    confident); otherwise it is asked as a question."""
     rows, suggested_primary = [], 0
     for d in details:
         expected = set(d["expected"])
         r = set(d["rules"])
         j = d["jev"] if d["jev"] != "other" and d["jev_confidence"] >= KIND_CONFIDENCE_MIN else None
         pred = r if r else ({j} if j else set())
+        if add_min is not None and j and d["jev_confidence"] >= add_min:
+            pred = pred | {j}
+            r = r | {j}
         if j and r and j not in r and d["expected"][0] == j and d["expected"][0] not in r:
             suggested_primary += 1
         rows.append((pred, expected, d["expected"], d["rules_tentative"] or d["jev_tentative"] >= TENTATIVE_MIN, d["tentative"]))
@@ -63,6 +67,10 @@ def summarise(details, rows_by_reader):
         verified = score("shipped+verify", vrows)
         verified["primary_kind_suggested_as_question"] = vsuggested
         out.append(verified)
+        arows, asuggested = shipped_rows([{**d, "rules": d["rules_verified"]} for d in details], add_min=AI_ADD_MIN)
+        added = score("shipped+verify+add", arows)
+        added["primary_kind_suggested_as_question"] = asuggested
+        out.append(added)
     return out
 
 

@@ -17,9 +17,10 @@ were wrong.
 | --- | --- | --- |
 | Learning from actual hours beats the developers' own estimates | 2,248 real tasks, 2011–2014 (SiP), model fitted on earlier years | MAE **10.34 → 9.26 h (−10.4%)** · SA **48.6 → 54.0%** · Wilcoxon **p = 3×10⁻⁶** · P10–P90 interval holds **82.0%** of actuals |
 | …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 · interval holds **85.0%** |
-| The AI reader catches scope the client has not committed to | 6 rounds of new brief clauses, 136 clauses (Vietnamese, English, no diacritics, incl. a private-equity onboarding brief), labels committed first | **27/28** caught vs **12/28** with keyword rules · **0** false alarms |
-| It finds the main kind of work in each clause | same 136 clauses | **112/136** (rules alone 105/136); private-equity round: Jev alone **13/13** |
-| It stops the rules from adding work nobody asked for | round 7, 24 new clauses; threshold fixed on earlier rounds | kind precision **73.1% → 83.3%**, recall up too |
+| The AI reader catches scope the client has not committed to | 7 rounds of new brief clauses, 160 clauses (Vietnamese, English, no diacritics, incl. a private-equity onboarding brief), labels committed first | **30/31** caught vs **14/31** with keyword rules · **0** false alarms |
+| It finds the main kind of work in each clause | same 160 clauses | **133/160** (rules alone 121/160); private-equity round: Jev alone **13/13** |
+| It stops the rules from adding work nobody asked for | rounds 7 and 8, 48 new clauses; threshold fixed on earlier rounds | kind precision **73.1% → 83.3%** and **84.6% → 95.8%**, recall up too |
+| It works on the deployed site | a new brief typed into the live app | every clause read by the AI in **1.5 s**, for **$0.0002** |
 | Rule fixes generalise | Round 3 written before the fixes; PROMISE_exp: 392 real requirements from projects not used for the fixes | 17/25 → **23/25** · requirements kept 72.7% → **100%** |
 
 SA = standardized accuracy vs random guessing (Shepperd & MacDonell 2012); higher is better. The "human" baseline is
@@ -93,6 +94,8 @@ flowchart LR
   - When Jev sees a kind the rules missed, the app *asks you* rather than adding hours.
   - Every kind the rules propose is checked by Jev ("does this clause itself ask for it?"); rejected kinds leave the
     estimate and become a question, so nothing disappears silently.
+  - A kind the rules missed is added directly only when Jev is ≥ 95% confident (you can remove it; removals are
+    learned).
   - A clause is uncommitted if either reader says so; the Jev threshold of 0.7 was fixed before any test.
 - **Jev client** (`apps/api/parallax/jev.py`):
   - A pool of any number of keys, with automatic failover on empty keys.
@@ -131,7 +134,7 @@ flowchart LR
 | [SiP](https://github.com/Derek-Jones/SiP_dataset) (Jones & Cullum 2019) | 10,022 real tasks with estimated and actual hours, 2004–2014 | CC BY-NC-ND 4.0 | Calibration, uncertainty, benchmarks. Files unmodified; we store only task ids and Jev's probabilities, never the text |
 | [Itemlet](https://doi.org/10.5281/zenodo.19411554) (Abebe & Rusiecki 2026) | Jira issues with logged hours and original estimates | CC BY 4.0 | Independent replication (downloaded on demand, not committed) |
 | [PROMISE_exp](https://doi.org/10.1145/3350768.3350776) (Lima et al. 2019) | 969 real requirements | research | Rule checks |
-| Clause sets v1–v7 | 163 brief clauses written in the style of client briefs, hand-labelled before runs | this repo | Reader evaluation |
+| Clause sets v1–v8 | 187 brief clauses written in the style of client briefs, hand-labelled before runs | this repo | Reader evaluation |
 
 The AI provider is interchangeable: the same pinned model (`jev-1.13.0`) was used through JevStation (credits) and
 TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet replication cost a few cents).

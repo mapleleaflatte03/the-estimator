@@ -382,14 +382,41 @@ run.
   all rounds the shipped reader is still ahead (rounds 1–2 favour rules). A language-aware policy is a candidate for
   a future pre-registered round.
 
+### 22. A live test on the deployed site, and round 8
+
+A brand-new brief was entered on the live site: a car-wash booking platform with 7 clauses. Jev read it through
+TypeSafe in 1.5 s, for $0.00022.
+
+The test exposed a pattern:
+- "pay by card… refunds" was read by the rules as *scheduling*, from the word "booking".
+- Jev read it as *payments* with high confidence, but the app only offered that as a question.
+
+On rounds 1–7 (dev, `scripts/confident_kind_dev.py`), adding Jev's kind directly at confidence ≥ 0.95 raised primary
+kind from 152/163 to 155/163, with precision −0.6 points. `AI_ADD_MIN = 0.95` was committed with the round-8 labels
+(`d194f64`) before round 8 ran.
+
+Round 8 had 24 new clauses: restaurant, payroll and delivery in Vietnamese (one clause without diacritics); clinic and
+real estate in English.
+
+| Reader | Primary kind | Kind precision | Kind recall | Tentative caught | False alarms |
+| --- | --- | --- | --- | --- | --- |
+| Rules | 16/24 | 81.0% | 60.7% | 2/3 | 0 |
+| Jev alone | 22/24 | 100% | 85.7% | 3/3 | 0 |
+| Shipped before (rules + Jev) | 20/24 | 84.6% | 78.6% | 3/3 | 0 |
+| + verification (section 20) | 21/24 | **95.8%** | 82.1% | 3/3 | 0 |
+| **+ add near-certain Jev kinds (shipped now)** | **21/24** | **95.8%** | 82.1% | **3/3** | 0 |
+
+- **Verification is confirmed a second time on held-out data:** precision rose by 11 points.
+- **Adding near-certain kinds was neutral on this round.** It is kept, because it helped on dev and did no harm here.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
 | --- | --- |
 | Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, SA 48.6 → 54.0%, Wilcoxon p = 3.2×10⁻⁶, P10–P90 coverage 82.0%. Production replay (1,391 tasks): SA 56.3 → 61.1%, p = 0.006, coverage 85.0% |
-| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4, 5, 6 and 7: **27/28** tentative clauses caught vs **12/28** with rules alone, **0** false alarms |
-| The shipped reader finds the main kind of work | Rounds 1, 2, 4, 5, 6 and 7: **112/136** vs 105/136 with rules alone |
-| AI verification removes kinds the client did not ask for | Round 7: kind precision 73.1% → **83.3%**, recall 59.4% → 62.5% |
+| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4–8: **30/31** tentative clauses caught vs **14/31** with rules alone, **0** false alarms |
+| The shipped reader finds the main kind of work | Rounds 1, 2, 4–8: **133/160** vs 121/160 with rules alone |
+| AI verification removes kinds the client did not ask for | Round 7: kind precision 73.1% → **83.3%**; round 8: 84.6% → **95.8%**; recall up in both |
 | Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, all 2,032 issues): same direction, weak (AUC 0.535). No MAE gain anywhere, so it is a review flag, not extra hours |
 | Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
 
@@ -409,17 +436,17 @@ run.
 | # | Date (UTC+7) | Run | Rules | Model | Result | Note |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 2026-10-17 00:36 | `round2_rules_first` | `55dfa88a19` | — | rules: kind 23/30, tentative 1/5, false 0 | Round 2 VN set, rules before any change |
-| 2 | 2026-10-17 00:37 | `round2` | `55dfa88a19` | jev-1.13.0 | rules: kind 23/30, tentative 1/5, false 0<br>jev: kind 19/30, tentative 4/5, false 0<br>shipped: kind 24/30, tentative 5/5, false 0 | Round 2 VN set (held-out), Jev jev-1.13.0 via JevStation, rules before any round-2 change |
+| 2 | 2026-10-17 00:37 | `round2` | `55dfa88a19` | jev-1.13.0 | rules: kind 23/30, tentative 1/5, false 0<br>jev: kind 19/30, tentative 4/5, false 0<br>shipped: kind 24/30 (precision 84.8%), tentative 5/5, false 0 | Round 2 VN set (held-out), Jev jev-1.13.0 via JevStation, rules before any round-2 change |
 | 3 | 2026-10-17 00:40 | `round3_rules_before` | `55dfa88a19` | — | rules: kind 17/25, tentative 3/4, false 0 | Round 3 held-out, rules BEFORE round-2 fixes (summary only, details not inspected) |
-| 4 | 2026-10-17 00:41 | `round1_dev_after_fixes` | `7ffca8bc41` | jev-1.13.0 | rules: kind 29/31, tentative 6/6, false 0<br>jev: kind 23/31, tentative 6/6, false 0<br>shipped: kind 29/31, tentative 6/6, false 0 | Round 1 after round-2 rule fixes (this set was used to derive them: dev, not held-out) |
-| 5 | 2026-10-17 00:41 | `round2_dev_after_fixes` | `7ffca8bc41` | jev-1.13.0 | rules: kind 28/30, tentative 5/5, false 0<br>jev: kind 19/30, tentative 4/5, false 0<br>shipped: kind 29/30, tentative 5/5, false 0 | Round 2 after round-2 rule fixes (this set was used to derive them: dev, not held-out) |
+| 4 | 2026-10-17 00:41 | `round1_dev_after_fixes` | `7ffca8bc41` | jev-1.13.0 | rules: kind 29/31, tentative 6/6, false 0<br>jev: kind 23/31, tentative 6/6, false 0<br>shipped: kind 29/31 (precision 87.8%), tentative 6/6, false 0 | Round 1 after round-2 rule fixes (this set was used to derive them: dev, not held-out) |
+| 5 | 2026-10-17 00:41 | `round2_dev_after_fixes` | `7ffca8bc41` | jev-1.13.0 | rules: kind 28/30, tentative 5/5, false 0<br>jev: kind 19/30, tentative 4/5, false 0<br>shipped: kind 29/30 (precision 89.5%), tentative 5/5, false 0 | Round 2 after round-2 rule fixes (this set was used to derive them: dev, not held-out) |
 | 6 | 2026-10-17 00:44 | `round3_rules_after` | `7ffca8bc41` | — | rules: kind 23/25, tentative 4/4, false 0 | Round 3 held-out, rules AFTER round-2 fixes: generalisation check |
 | 7 | 2026-10-17 00:45 | `promise_rules_first` | `7ffca8bc41` | — | retention 69.7%, false tentative 4/969 | First PROMISE_exp run, rules as of round-2 fixes |
 | 8 | 2026-10-17 00:46 | `promise_split_before` | `7ffca8bc41` | — | odd projects: retention 72.7%, performance recall 3.2%, security recall 54.7%, false tentative 0/392 | PROMISE split by project parity, rules BEFORE English fixes |
 | 9 | 2026-10-17 00:47 | `promise_split_after` | `3e1ee5ba9d` | — | odd projects: retention 100.0%, performance recall 51.6%, security recall 77.4%, false tentative 0/392 | PROMISE split by project parity, AFTER English rule fixes derived from even projects only |
 | 10 | 2026-10-17 00:47 | `round3_rules_after_english` | `3e1ee5ba9d` | — | rules: kind 23/25, tentative 4/4, false 0 | Round 3 held-out after English (PROMISE) fixes: regression check |
 | 11 | 2026-10-17 00:56 | `sip_holdout` | `2860f74a76` | — | MAE 10.34 → 9.26 h (-10.4%), P10–P90 coverage 82.03% | Calibration benchmark on real SiP tasks: fit before 2011, test 2011-2014 |
-| 12 | 2026-10-17 02:02 | `round4_heldout` | `2860f74a76` | jev-1.13.0 | rules: kind 13/14, tentative 2/4, false 0<br>jev: kind 11/14, tentative 4/4, false 0<br>shipped: kind 14/14, tentative 4/4, false 0 | Round 4: 16 new clauses labelled before any reader ran (commit 6169d92). Final shipped reader, spends the last credits of the main key. (scored 14/16, API calls 7, credits left 0) |
+| 12 | 2026-10-17 02:02 | `round4_heldout` | `2860f74a76` | jev-1.13.0 | rules: kind 13/14, tentative 2/4, false 0<br>jev: kind 11/14, tentative 4/4, false 0<br>shipped: kind 14/14 (precision 78.9%), tentative 4/4, false 0 | Round 4: 16 new clauses labelled before any reader ran (commit 6169d92). Final shipped reader, spends the last credits of the main key. (scored 14/16, API calls 7, credits left 0) |
 | 13 | 2026-10-17 02:03 | `round4_rules_before` | `2860f74a76` | — | rules: kind 14/16, tentative 3/5, false 0 | Round 4, all 16 clauses, rules as shipped before the round-4 fixes (held-out for rules). |
 | 14 | 2026-10-17 02:03 | `round1_rules_after_round4_fixes` | `d59755ab5f` | — | rules: kind 29/31, tentative 6/6, false 0 | Regression check after round-4 rule fixes (round 4 = dev, derived from it). |
 | 15 | 2026-10-17 02:03 | `round2_rules_after_round4_fixes` | `d59755ab5f` | — | rules: kind 28/30, tentative 5/5, false 0 | Regression check after round-4 rule fixes (round 4 = dev, derived from it). |
@@ -431,23 +458,24 @@ run.
 | 21 | 2026-10-17 02:04 | `round3_rules_final` | `5f17422a06` | — | rules: kind 23/25, tentative 4/4, false 0 | Final rules: round-4 fixes + 'tìm … theo' search pattern (round 4 = dev). |
 | 22 | 2026-10-17 02:04 | `round4_rules_final` | `5f17422a06` | — | rules: kind 16/16, tentative 5/5, false 0 | Final rules: round-4 fixes + 'tìm … theo' search pattern (round 4 = dev). |
 | 23 | 2026-10-17 02:04 | `promise_final` | `5f17422a06` | — | odd projects: retention 100.0%, performance recall 51.6%, security recall 77.4%, false tentative 0/392 | Final rules regression check. |
-| 24 | 2026-10-17 02:07 | `round4_shipped_final` | `5f17422a06` | jev-1.13.0 | rules: kind 14/14, tentative 4/4, false 0<br>jev: kind 11/14, tentative 4/4, false 0<br>shipped: kind 14/14, tentative 4/4, false 0 | Final shipped reader (final rules + cached Jev readings, no API calls) on round 4; rule fixes were derived from round 4, so this is dev, not held-out. (scored 14/16, API calls 0, credits left None) |
+| 24 | 2026-10-17 02:07 | `round4_shipped_final` | `5f17422a06` | jev-1.13.0 | rules: kind 14/14, tentative 4/4, false 0<br>jev: kind 11/14, tentative 4/4, false 0<br>shipped: kind 14/14 (precision 78.9%), tentative 4/4, false 0 | Final shipped reader (final rules + cached Jev readings, no API calls) on round 4; rule fixes were derived from round 4, so this is dev, not held-out. (scored 14/16, API calls 0, credits left None) |
 | 25 | 2026-10-17 13:53 | `sip_jev_pilot` | `` | jev-1.13.0 | open_scope@v1: Spearman 0.106, AUC 0.631<br>new_build@v1: Spearman 0.302, AUC 0.595<br>coupling@v1: Spearman 0.19, AUC 0.598<br>overrun@v1: Spearman 0.297, AUC 0.678 | Pilot on 75 TRAINING tasks only (estimated before 2011): choose the question to scale up. Chosen: new_build@v1 |
 | 26 | 2026-10-17 13:53 | `sip_jev_pilot` | `` | jev-1.13.0 | open_scope@v1: Spearman 0.106, AUC 0.631<br>new_build@v1: Spearman 0.302, AUC 0.595<br>coupling@v1: Spearman 0.19, AUC 0.598<br>overrun@v1: Spearman 0.297, AUC 0.678 | Pilot on 75 TRAINING tasks only (estimated before 2011), test tasks untouched. Chosen: overrun@v1. Reason: Tie on Spearman (new_build 0.302 vs overrun 0.297); overrun has the higher AUC for >25% overruns (0.678 vs 0.595) and transfers to greenfield briefs, where nearly every clause is new_build. Decided on training data only. |
 | 27 | 2026-10-17 13:54 | `sip_jev_holdout` | `` | jev-1.13.0 | human: MAE 56.92 h, PRED(25) 23.7%, P10–P90 —<br>size-only: MAE 52.11 h, PRED(25) 16.4%, P10–P90 76.3<br>jev:overrun@v1: MAE 52.65 h, PRED(25) 19.6%, P10–P90 76.7 | Held-out test 2011-2014. Jev overrun@v1 tertile split fitted on training tasks only. MAE gain vs size-only -0.54 h (95% CI [-1.91, 0.73]); test Spearman 0.197, AUC 0.62. |
 | 28 | 2026-10-17 14:01 | `round5_rules_before` | `74c1409f3b` | — | rules: kind 21/24, tentative 1/6, false 0 | Round 5: 24 new clauses (labels committed before the run). Rules as shipped incl. round-4 fixes: first held-out check of those fixes. |
-| 29 | 2026-10-17 14:02 | `round5_heldout` | `74c1409f3b` | jev-1.13.0 | rules: kind 21/24, tentative 1/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 21/24, tentative 5/6, false 0 | Round 5 held-out: 24 new clauses (VN + EN), labels committed before any reader ran. Shipped reader = rules + Jev via the 9-key pool. (scored 24/24, API calls 10, credits left 108) |
+| 29 | 2026-10-17 14:02 | `round5_heldout` | `74c1409f3b` | jev-1.13.0 | rules: kind 21/24, tentative 1/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 21/24 (precision 75.9%), tentative 5/6, false 0 | Round 5 held-out: 24 new clauses (VN + EN), labels committed before any reader ran. Shipped reader = rules + Jev via the 9-key pool. (scored 24/24, API calls 10, credits left 108) |
 | 30 | 2026-10-17 14:03 | `round1_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 29/31, tentative 6/6, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
 | 31 | 2026-10-17 14:03 | `round2_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 28/30, tentative 5/5, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
 | 32 | 2026-10-17 14:03 | `round3_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 23/25, tentative 4/4, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
 | 33 | 2026-10-17 14:03 | `round4_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 16/16, tentative 5/5, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
 | 34 | 2026-10-17 14:03 | `round5_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 24/24, tentative 6/6, false 0 | Round 5 after its own rule fixes: dev, not evidence. |
 | 35 | 2026-10-17 14:03 | `promise_after_round5_fixes` | `dd175964ab` | — | odd projects: retention 100.0%, performance recall 51.6%, security recall 77.4%, false tentative 0/392 | Regression check after round-5 rule fixes. |
-| 36 | 2026-10-17 14:03 | `round5_shipped_final` | `dd175964ab` | jev-1.13.0 | rules: kind 24/24, tentative 6/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 24/24, tentative 6/6, false 0 | Final shipped reader (rules after round-5 fixes + cached Jev answers, no API calls) on round 5: dev, not held-out. (scored 24/24, API calls 0, credits left None) |
+| 36 | 2026-10-17 14:03 | `round5_shipped_final` | `dd175964ab` | jev-1.13.0 | rules: kind 24/24, tentative 6/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 24/24 (precision 80.6%), tentative 6/6, false 0 | Final shipped reader (rules after round-5 fixes + cached Jev answers, no API calls) on round 5: dev, not held-out. (scored 24/24, API calls 0, credits left None) |
 | 37 | 2026-10-17 14:51 | `itemlet_replication_interim` | `` | jev-1.13.0 | read 465/2032: high/low median ratio x1.145, Spearman 0.053, AUC 0.559<br>MAE raw 18.64 h → with SiP factors 19.86 h (gain CI [-1.81, -0.66]) | Independent replication on Itemlet (30 open-source Jira projects), SiP thresholds and factors unchanged, protocol committed before the run. Read 465/2032 (random prefix). |
 | 38 | 2026-10-17 14:52 | `sip_operational_replay` | `` | jev-1.13.0 (cached) | human: MAE 4.33 h, PRED(25) 51.5%, SA 56.3%, P10–P90 —<br>frozen: MAE 3.82 h, PRED(25) 51.1%, SA 61.4%, P10–P90 85.3, Wilcoxon p 0.00208<br>online: MAE 3.85 h, PRED(25) 50.9%, SA 61.1%, P10–P90 85.0, Wilcoxon p 0.00552<br>dev>=20h human: MAE 26.89 h, PRED(25) 27.6%, SA 18.5%, P10–P90 —<br>dev>=20h online: MAE 23.81 h, PRED(25) 21.9%, SA 27.8%, P10–P90 81.0, Wilcoxon p 0.0155<br>dev>=20h online+jev: MAE 24.7 h, PRED(25) 22.9%, SA 25.1%, P10–P90 81.0, Wilcoxon p 0.0106 | Production replay: every estimate uses only work completed before its estimate date. Online = refit daily (what the app does); frozen = fitted on work completed before 2011. |
 | 39 | 2026-10-17 14:56 | `round6_rules_before` | `f0608239a4` | — | rules: kind 10/13, tentative 2/3, false 0 | Round 6 (private-equity onboarding, 13 new clauses, labels committed in 60fbfe8 before the run). Rules incl. round-5 fixes: first held-out check of those fixes. |
 | 40 | 2026-10-17 16:54 | `itemlet_replication_final` | `` | jev-1.13.0 | read 2032/2032: high/low median ratio x1.128, Spearman 0.054, AUC 0.535<br>MAE raw 18.35 h → with SiP factors 19.54 h (gain CI [-1.45, -0.95]) | Independent replication on Itemlet (37 open-source Jira projects), SiP thresholds and factors unchanged, protocol committed before the run. Read 2032/2032 (random prefix). |
-| 41 | 2026-10-17 16:55 | `round6_heldout` | `f0608239a4` | jev-1.13.0 | rules: kind 10/13, tentative 2/3, false 0<br>jev: kind 13/13, tentative 3/3, false 0<br>shipped: kind 12/13, tentative 3/3, false 0 | Round 6 held-out: private-equity investor onboarding (challenge host's domain), 13 new clauses, labels committed in 60fbfe8 before any reader ran. Jev jev-1.13.0 via TypeSafe direct (same pinned model). (scored 13/13, API calls 2, credits left None) |
-| 42 | 2026-10-17 17:01 | `round7_heldout` | `b226aede6c` | jev-1.13.0 | rules: kind 15/24, tentative 4/4, false 0<br>jev: kind 19/24, tentative 4/4, false 0<br>shipped: kind 16/24, tentative 4/4, false 0 | Round 7 held-out: 24 new clauses (VI + EN), labels committed in 9779516 before any reader ran. First held-out test of AI verification of rule kinds (VERIFY_MIN 0.4 fixed on rounds 1-6). Jev jev-1.13.0 via TypeSafe. (scored 24/24, API calls 4, credits left None) |
+| 41 | 2026-10-17 16:55 | `round6_heldout` | `f0608239a4` | jev-1.13.0 | rules: kind 10/13, tentative 2/3, false 0<br>jev: kind 13/13, tentative 3/3, false 0<br>shipped: kind 12/13 (precision 54.5%), tentative 3/3, false 0 | Round 6 held-out: private-equity investor onboarding (challenge host's domain), 13 new clauses, labels committed in 60fbfe8 before any reader ran. Jev jev-1.13.0 via TypeSafe direct (same pinned model). (scored 13/13, API calls 2, credits left None) |
+| 42 | 2026-10-17 17:01 | `round7_heldout` | `b226aede6c` | jev-1.13.0 | rules: kind 15/24, tentative 4/4, false 0<br>jev: kind 19/24, tentative 4/4, false 0<br>shipped: kind 16/24 (precision 73.1%), tentative 4/4, false 0<br>shipped+verify: kind 17/24 (precision 83.3%), tentative 4/4, false 0 | Round 7 held-out: 24 new clauses (VI + EN), labels committed in 9779516 before any reader ran. First held-out test of AI verification of rule kinds (VERIFY_MIN 0.4 fixed on rounds 1-6). Jev jev-1.13.0 via TypeSafe. (scored 24/24, API calls 4, credits left None) |
+| 43 | 2026-10-17 17:11 | `round8_heldout` | `0d839b7e12` | jev-1.13.0 | rules: kind 16/24, tentative 2/3, false 0<br>jev: kind 22/24, tentative 3/3, false 0<br>shipped: kind 20/24 (precision 84.6%), tentative 3/3, false 0<br>shipped+verify: kind 21/24 (precision 95.8%), tentative 3/3, false 0<br>shipped+verify+add: kind 21/24 (precision 95.8%), tentative 3/3, false 0 | Round 8 held-out: 24 new clauses (VI + EN), labels committed before any reader ran. Tests adding Jev's kind directly at confidence >= 0.95 (fixed on rounds 1-7) on top of verification. Jev jev-1.13.0 via TypeSafe. (scored 24/24, API calls 4, credits left None) |
 <!-- AUTO:journal:end -->

@@ -40,9 +40,10 @@ def result(entry: dict) -> str:
                            for r in entry["summary"])
     parts = []
     for r in entry["summary"]:
-        if r["reader"] in ("rules", "jev", "shipped"):
-            parts.append(f"{r['reader']}: kind {r['primary_kind_found']}/{r['n_clauses']}, "
-                         f"tentative {r['tentative_caught']}, false {r['false_tentative']}")
+        if r["reader"] in ("rules", "jev", "shipped", "shipped+verify", "shipped+verify+add"):
+            parts.append(f"{r['reader']}: kind {r['primary_kind_found']}/{r['n_clauses']}"
+                         + (f" (precision {r['kind_precision_pct']}%)" if r["reader"].startswith("shipped") else "")
+                         + f", tentative {r['tentative_caught']}, false {r['false_tentative']}")
     return "<br>".join(parts)
 
 

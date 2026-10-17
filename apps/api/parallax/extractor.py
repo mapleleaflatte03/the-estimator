@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
 from .estimation.engine import synthesize_forecast
-from .jev import COMPONENT_TO_KIND, KIND_CONFIDENCE_MIN, TENTATIVE_MIN, VERIFY_MIN, ClauseReading
+from .jev import AI_ADD_MIN, COMPONENT_TO_KIND, KIND_CONFIDENCE_MIN, TENTATIVE_MIN, VERIFY_MIN, ClauseReading
 from .provenance import validate_evidence_against_sources
 from .risk import GROUP_LABELS, Adjustments
 from .schemas import (
@@ -654,7 +654,11 @@ def extract_scope_and_wbs(
                 ai_component = candidate
                 matched = [candidate]
             elif candidate not in matched and candidate.key not in (ai_suppressed or set()):
-                ai_suggest = candidate
+                if reading.kind_confidence >= AI_ADD_MIN:
+                    ai_component = candidate  # near-certain: include it, the user can still remove it
+                    matched = [*matched, candidate]
+                else:
+                    ai_suggest = candidate
         if clause.is_title:
             continue
         if not matched and not clause.is_item and not _REQUIREMENT_MARKERS.search(folded):

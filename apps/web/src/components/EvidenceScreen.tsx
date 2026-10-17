@@ -17,7 +17,15 @@ const frac = (s?: string | null): [number, number] => {
 const vn = (v: unknown) => `${Number(v).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`;
 const hours1 = (v: number) => `${v.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} giờ`;
 const find = (j: JournalEntry[], tag: string) => [...j].reverse().find((e) => e.tag === tag);
-const reader = (rows: Partial<ReaderSummary>[] | undefined, name: string) => rows?.find((r) => r.reader === name);
+const reader = (rows: Partial<ReaderSummary>[] | undefined, name: string) => {
+  if (name !== 'shipped') return rows?.find((r) => r.reader === name);
+  // "Shipped" = the reader the app used when that round ran (later rounds add verification steps).
+  for (const n of ['shipped+verify+add', 'shipped+verify', 'shipped']) {
+    const row = rows?.find((r) => String(r.reader) === n);
+    if (row) return row;
+  }
+  return undefined;
+};
 const promise = (e: JournalEntry | undefined) =>
   (e?.summary?.[0]?.test_odd_projects ?? null) as null | Record<string, number | string>;
 
@@ -82,13 +90,15 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const r5 = find(journal, 'round5_heldout')?.summary;
   const r6 = find(journal, 'round6_heldout')?.summary;
   const r7 = find(journal, 'round7_heldout')?.summary;
+  const r8 = find(journal, 'round8_heldout')?.summary;
   const rounds = [
     { key: 'r1', label: `Vòng 1 · ${reader(r1, 'rules')?.n_clauses ?? 0} câu`, rows: r1 },
     { key: 'r2', label: `Vòng 2 · ${reader(r2, 'rules')?.n_clauses ?? 0} câu`, rows: r2 },
     { key: 'r4', label: `Vòng 4 · ${reader(r4, 'rules')?.n_clauses ?? 0} câu`, rows: r4 },
     { key: 'r5', label: `Vòng 5 · ${reader(r5, 'rules')?.n_clauses ?? 0} câu`, rows: r5 },
     { key: 'r6', label: `Vòng 6 · quỹ đầu tư · ${reader(r6, 'rules')?.n_clauses ?? 0} câu`, rows: r6 },
-    { key: 'r7', label: `Vòng 7 (mới nhất) · ${reader(r7, 'rules')?.n_clauses ?? 0} câu`, rows: r7 },
+    { key: 'r7', label: `Vòng 7 · ${reader(r7, 'rules')?.n_clauses ?? 0} câu`, rows: r7 },
+    { key: 'r8', label: `Vòng 8 (mới nhất) · ${reader(r8, 'rules')?.n_clauses ?? 0} câu`, rows: r8 },
   ].filter((r) => r.rows);
 
   const tentTotals = (name: string) =>
@@ -143,7 +153,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const holdout = bench?.sip.holdout;
   const sip = find(journal, 'sip_holdout')?.summary?.[0] as undefined | Record<string, number | string>;
   const r4All = find(journal, 'round4_rules_before')?.summary;
-  const labelledClauses = [r1, r2, r3After ? [r3After] : undefined, r4All, r5, r6, r7].reduce((s, rows) => s + Number(reader(rows, 'rules')?.n_clauses ?? 0), 0);
+  const labelledClauses = [r1, r2, r3After ? [r3After] : undefined, r4All, r5, r6, r7, r8].reduce((s, rows) => s + Number(reader(rows, 'rules')?.n_clauses ?? 0), 0);
   const fb = ev.feedback;
   const study = ev.sip_study;
   const rep = study?.report;

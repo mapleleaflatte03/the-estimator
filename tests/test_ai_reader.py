@@ -6,7 +6,7 @@ from parallax.extractor import extract_scope_and_wbs
 from parallax.jev import ClauseReading, JevReader
 
 
-def reading(kind, conf=0.95, tentative=0.05):
+def reading(kind, conf=0.9, tentative=0.05):
     return ClauseReading(kind=kind, kind_confidence=conf, kind_probabilities={kind: conf}, tentative=tentative,
                          model="jev-test", provider="fake")
 
@@ -46,6 +46,14 @@ def test_ai_extra_kind_becomes_question_not_hours():
                                 clarification_answers={q.question_id: True})
     assert yes.forecast.p50_hours > v.forecast.p50_hours
     assert any("SCHEDULING" in w.item_id for w in yes.wbs)
+
+
+def test_near_certain_ai_kind_is_added_directly():
+    clause = "Customers pay by card when booking; refunds if cancelled 2 hours ahead."
+    v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("payment", conf=0.97)})
+    req = feature_reqs(v)[0]
+    assert "payment" in req.components and req.ai_reading["added_component"] == "payment"
+    assert not any(q.question_id.endswith("-AI") for q in v.clarifications)
 
 
 def test_ai_tentative_reading_creates_scope_question():

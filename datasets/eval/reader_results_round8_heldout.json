@@ -1,0 +1,507 @@
+{
+  "labels": "datasets/eval/clause_labels_v8.json",
+  "tag": "round8_heldout",
+  "rules_version": "0d839b7e12",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 24,
+      "primary_kind_found": 16,
+      "kind_recall_pct": 60.7,
+      "kind_precision_pct": 81.0,
+      "tentative_correct": 23,
+      "tentative_caught": "2/3",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 24,
+      "primary_kind_found": 22,
+      "kind_recall_pct": 85.7,
+      "kind_precision_pct": 100.0,
+      "tentative_correct": 24,
+      "tentative_caught": "3/3",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 24,
+      "primary_kind_found": 21,
+      "kind_recall_pct": 82.1,
+      "kind_precision_pct": 85.2,
+      "tentative_correct": 24,
+      "tentative_caught": "3/3",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 24,
+      "primary_kind_found": 20,
+      "kind_recall_pct": 78.6,
+      "kind_precision_pct": 84.6,
+      "tentative_correct": 24,
+      "tentative_caught": "3/3",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 1
+    },
+    {
+      "reader": "shipped+verify",
+      "n_clauses": 24,
+      "primary_kind_found": 21,
+      "kind_recall_pct": 82.1,
+      "kind_precision_pct": 95.8,
+      "tentative_correct": 24,
+      "tentative_caught": "3/3",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 0
+    },
+    {
+      "reader": "shipped+verify+add",
+      "n_clauses": 24,
+      "primary_kind_found": 21,
+      "kind_recall_pct": 82.1,
+      "kind_precision_pct": 95.8,
+      "tentative_correct": 24,
+      "tentative_caught": "3/3",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 0
+    }
+  ],
+  "coverage": {
+    "clauses_labelled": 24,
+    "clauses_scored": 24,
+    "unread": [],
+    "cached_before_run": 0,
+    "fresh_api_calls": 4,
+    "credits_remaining_after": null
+  },
+  "details": [
+    {
+      "text": "Khách thanh toán hóa đơn tại bàn bằng ví MoMo hoặc thẻ.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": [
+        "payment"
+      ]
+    },
+    {
+      "text": "Quản lý nhà hàng xem báo cáo món bán chạy theo tuần.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.09,
+      "verify": {
+        "data_management": 0.36
+      },
+      "rules_verified": [
+        "reporting"
+      ]
+    },
+    {
+      "text": "Nhân viên chấm công bằng khuôn mặt qua camera ở cửa hàng.",
+      "expected": [
+        "ai_assistant",
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "ai_assistant",
+      "jev_confidence": 0.4,
+      "jev_tentative": 0.08,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Tính lương tự động từ bảng chấm công và gửi phiếu lương qua email.",
+      "expected": [
+        "data_management",
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 0.69,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Kết nối với phần mềm kế toán MISA để đẩy bút toán lương.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.17,
+      "verify": {},
+      "rules_verified": [
+        "external_integration"
+      ]
+    },
+    {
+      "text": "Nhân viên chỉ xem được phiếu lương của chính mình.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Co le can them app cho nhan vien xin nghi phep tren dien thoai.",
+      "expected": [
+        "mobile_app",
+        "workflow_approval"
+      ],
+      "tentative": true,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": true,
+      "jev": "mobile_app",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.9,
+      "verify": {},
+      "rules_verified": [
+        "mobile_app"
+      ]
+    },
+    {
+      "text": "Đơn xin nghỉ phép phải được trưởng bộ phận duyệt.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "workflow_approval",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.11,
+      "verify": {},
+      "rules_verified": [
+        "workflow_approval"
+      ]
+    },
+    {
+      "text": "Tài xế cập nhật vị trí theo thời gian thực để khách theo dõi đơn hàng trên bản đồ.",
+      "expected": [
+        "maps_location"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "maps_location"
+      ],
+      "rules_tentative": false,
+      "jev": "maps_location",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.1,
+      "verify": {
+        "data_management": 0.19
+      },
+      "rules_verified": [
+        "maps_location"
+      ]
+    },
+    {
+      "text": "Khách nhận thông báo đẩy khi đơn hàng được giao.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.11,
+      "verify": {},
+      "rules_verified": [
+        "notification"
+      ]
+    },
+    {
+      "text": "Hệ thống phải chịu được 5.000 đơn mỗi giờ vào dịp Tết.",
+      "expected": [
+        "performance"
+      ],
+      "tentative": false,
+      "rules": [
+        "performance"
+      ],
+      "rules_tentative": false,
+      "jev": "performance",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05,
+      "verify": {},
+      "rules_verified": [
+        "performance"
+      ]
+    },
+    {
+      "text": "Xuất danh sách đơn hàng giao thất bại ra Excel cho bộ phận chăm sóc khách hàng.",
+      "expected": [
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "file_export"
+      ],
+      "rules_tentative": false,
+      "jev": "file_export",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05,
+      "verify": {
+        "data_management": 0.54
+      },
+      "rules_verified": [
+        "data_management",
+        "file_export"
+      ]
+    },
+    {
+      "text": "Patients book appointments with a specific doctor through the website.",
+      "expected": [
+        "scheduling"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "scheduling",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Prescriptions are sent electronically to the national pharmacy system.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Nurses record vital signs on a tablet at the bedside.",
+      "expected": [
+        "data_management",
+        "mobile_app"
+      ],
+      "tentative": false,
+      "rules": [
+        "mobile_app"
+      ],
+      "rules_tentative": false,
+      "jev": "mobile_app",
+      "jev_confidence": 0.77,
+      "jev_tentative": 0.04,
+      "verify": {},
+      "rules_verified": [
+        "mobile_app"
+      ]
+    },
+    {
+      "text": "Only the treating doctor can view a patient's full medical history.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.04,
+      "verify": {},
+      "rules_verified": [
+        "permissions_audit"
+      ]
+    },
+    {
+      "text": "Every access to a medical record is logged for compliance audits.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.03,
+      "verify": {},
+      "rules_verified": [
+        "permissions_audit"
+      ]
+    },
+    {
+      "text": "We are still deciding whether patients should be able to pay online.",
+      "expected": [
+        "payment"
+      ],
+      "tentative": true,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "payment",
+      "jev_confidence": 0.97,
+      "jev_tentative": 0.97,
+      "verify": {},
+      "rules_verified": []
+    },
+    {
+      "text": "Listing agents upload property photos and floor plans.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import"
+      ],
+      "rules_tentative": false,
+      "jev": "data_management",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05,
+      "verify": {
+        "data_import": 0.06
+      },
+      "rules_verified": []
+    },
+    {
+      "text": "Buyers search properties by district, price range and number of bedrooms.",
+      "expected": [
+        "search"
+      ],
+      "tentative": false,
+      "rules": [
+        "search"
+      ],
+      "rules_tentative": false,
+      "jev": "search",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.04,
+      "verify": {},
+      "rules_verified": [
+        "search"
+      ]
+    },
+    {
+      "text": "Show each property's location on a map with nearby schools.",
+      "expected": [
+        "maps_location"
+      ],
+      "tentative": false,
+      "rules": [
+        "maps_location"
+      ],
+      "rules_tentative": false,
+      "jev": "maps_location",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": [
+        "maps_location"
+      ]
+    },
+    {
+      "text": "Import 3,000 existing listings from the old WordPress site.",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import"
+      ],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": [
+        "data_import"
+      ]
+    },
+    {
+      "text": "A chatbot answers common buyer questions about the listings, possibly in phase 2.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": true,
+      "rules": [
+        "ai_assistant"
+      ],
+      "rules_tentative": true,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.95,
+      "verify": {},
+      "rules_verified": [
+        "ai_assistant"
+      ]
+    },
+    {
+      "text": "Agents receive an email when a buyer requests a viewing.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [
+        "notification"
+      ],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07,
+      "verify": {},
+      "rules_verified": [
+        "notification"
+      ]
+    }
+  ]
+}
