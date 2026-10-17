@@ -124,7 +124,7 @@ def cmd_read(args) -> int:
     texts = [i["text"] for p in PUBLISHED for i in load_project(p)]
     todo = r.missing(texts, [SIZE_Q])
     print(f"{len(texts)} issues, {len(todo)} to read")
-    r.ask(texts, [SIZE_Q], max_calls=args.max_calls, workers=12)
+    r.ask(texts, [SIZE_Q], max_calls=args.max_calls, workers=6)
     data = {}
     for p in PUBLISHED:
         for i in load_project(p):

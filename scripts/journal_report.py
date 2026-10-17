@@ -35,6 +35,10 @@ def result(entry: dict) -> str:
     if "spearman_log_ratio" in first:
         return "<br>".join(f"{r['question']}: Spearman {r['spearman_log_ratio']}, AUC {r['auc_overrun_25pct']}"
                            for r in entry["summary"])
+    if "deepse_mae" in first:
+        return (f"MAE {first['mae']} vs Deep-SE {first['deepse_mae']} vs recomputed median {first['median_mae']}; "
+                f"lower MAE than Deep-SE on {first['better_than_deepse']}, "
+                f"lower MAE than the recomputed median on {first['better_than_median']}")
     if first.get("reader") == "human":
         return "<br>".join(f"{r['reader']}: MAE {r['mae']} h, PRED(25) {r['pred_25']}%"
                            + (f", SA {r['sa']}%" if "sa" in r else "")

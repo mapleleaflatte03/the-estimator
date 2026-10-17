@@ -1,0 +1,83 @@
+{
+ "validation_mae": {
+  "level": {
+   "mesos": 1.186,
+   "usergrid": 0.833,
+   "appceleratorstudio": 1.772,
+   "aptanastudio": 3.055,
+   "titanium": 2.376,
+   "duracloud": 0.586,
+   "bamboo": 0.702,
+   "clover": 1.645,
+   "jirasoftware": 2.079,
+   "moodle": 11.369,
+   "datamanagement": 5.538,
+   "mule": 1.814,
+   "mulestudio": 4.555,
+   "springxd": 1.396,
+   "talenddataquality": 3.569,
+   "talendesb": 0.723
+  },
+  "bins5": {
+   "mesos": 1.17,
+   "usergrid": 0.833,
+   "appceleratorstudio": 1.566,
+   "aptanastudio": 2.752,
+   "titanium": 2.347,
+   "duracloud": 0.541,
+   "bamboo": 0.596,
+   "clover": 1.921,
+   "jirasoftware": 2.143,
+   "moodle": 11.309,
+   "datamanagement": 5.652,
+   "mule": 2.0,
+   "mulestudio": 4.568,
+   "springxd": 1.438,
+   "talenddataquality": 3.254,
+   "talendesb": 0.699
+  },
+  "bins10": {
+   "mesos": 1.152,
+   "usergrid": 0.833,
+   "appceleratorstudio": 1.587,
+   "aptanastudio": 2.873,
+   "titanium": 2.364,
+   "duracloud": 0.564,
+   "bamboo": 0.889,
+   "clover": 1.993,
+   "jirasoftware": 2.143,
+   "moodle": 10.335,
+   "datamanagement": 5.42,
+   "mule": 1.859,
+   "mulestudio": 4.486,
+   "springxd": 1.448,
+   "talenddataquality": 3.424,
+   "talendesb": 0.642
+  },
+  "bins20": {
+   "mesos": 1.128,
+   "usergrid": 0.823,
+   "appceleratorstudio": 1.525,
+   "aptanastudio": 2.83,
+   "titanium": 2.396,
+   "duracloud": 0.553,
+   "bamboo": 1.077,
+   "clover": 2.092,
+   "jirasoftware": 3.414,
+   "moodle": 10.502,
+   "datamanagement": 5.406,
+   "mule": 1.831,
+   "mulestudio": 4.236,
+   "springxd": 1.41,
+   "talenddataquality": 3.409,
+   "talendesb": 0.723
+  }
+ },
+ "mean": {
+  "level": 2.6999,
+  "bins5": 2.6743,
+  "bins10": 2.6258,
+  "bins20": 2.7097
+ },
+ "chosen": "bins10"
+}

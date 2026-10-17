@@ -491,6 +491,7 @@ class JevReader:
         state = {ref: t for t, ref in refs.items()}
         questions = {f"{refs[t]}_{q.qid}": q.spec(refs[t]) for t, q in pack}
         tried: set[str] = set()
+        backoff = 1.0
         while True:
             key = self._pick_key(tried, len(pack))
             if key is None:
@@ -499,6 +500,12 @@ class JevReader:
             try:
                 data = self._post(key, {"model": key.model, "state": state, "questions": questions})
             except JevError as exc:
+                if exc.status in (None, 429, 502, 503, 529) and backoff <= 8:
+                    # Rate limited, overloaded or a dropped connection: retry the same key with exponential backoff.
+                    time.sleep(backoff)
+                    backoff *= 2
+                    tried.discard(key.name)
+                    continue
                 self._key_failed(key, exc)
                 continue
             break

@@ -23,6 +23,7 @@ its numbers are exactly what the evaluation scripts recorded.
 | Does the reader find the kind of work in each clause? | Hand-labelled clause sets, rounds 1–4 | Primary kind found |
 | Does it notice what the client has **not** committed to? | Same sets | Tentative clauses caught, false alarms |
 | Does it keep every requirement in real English specs? | PROMISE_exp: 969 requirements from 47 projects (Lima et al., 2019) | Retention, NFR recall, false alarms |
+| Can a zero-shot size reading predict story points as well as a model trained for that? | Choetkiertikul et al. 2019: 23,313 issues, 16 projects, authors' test split (doi:10.1109/TSE.2018.2792473) | MAE vs Deep-SE and vs a median baseline. One project-level MAE is not a paired test |
 
 ## Timeline
 
@@ -462,6 +463,69 @@ The person effects did not carry over to later years; staff and habits change. T
 to +0.19 h, so it is not shipped. The app's per-project-type and per-kind learning use the same pooling but start
 from no effect and only move with the team's own data.
 
+### 25. Story points from text (negative result, not shipped)
+
+**Question.** Can the same reader, with no training on story points, size an issue as well as Deep-SE, a model
+trained for that task?
+
+**Data.** M. Choetkiertikul, H. K. Dam, T. Tran, T. Pham, A. Ghose and T. Menzies, "A Deep Learning Model for
+Estimating Story Points", IEEE TSE 45(7):637–656, 2019, doi:10.1109/TSE.2018.2792473. 23,313 issues from 16
+open-source projects. Files and the authors' 60/20/20 chronological split are from
+https://github.com/morakotch/datasets at `133a5f5` (`scripts/fetch_storypoints.py`). Published Deep-SE, mean and
+median MAE are Table 3 of the preprint in that repository. GPT2SP is not compared: Tawosi, Moussa and Sarro
+(IEEE TSE 2023, arXiv:2201.05401) reported an evaluation bug in those figures.
+
+**Method.** Jev answered a 5-level size question that never mentions story points (`SIZE_Q` in `parallax/jev.py`).
+Per project, that score was mapped to points with a monotone step function. Four mappings were fit on the
+training split and compared on the validation split. `bins10` had the lowest mean validation MAE (2.63).
+The single test refit that chosen mapping on train+validation, then scored the test split once
+(`scripts/storypoint_benchmark.py`). All 23,313 issues were read. Re-running `test --no-journal` from the
+saved scores reproduces `datasets/eval/storypoint_result.json`.
+
+**Test result.** Unweighted mean of the 16 project MAEs. 4,692 test issues. Deep-SE, Mean and Median below
+are Table 3 of the preprint, checked against `datasets/external/deepse/preprint.pdf` (the accepted manuscript
+carrying doi:10.1109/TSE.2018.2792473). "Our median" is the median of story points in that project's
+train+validation rows, scored on the test rows. It is not Table 3's Median column: the two averages are
+2.56 and 2.77. The paper's own baseline code was not re-run.
+
+| | Jev | Deep-SE (Table 3) | Table 3 median | Our median |
+| --- | --- | --- | --- | --- |
+| Mean MAE | 2.54 | **2.09** | 2.77 | 2.56 |
+| Projects where this column has a higher MAE than Jev | — | 4/16 | 11/16 | 10/16 |
+
+The 4/16 and 11/16 counts compare one published MAE with one MAE of ours. They are not a paired test.
+Wilcoxon is only against our recomputed median, issue by issue. It is significant (p < 0.05) and in Jev's
+favour on 6 projects: Mesos, Titanium, DuraCloud, Data Management, Mule, Talend ESB. It is significant and
+against Jev on 2: Moodle (p = 5.4×10⁻⁶) and Talend Data Quality (p = 2.4×10⁻⁴). Median Spearman of the raw
+score against story points was 0.49.
+
+| Project | n | Jev | Our median | Table 3 median | Deep-SE |
+| --- | --- | --- | --- | --- | --- |
+| Mesos | 337 | 0.90 | 1.22 | 1.73 | 1.02 |
+| Usergrid | 98 | 1.15 | 1.15 | 1.60 | 1.03 |
+| Appcelerator Studio | 586 | 1.40 | 1.30 | 1.84 | 1.36 |
+| Aptana Studio | 168 | 3.14 | 3.61 | 3.71 | 2.71 |
+| Titanium | 452 | 1.71 | 2.04 | 2.47 | 1.97 |
+| DuraCloud | 135 | 0.64 | 0.82 | 0.73 | 0.68 |
+| Bamboo | 106 | 0.84 | 0.75 | 1.32 | 0.74 |
+| Clover | 79 | 3.15 | 3.57 | 2.84 | 2.11 |
+| Jira | 72 | 1.79 | 1.58 | 2.93 | 1.38 |
+| Moodle | 235 | 9.11 | 6.59 | 7.18 | 5.97 |
+| Data Management | 935 | 5.08 | 6.19 | 4.82 | 3.77 |
+| Mule | 180 | 2.07 | 2.47 | 2.69 | 2.18 |
+| Mule Studio | 148 | 3.45 | 3.66 | 3.30 | 3.23 |
+| Spring XD | 707 | 1.67 | 1.71 | 2.07 | 1.63 |
+| Talend Data Quality | 278 | 3.91 | 3.31 | 3.87 | 2.97 |
+| Talend ESB | 176 | 0.66 | 0.92 | 1.16 | 0.64 |
+
+Data Management is the case that shows why the two medians must not be mixed: Jev MAE 5.08 beats our median
+6.19 and loses to Table 3's median 4.82, and loses to Deep-SE 3.77. Moodle dominates the average
+(9.11 vs Deep-SE 5.97).
+
+**Decision.** Not shipped. On this benchmark a zero-shot reading is in the neighbourhood of a per-project
+median and behind Deep-SE. The product still estimates hours from a brief plus the team's own actuals. This
+run does not show that a size score read from text should be added to that hour model.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
@@ -472,6 +536,7 @@ from no effect and only move with the team's own data.
 | The 80% range is honest for every size of work | Production replay 2011–2014 with adaptive conformal ranges: 85.0% → **80.4%** overall; every bucket with n ≥ 100 within 2.2 points of 80% (was up to 9.7 off) |
 | AI verification removes kinds the client did not ask for | Round 7: kind precision 73.1% → **83.3%**; round 8: 84.6% → **95.8%**; recall up in both |
 | Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, all 2,032 issues): same direction, weak (AUC 0.535). No MAE gain anywhere, so it is a review flag, not extra hours |
+| A zero-shot size reading predicts story points | No. Choetkiertikul et al. 2019 test split, 16 projects. `bins10` chosen on validation, refit on train+validation, tested once: mean MAE 2.54 vs Table 3 Deep-SE 2.09 vs Table 3 median 2.77 vs our recomputed median 2.56. Lower MAE than Deep-SE on 4/16 projects, with no paired test. Not shipped |
 | Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
 
 ## Limitations
@@ -535,4 +600,5 @@ from no effect and only move with the team's own data.
 | 44 | 2026-10-17 18:48 | `sip_conformal_select` | `` | — | gamma 0.0: 80% range holds 85.5%, worst size bucket off by 7.3 pts, mean width 14.3 h<br>gamma 0.002: 80% range holds 81.7%, worst size bucket off by 3.4 pts, mean width 14.0 h<br>gamma 0.005: 80% range holds 81.0%, worst size bucket off by 3.4 pts, mean width 13.8 h<br>gamma 0.01: 80% range holds 80.5%, worst size bucket off by 2.5 pts, mean width 13.8 h<br>gamma 0.02: 80% range holds 80.4%, worst size bucket off by 1.9 pts, mean width 13.7 h<br>gamma 0.05: 80% range holds 80.0%, worst size bucket off by 1.1 pts, mean width 14.1 h | Choosing the adaptive-conformal step on the training period only (replay 2008-2010). Chosen gamma 0.05. |
 | 45 | 2026-10-17 18:49 | `sip_conformal_holdout` | `` | — | fixed ranges: 80% range holds 85.0%, worst size bucket off by 9.7 pts, mean width 14.4 h<br>adaptive (gamma 0.05): 80% range holds 80.4%, worst size bucket off by 5.2 pts, mean width 18.9 h | Held-out production replay 2011-2014, gamma fixed on 2008-2010. Coverage by size bucket: 0-4h: 84.3% -> 80.0%; 20-50h: 78.5% -> 79.9%; 4-8h: 89.7% -> 81.3%; 8-20h: 89.1% -> 82.2%; >= 50h: 88.9% -> 85.2% |
 | 46 | 2026-10-17 18:50 | `sip_hierarchical_holdout` | `` | — | human: MAE 10.337 h, PRED(25) 44.88%, SA 48.64%, P10–P90 —<br>size-only: MAE 9.255 h, PRED(25) 45.42%, SA 54.02%, P10–P90 82.03<br>hierarchical: MAE 9.339 h, PRED(25) 42.62%, SA 53.6%, P10–P90 78.11, Wilcoxon p 1.06e-07 | Hierarchical correction chosen on 2010 validation only (hier[bucket+assignee] k=5), fitted on pre-2011, tested once on 2011-2014. Wilcoxon vs size-only p=9.86e-18, MAE gain vs size-only CI [-0.343, 0.185] h. |
+| 47 | 2026-10-17 19:17 | `storypoint_benchmark` | `` | jev-1.13.0 | MAE 2.542 vs Deep-SE 2.087 vs recomputed median 2.556; lower MAE than Deep-SE on 4/16, lower MAE than the recomputed median on 10/16 | Zero-shot Jev size score (variant bins10 chosen on validation), test split once. Deep-SE MAE from the authors' preprint Table 3 (doi:10.1109/TSE.2018.2792473). |
 <!-- AUTO:journal:end -->

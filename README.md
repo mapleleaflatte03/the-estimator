@@ -38,6 +38,17 @@ what the company actually used, i.e. its developers' estimates before the work s
   - **So the app flags such clauses for senior review and only adds hours once your own actuals show it.**
 - **"This person always under-estimates."** Effects per assignee and per project were chosen on 2010 and tested once
   on 2011–2014. They did not beat the size-only model (MAE 9.34 vs 9.26 h), so they were not shipped.
+- **Reading an issue and guessing its story points does not beat a model trained for that.** On the
+  Choetkiertikul et al. (2019) benchmark (IEEE TSE, doi:10.1109/TSE.2018.2792473; 23,313 issues, 16 projects,
+  files from [morakotch/datasets](https://github.com/morakotch/datasets) @ `133a5f5`), Jev scored each issue
+  with no story points in the question. Mapping `bins10` had the lowest validation MAE (2.63). For the one
+  test, that mapping was refit on train+validation and applied to the authors' test split (4,692 issues).
+  Mean test MAE was **2.54**. Table 3 of the authors' preprint gives Deep-SE **2.09** and their median
+  baseline **2.77**. A median recomputed on our train+validation rows has MAE **2.56**; those two medians
+  are not the same estimator. Jev has a lower MAE than Deep-SE on 4 of 16 projects. There is no paired
+  test against Deep-SE: the paper publishes one MAE per project. It is not shipped. GPT2SP is not used as
+  a comparison: Tawosi, Moussa and Sarro (IEEE TSE 2023, arXiv:2201.05401) reported an evaluation bug in
+  those numbers.
 - **Keyword rules don't keep up with new phrasing.** Rules tuned through round 4 caught 1/6 uncommitted clauses in round
   5; Jev caught 6/6. This is why the AI reader is mandatory.
 - **A costly bug.** The API rewrote our question keys, and 60 paid calls were unusable. The reader now halts the moment
