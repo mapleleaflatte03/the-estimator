@@ -14,19 +14,22 @@ uvicorn parallax.main:app --port 8000       # API (store: data/parallax_store.js
 cd apps/web && npm install && npm run dev   # UI on :3000 (proxy target: $PARALLAX_API_URL, default :8000)
 ```
 
-### Use it yourself: bring your own AI key
+### Use it yourself: bring your own AI keys
 
-The app works fully **without any AI key** (rules reader + cached readings for the sample briefs). To let Jev read
-new briefs, clone the repo and put **your own** key in a git-ignored `.env` at the repo root (never commit it):
+The AI reader (Jev) is **required**: every clause of a new brief is read by Jev before an estimate is produced.
+The sample briefs ship with cached answers, so they work without a key. For new briefs, put **your own** keys in a
+git-ignored `.env` at the repo root (never commit it). The API loads it at startup; real environment variables win.
 
 ```bash
 git clone https://github.com/mapleleaflatte03/the-estimator && cd the-estimator
-cp .env.example .env    # then set ONE of: TYPESAFE_API_KEY / JEVSTATION_API_KEY / AI_GATEWAY_API_KEY
-set -a && . ./.env && set +a && uvicorn parallax.main:app --app-dir apps/api --port 8000
+cp .env.example .env    # JEVSTATION_API_KEY, JEVSTATION_API_KEY_2, ... (any number) or TYPESAFE_API_KEY
+uvicorn parallax.main:app --app-dir apps/api --port 8000
 ```
 
-Each person uses their own account and pays for their own usage under that provider's terms; the public demo
-uses the author's key with a small hourly cap and falls back to rules when its credits run out.
+Several keys form a **pool**: questions are packed 5 per call (JevStation bills 1 credit for up to 5 questions and
+3 credits for 6–10), calls run in parallel, an empty key (HTTP 402, not charged) is skipped and the call retried on
+the next key. If a charged call ever returns no usable answer, the reader halts instead of spending further. Each
+person pays for their own usage under the provider's terms. `JEV_REQUIRED=0` turns the requirement off (tests only).
 
 ## Deploy (single service)
 
@@ -82,20 +85,53 @@ against a component taxonomy (auth, scheduling, offline, notifications, import, 
 ("có thể cần", "cần xem xét", "TBD", …) produces scope questions; missing platform/data-quality/API-docs information
 produces add-on questions. Answers accumulate across versions.
 
-## AI reader (Jev) — optional, measured, with fallback
+## AI reader (Jev): required, measured on real outcomes
 
-Scoping a brief is a chain of small judgements per clause: *what kind of work is this?* and *has the client
-committed to it?*. These go to [Jev](https://docs.typesafe.ai) (TypeSafe's System One decision model: typed
-answers with calibrated probabilities, no generated text). Hours, simulation and learning stay in code.
+Scoping a brief is a chain of small judgements a senior estimator makes per clause: *what kind of work is this?*,
+*has the client committed to it?* and *will this take longer than it looks?*. All three go to
+[Jev](https://docs.typesafe.ai) (TypeSafe's System One decision model: typed answers with calibrated probabilities,
+no generated text). Hours, simulation and learning stay in code.
+
+### "Will this take longer than it looks?" — validated on 798 real tasks
+
+`scripts/sip_jev_study.py` asks Jev about the text of real SiP development tasks (estimate ≥ 20 h, where most of the
+error lives) and compares with the hours actually spent. Only task ids and Jev's probabilities are stored
+(`datasets/eval/sip_jev_readings.json`); the SiP text is never copied.
+
+1. **Pilot on training years only** (75 tasks before 2011): four candidate questions. `new_build` and `overrun` tied
+   on Spearman (0.302 vs 0.297); `overrun` was chosen for its higher AUC (0.678 vs 0.595) and because nearly every
+   clause of a greenfield brief is "new build". Both the default pick and the override are in the journal.
+2. **Thresholds from training years** (579 tasks): three groups by Jev's probability.
+3. **One run on 2011–2014** (219 unseen tasks):
+
+| Jev's reading | Training: actual / estimate (median) | Unseen years: actual / estimate (median) |
+| --- | --- | --- |
+| Low risk | 0.59 | 0.65 |
+| Medium | 0.66 (×1.11) | 0.69 (×1.07) |
+| **Takes longer than it looks** | 0.78 (**×1.32**) | 0.95 (**×1.47**) |
+
+Spearman 0.20 and AUC 0.62 on the unseen tasks: the ordering holds. Using the groups as a point forecast did **not**
+significantly change MAE (52.1 → 52.7 h; 95% CI of the gain −1.9 to +0.7 h), while PRED(25) rose 16.4% → 19.6%.
+In the app, the *same question* is asked of every brief clause; clauses Jev rates medium/high get ×1.11 / ×1.32
+hours (the training ratios), shown on the work list with the reason.
+
+### Learning from your own projects
+
+When a finished project's hours are entered per requirement (optional, in "Giờ thực tế"), each requirement is an
+observation (unadjusted estimate vs actual). The risk-group factors and a factor per kind of work (reporting,
+integration, …) are pulled from the SiP prior towards the workspace's own record with partial pooling (4
+pseudo-observations, bounds 0.5–2.0), so a few projects nudge them and many take over. User-edited hours always win.
+
+### Reading accuracy
 
 - Questions are in English, clauses stay in their original language (independent tests found this keeps accuracy).
 - Rules + Jev are combined conservatively: Jev's kind is used when the rules recognise nothing; when Jev sees a
   kind the rules missed, the app **asks the user** instead of silently adding hours; a clause is tentative if
   either reader says so (Jev threshold 0.7).
-- Readings are cached per clause (`datasets/jev_cache/` ships readings for the sample briefs), so re-estimates
-  and clarifications cost nothing and stay consistent. A credit floor and an hourly call cap protect the
-  balance; any error falls back to rules. Provider keys: `JEVSTATION_API_KEY` (jevstation.com, an independent
-  reseller — brief text passes through it, so use demo briefs only), `TYPESAFE_API_KEY`, `AI_GATEWAY_API_KEY`.
+- Answers are cached per (question version, clause) (`datasets/jev_cache/` ships them for the sample briefs), so
+  re-estimates and clarifications cost nothing and stay consistent, and a new question only costs the new question.
+  If Jev cannot read every clause (no key, credits exhausted, hourly cap), the API answers 503 with the reason
+  instead of a weaker estimate. JevStation is an independent reseller: brief text passes through it.
 
 Held-out check (`datasets/eval/clause_labels_v1.json`: 31 new clauses, hand-labelled before any model ran;
 results in `datasets/eval/reader_results_v1_heldout.json`, reproduce with `scripts/evaluate_readers.py`):
@@ -113,7 +149,12 @@ rounds the rules alone caught 3/11 uncommitted requirements; with Jev **11/11**.
 Round 4, the final end-to-end test (16 new clauses, labels committed in `6169d92` before the run; the last
 credits covered 14 of them): rules 13/14 kinds and 2/4 tentative; **shipped 14/14 and 4/4**, no false alarms.
 Over rounds 1, 2 and 4 the shipped reader caught **15/15** uncommitted requirements (rules alone 5/15).
-Fixes derived from round 4 are reported as dev only. Full story, including a cache incident and its fix:
+Fixes derived from round 4 are reported as dev only.
+
+Round 5 (24 new clauses from two new sample briefs, Vietnamese and English; labels committed in their own commit
+before any reader ran): rules 21/24 kinds and **1/6** tentative; Jev alone 6/6 tentative; shipped 21/24 (+2 as
+questions) and **5/6**, no false alarms. Over rounds 1, 2, 4 and 5: shipped **20/21** uncommitted requirements
+caught vs **6/21** with rules alone, and 83/99 primary kinds vs 80/99. Full story, including a cache incident and its fix:
 [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md) (run table regenerated by `scripts/journal_report.py`).
 
 Rule improvements are always measured on data not used to derive them:
@@ -147,11 +188,12 @@ A free open model (Laya) was also tried on 12 clauses and rejected (7/12 kinds, 
 
 ## Methodological limitations
 
-1. Per-component hour templates are **engine priors (assumptions)**, not fitted to data. Only the workspace's own actuals can validate them.
-2. SiP is one UK company's maintenance/enhancement work (2004–2014); its error distribution may not transfer to other teams or greenfield projects.
-3. Feature-level ratios have a long right tail (two packages overran 6–14×); P99 of the forecast is therefore very wide. This is shown, not hidden.
-4. Clause classification (rules, optionally + Jev) can mislabel a component; every clause is still kept, so nothing is silently dropped. The held-out reader set has 31 clauses — small.
-5. Old test runs wrote fake projects into `data/parallax_store.json`. `python scripts/clean_test_artifacts.py` lists them; `--apply` removes them with a backup.
+1. Per-component hour templates are **engine priors (assumptions)**, not fitted to data. Per-requirement actuals now adjust them per kind of work, but only the workspace's own outcomes can validate them.
+2. The overrun-risk factors come from SiP maintenance tasks; whether they transfer to greenfield brief clauses is assumed, and is what per-requirement actuals correct over time.
+3. SiP is one UK company's maintenance/enhancement work (2004–2014); its error distribution may not transfer to other teams or greenfield projects.
+4. Feature-level ratios have a long right tail (two packages overran 6–14×); P99 of the forecast is therefore very wide. This is shown, not hidden.
+5. Clause classification (rules + Jev) can mislabel a component; every clause is still kept, so nothing is silently dropped. The labelled clause sets total 126 clauses written by the developer — small.
+6. Old test runs wrote fake projects into `data/parallax_store.json`. `python scripts/clean_test_artifacts.py` lists them; `--apply` removes them with a backup.
 
 ## Next steps (priority order)
 

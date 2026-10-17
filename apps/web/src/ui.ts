@@ -48,4 +48,17 @@ export const KIND_LABELS: Record<string, string> = {
   other: 'khác',
 };
 
+/** Work components used by the extractor (WorkItem.component, RequirementNode.components). */
+export const COMPONENT_LABELS: Record<string, string> = {
+  auth: 'đăng nhập', rbac: 'phân quyền', audit: 'lịch sử thay đổi', integration: 'kết nối hệ thống khác',
+  reporting: 'báo cáo', export: 'xuất file', import: 'nhập file', migration: 'chuyển dữ liệu cũ',
+  notification: 'thông báo', scheduling: 'lịch & phân công', mobile: 'điện thoại', offline: 'dùng khi mất mạng',
+  realtime: 'cập nhật tức thời', performance: 'chịu tải', ai: 'AI', rag: 'tìm kiếm tài liệu', search: 'tìm kiếm',
+  payment: 'thanh toán', workflow: 'quy trình & trạng thái', files: 'ảnh & file', maps: 'bản đồ',
+  widget: 'khung nhúng website', i18n: 'nhiều ngôn ngữ', security: 'bảo mật', crud: 'quản lý dữ liệu',
+  generic: 'chưa phân loại', foundation: 'việc chung',
+};
+
+export const RISK_LABELS = ['ít rủi ro', 'rủi ro vừa', 'dễ vượt giờ'];
+
 export const HOURS_PER_PERSON_WEEK = 32;

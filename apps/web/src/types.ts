@@ -22,7 +22,11 @@ export interface RequirementNode {
     added_component?: string | null;
     suggested_component?: string | null;
     flagged_tentative: boolean;
+    overrun?: number | null;
   } | null;
+  estimated_hours_raw?: number | null;
+  risk_group?: number | null;
+  adjustment_factor?: number | null;
 }
 
 export interface WorkItem {
@@ -263,6 +267,77 @@ export interface ActualsResult {
     type_multiplier_after: number;
     type_observations: number;
   };
+  learning?: { requirements_recorded: number; before: Learning; after: Learning };
+}
+
+export interface Learning {
+  question: string | null;
+  thresholds: number[] | null;
+  sip_factors: number[] | null;
+  sip_train_counts: number[] | null;
+  sip_test_ratio_p50: (number | null)[] | null;
+  group_factors: number[];
+  group_observations: number[];
+  component_factors: Record<string, number>;
+  component_observations: Record<string, number>;
+}
+
+export interface SipStudyMetrics {
+  n: number;
+  mae: number;
+  mdape: number;
+  pred_25: number;
+  coverage_p10_p90: number | null;
+}
+
+export interface SipStudy {
+  pilot: {
+    seed: number;
+    size: number;
+    chosen: string;
+    reason: string;
+    candidates: { question: string; n: number; spearman_log_ratio: number; auc_overrun_25pct: number; mean_p: number }[];
+  };
+  report?: {
+    question: string;
+    population: string;
+    train: string;
+    test: string;
+    thresholds_from_train: number[];
+    groups_train: { group: number; n_train: number; ratio_p10: number; ratio_p50: number; ratio_p90: number }[];
+    groups_test: { group: number; n_test: number; test_ratio_p50: number }[];
+    spearman_test: number;
+    auc_overrun_25pct_test: number;
+    human_estimate: SipStudyMetrics;
+    calibrated_size_only: SipStudyMetrics;
+    calibrated_with_jev: SipStudyMetrics;
+    mae_gain_vs_size_only_h: number;
+    mae_gain_95ci_h: number[];
+  };
+}
+
+export interface JevKeyStatus {
+  name: string;
+  provider: string;
+  credits: number | null;
+  calls: number;
+  charged: number;
+  cooling_down: boolean;
+  last_error: string | null;
+}
+
+export interface ReaderStatus {
+  configured: boolean;
+  provider: string | null;
+  available: boolean;
+  credits_remaining: number | null;
+  cached_clauses: number;
+  keys_total?: number;
+  keys_usable?: number;
+  keys?: JevKeyStatus[];
+  questions?: string[];
+  halted?: string | null;
+  required?: boolean;
 }
 
 export interface ReaderSummary {
@@ -296,9 +371,11 @@ export interface FeedbackSummary {
 export interface ReaderEvaluation {
   held_out?: { note?: string; model: string; summary: ReaderSummary[] };
   latest?: { model: string; summary: ReaderSummary[] };
-  status: { configured: boolean; provider: string | null; available: boolean; credits_remaining: number | null; cached_clauses: number };
+  status: ReaderStatus;
   feedback?: FeedbackSummary;
   journal?: JournalEntry[];
+  sip_study?: SipStudy | null;
+  learning?: Learning;
 }
 
 export interface SystemStatus {
@@ -315,6 +392,8 @@ export interface SystemStatus {
   };
   calibration: { multiplier: number; n_observations: number };
   reference_class_projects: number;
+  ai_reader?: ReaderStatus;
+  learning?: Learning & { requirement_observations: number };
   last_benchmark: {
     run_id: string;
     created_at: string;

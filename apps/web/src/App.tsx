@@ -85,7 +85,7 @@ export const App: React.FC = () => {
   };
 
   const handleProjectCreated = (newProj: Project) =>
-    withBusy('Đang phân tích mô tả và tính dự toán…', async () => {
+    withBusy('AI Jev đang đọc từng câu của mô tả (khoảng 10–30 giây với mô tả mới)…', async () => {
       setProjects((prev) => [newProj, ...prev]);
       setCurrentProject(newProj);
       const v1 = await estimateProject(newProj.project_id);
@@ -119,9 +119,9 @@ export const App: React.FC = () => {
       setCurrentVersion(v);
     });
 
-  const handleRecordActuals = async (hoursSpent: number, reasons: string[]) => {
+  const handleRecordActuals = async (hoursSpent: number, reasons: string[], perRequirement?: Record<string, number>) => {
     if (!currentProject) throw new Error('Chưa chọn dự án');
-    const result = await recordActuals(currentProject.project_id, hoursSpent, reasons);
+    const result = await recordActuals(currentProject.project_id, hoursSpent, reasons, perRequirement);
     setProjects((prev) =>
       prev.map((p) => (p.project_id === currentProject.project_id ? { ...p, status: 'actuals_recorded' } : p)),
     );

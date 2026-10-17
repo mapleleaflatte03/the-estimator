@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, RotateCcw, Sparkles, TrendingDown } from 'lucide-react';
+import { CheckCircle2, Gauge, KeyRound, RotateCcw, Sparkles, TrendingDown } from 'lucide-react';
 import type { BenchmarkReport, JournalEntry, ReaderEvaluation, ReaderSummary } from '../types';
 import { fetchReaderEvaluation } from '../api';
 import { KIND_LABELS, card } from '../ui';
@@ -26,6 +26,11 @@ const resultText = (e: JournalEntry): string => {
   const odd = promise(e);
   if (odd) return `giữ lại ${vn(odd.retention_pct)} · hiệu năng ${vn(odd.performance_recall_pct)} · bảo mật ${vn(odd.security_recall_pct)}`;
   const first = e.summary?.[0];
+  if (first && 'spearman_log_ratio' in first)
+    return e.summary.map((s) => `${String(s.question).split('@')[0]} ρ=${s.spearman_log_ratio}`).join(' · ');
+  const jevRow = e.summary?.find((s) => String(s.reader ?? '').startsWith('jev:'));
+  const sizeRow = e.summary?.find((s) => String(s.reader) === 'size-only');
+  if (jevRow && sizeRow) return `sai lệch ${sizeRow.mae} → ${jevRow.mae} giờ · PRED(25) ${sizeRow.pred_25}% → ${jevRow.pred_25}%`;
   if (first && 'mae_change_pct' in first) return `sai lệch ${String(first.mae_change_pct).replace('.', ',')}% (${first.baseline_mae} → ${first.calibrated_mae} giờ)`;
   if (first && 'retention_pct' in first) return `giữ lại ${vn(first.retention_pct)}`;
   const r = reader(e.summary, 'shipped') ?? reader(e.summary, 'rules');
@@ -74,10 +79,12 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const r1 = ev.held_out?.summary;
   const r2 = find(journal, 'round2')?.summary;
   const r4 = find(journal, 'round4_heldout')?.summary;
+  const r5 = find(journal, 'round5_heldout')?.summary;
   const rounds = [
     { key: 'r1', label: `Vòng 1 · ${reader(r1, 'rules')?.n_clauses ?? 0} câu`, rows: r1 },
     { key: 'r2', label: `Vòng 2 · ${reader(r2, 'rules')?.n_clauses ?? 0} câu`, rows: r2 },
-    { key: 'r4', label: `Vòng 4 (lần cuối) · ${reader(r4, 'rules')?.n_clauses ?? 0} câu`, rows: r4 },
+    { key: 'r4', label: `Vòng 4 · ${reader(r4, 'rules')?.n_clauses ?? 0} câu`, rows: r4 },
+    { key: 'r5', label: `Vòng 5 (mới nhất) · ${reader(r5, 'rules')?.n_clauses ?? 0} câu`, rows: r5 },
   ].filter((r) => r.rows);
 
   const tentTotals = (name: string) =>
@@ -132,8 +139,11 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const holdout = bench?.sip.holdout;
   const sip = find(journal, 'sip_holdout')?.summary?.[0] as undefined | Record<string, number | string>;
   const r4All = find(journal, 'round4_rules_before')?.summary;
-  const labelledClauses = [r1, r2, r3After ? [r3After] : undefined, r4All].reduce((s, rows) => s + Number(reader(rows, 'rules')?.n_clauses ?? 0), 0);
+  const labelledClauses = [r1, r2, r3After ? [r3After] : undefined, r4All, r5].reduce((s, rows) => s + Number(reader(rows, 'rules')?.n_clauses ?? 0), 0);
   const fb = ev.feedback;
+  const study = ev.sip_study;
+  const rep = study?.report;
+  const st = ev.status;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
@@ -145,7 +155,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Kpi
           tone="ai"
           icon={<Sparkles className="w-4 h-4" />}
@@ -153,6 +163,15 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
           value={`${tShip}/${tAll}`}
           sub={`Chỉ dùng luật: ${tRules}/${tAll}. Không báo nhầm câu nào.`}
         />
+        {rep && rep.groups_test.length === 3 && (
+          <Kpi
+            tone="ai"
+            icon={<Gauge className="w-4 h-4" />}
+            label="AI nhận ra việc dễ vượt giờ"
+            value={`+${Math.round((rep.groups_test[2].test_ratio_p50 / rep.groups_test[0].test_ratio_p50 - 1) * 100)}%`}
+            sub={`${rep.groups_test.reduce((s, g) => s + g.n_test, 0)} công việc thật chưa từng thấy: việc AI đánh giá rủi ro cao vượt giờ hơn việc ít rủi ro.`}
+          />
+        )}
         {sip && (
           <Kpi
             tone="good"
@@ -214,6 +233,68 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
           </p>
         </section>
       </div>
+
+      {rep && study && (
+        <section className={`${card} p-6 space-y-5`}>
+          <div>
+            <h2 className="text-lg font-bold">AI đọc công việc thật: việc nào sẽ tốn hơn vẻ ngoài?</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Jev đọc mô tả của {rep.groups_train.reduce((s, g) => s + g.n_train, 0) + rep.groups_test.reduce((s, g) => s + g.n_test, 0)} công
+              việc lập trình thật (SiP, ước tính từ 20 giờ trở lên) và trả lời đúng câu hỏi app đặt cho mỗi câu trong mô tả của khách:{' '}
+              <em>“người làm lâu năm có thấy việc này sẽ tốn thời gian hơn vẻ ngoài không?”</em>. Ngưỡng chia nhóm lấy từ các năm trước 2011;
+              các năm 2011–2014 chỉ dùng để chấm, một lần.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Giờ thực tế / giờ ước tính (trung vị) theo đánh giá của AI
+              </div>
+              <GroupedBars
+                series={[
+                  { key: 'train', label: 'Năm trước (để học)', tone: 'muted' },
+                  { key: 'test', label: 'Năm sau (chưa từng thấy)', tone: 'ai' },
+                ]}
+                groups={[0, 1, 2].map((g) => {
+                  const tr = rep.groups_train.find((x) => x.group === g);
+                  const te = rep.groups_test.find((x) => x.group === g);
+                  const top = Math.max(...rep.groups_train.map((x) => x.ratio_p50), ...rep.groups_test.map((x) => x.test_ratio_p50));
+                  return {
+                    key: `g${g}`,
+                    label: `${['Ít rủi ro', 'Rủi ro vừa', 'Dễ vượt giờ'][g]} (${tr?.n_train ?? 0} + ${te?.n_test ?? 0} việc)`,
+                    values: [
+                      { series: 'train', value: (tr?.ratio_p50 ?? 0) / top, display: `×${(tr?.ratio_p50 ?? 0).toFixed(2)}` },
+                      { series: 'test', value: (te?.test_ratio_p50 ?? 0) / top, display: `×${(te?.test_ratio_p50 ?? 0).toFixed(2)}` },
+                    ],
+                  };
+                })}
+              />
+            </div>
+            <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+              <p>
+                Trên năm chưa từng thấy, thứ tự vẫn giữ nguyên: việc AI đánh giá <strong>dễ vượt giờ</strong> tốn gấp{' '}
+                <strong>
+                  {(rep.groups_test[2].test_ratio_p50 / rep.groups_test[0].test_ratio_p50).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+                </strong>{' '}
+                lần (so với ước tính) việc ít rủi ro. Tương quan thứ hạng {rep.spearman_test.toLocaleString('vi-VN')}, AUC{' '}
+                {rep.auc_overrun_25pct_test.toLocaleString('vi-VN')} cho việc vượt quá 25%.
+              </p>
+              <p>
+                App dùng đúng các tỷ lệ học từ năm trước (×{(rep.groups_train[1].ratio_p50 / rep.groups_train[0].ratio_p50).toFixed(2)} và ×
+                {(rep.groups_train[2].ratio_p50 / rep.groups_train[0].ratio_p50).toFixed(2)}) để cộng giờ cho những câu AI đánh giá rủi ro, rồi
+                tự điều chỉnh khi bạn nhập giờ thực tế theo từng yêu cầu.
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Nói thẳng: dự báo từng việc chưa chính xác hơn rõ rệt (sai lệch trung bình {rep.calibrated_size_only.mae.toLocaleString('vi-VN')} →{' '}
+                {rep.calibrated_with_jev.mae.toLocaleString('vi-VN')} giờ, khoảng tin cậy 95% của mức giảm: {rep.mae_gain_95ci_h[0]} đến{' '}
+                {rep.mae_gain_95ci_h[1]} giờ); tỷ lệ việc sai dưới 25% tăng {rep.calibrated_size_only.pred_25.toLocaleString('vi-VN')}% →{' '}
+                {rep.calibrated_with_jev.pred_25.toLocaleString('vi-VN')}%. Câu hỏi được chọn trong {study.pilot.candidates.length} câu thử trên{' '}
+                {study.pilot.size} việc của các năm trước.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {improvement.length > 0 && (
         <section className={`${card} p-6 space-y-4`}>
@@ -318,6 +399,19 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
         )}
       </section>
 
+      <section className={`${card} p-6 space-y-3`}>
+        <h2 className="text-lg font-bold flex items-center gap-2">
+          <KeyRound className="w-5 h-5" /> AI Jev đang chạy
+        </h2>
+        <p className="text-sm text-slate-700 dark:text-slate-300">
+          {st.configured
+            ? `${st.keys_usable ?? 0}/${st.keys_total ?? 0} khóa dùng được${st.credits_remaining != null ? ` · còn khoảng ${st.credits_remaining} lượt (mỗi lượt 5 câu hỏi)` : ''} · ${st.cached_clauses} câu trả lời đã lưu, đọc lại không tốn phí.`
+            : 'Chưa cấu hình khóa Jev: app chỉ tính được các mô tả mẫu đã đọc sẵn.'}{' '}
+          {st.required !== false && 'Mỗi dự toán đều phải được AI đọc đủ mọi câu.'}
+        </p>
+        {st.halted && <p className="text-sm text-rose-700 dark:text-rose-400">Đã tạm dừng để bảo vệ credit: {st.halted}</p>}
+      </section>
+
       <details className={`${card} p-6`}>
         <summary className="font-bold cursor-pointer">Nhật ký kiểm thử ({journal.length} lần chạy)</summary>
         <div className="overflow-x-auto mt-3">
@@ -343,8 +437,8 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
           </table>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-400 mt-3">
-          Mô hình AI: {ev.held_out?.model ?? 'jev-1.13.0'} (Jev của TypeSafe, qua JevStation). Dữ liệu: SiP (CC BY-NC-ND 4.0), PROMISE_exp (Lima et
-          al., 2019). Bộ câu gán tay còn nhỏ ({labelledClauses} câu, chủ yếu tiếng Việt), cần thêm mô tả thật của khách để kết luận chắc chắn.
+          Mô hình AI: {ev.held_out?.model ?? 'jev-1.13.0'} (Jev của TypeSafe, qua JevStation). Dữ liệu: SiP (CC BY-NC-ND 4.0; chỉ lưu mã
+          công việc và xác suất AI, không sao chép nội dung), PROMISE_exp (Lima et al., 2019). Bộ câu gán tay còn nhỏ ({labelledClauses} câu, chủ yếu tiếng Việt), cần thêm mô tả thật của khách để kết luận chắc chắn.
         </p>
       </details>
     </div>

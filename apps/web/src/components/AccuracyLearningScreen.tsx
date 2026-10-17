@@ -2,14 +2,31 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import type { ActualsResult, EstimateVersion, HistoricalCase } from '../types';
 import { fetchHistoricalCases } from '../api';
-import { PROJECT_TYPES, card, hours } from '../ui';
+import { COMPONENT_LABELS, PROJECT_TYPES, RISK_LABELS, card, hours } from '../ui';
 import { GroupedBars } from './charts';
 
 const typeLabel = (t: string) => PROJECT_TYPES.find((p) => p.value === t)?.label.toLowerCase() ?? t;
 
+/** What changed in the learned per-kind and per-risk factors after this record. */
+const learnedChanges = (r: ActualsResult): string[] => {
+  const l = r.learning;
+  if (!l || l.requirements_recorded === 0) return [];
+  const out: string[] = [];
+  Object.entries(l.after.component_factors).forEach(([c, f]) => {
+    const before = l.before.component_factors[c] ?? 1;
+    if (Math.abs(f - before) >= 0.01 && c !== 'foundation')
+      out.push(`${COMPONENT_LABELS[c] ?? c}: ×${before.toFixed(2)} → ×${f.toFixed(2)} (${l.after.component_observations[c]} yêu cầu)`);
+  });
+  l.after.group_factors.forEach((f, g) => {
+    const before = l.before.group_factors[g];
+    if (Math.abs(f - before) >= 0.01) out.push(`Việc AI đánh giá “${RISK_LABELS[g]}”: ×${before.toFixed(2)} → ×${f.toFixed(2)}`);
+  });
+  return out;
+};
+
 interface AccuracyLearningScreenProps {
   version: EstimateVersion;
-  onRecordActuals: (actualHours: number, reasons: string[]) => Promise<ActualsResult>;
+  onRecordActuals: (actualHours: number, reasons: string[], perRequirement?: Record<string, number>) => Promise<ActualsResult>;
   onReestimate: () => Promise<void>;
   onOpenEvidence: () => void;
   isLoading: boolean;
@@ -35,6 +52,9 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState<HistoricalCase[]>([]);
+  const [perReq, setPerReq] = useState<Record<string, string>>({});
+  const features = version.requirements.filter((r) => r.in_scope !== false && r.estimated_hours_raw);
+  const perReqTotal = Object.values(perReq).reduce((s, v) => s + (parseFloat(v) || 0), 0);
 
   useEffect(() => {
     fetchHistoricalCases()
@@ -48,8 +68,13 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
     if (isNaN(h) || h <= 0) return;
     setSaving(true);
     setError(null);
+    const byReq = Object.fromEntries(
+      Object.entries(perReq)
+        .map(([k, v]) => [k, parseFloat(v)] as const)
+        .filter(([, v]) => v > 0),
+    );
     try {
-      setResult(await onRecordActuals(h, note ? [note] : []));
+      setResult(await onRecordActuals(h, note ? [note] : [], Object.keys(byReq).length ? byReq : undefined));
       setCompleted(await fetchHistoricalCases());
     } catch (err) {
       setError((err as Error).message);
@@ -103,6 +128,48 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
             />
           </div>
         </div>
+        {features.length > 0 && (
+          <details className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+            <summary className="cursor-pointer text-sm font-semibold">
+              Giờ thực tế theo từng yêu cầu <span className="font-normal text-slate-600 dark:text-slate-400">(không bắt buộc, giúp học sát hơn)</span>
+            </summary>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+              Hệ thống sẽ học loại việc nào nhóm bạn hay làm lâu hơn dự kiến, và điều chỉnh mức cộng giờ cho những việc AI đánh giá dễ vượt
+              giờ, dựa trên chính dự án của bạn.
+            </p>
+            <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
+              {features.map((r) => (
+                <li key={r.req_id} className="py-2 flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+                  <span className="flex-1 min-w-0 break-words">
+                    {r.req_id === 'REQ-00' ? r.title : (r.evidence[0]?.quote ?? r.title)}
+                  </span>
+                  <span className="flex items-center gap-1.5 flex-shrink-0">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.5"
+                      aria-label={`Giờ thực tế: ${r.title}`}
+                      placeholder={String(Math.round(r.estimated_hours_raw ?? 0))}
+                      value={perReq[r.req_id] ?? ''}
+                      onChange={(e) => setPerReq((s) => ({ ...s, [r.req_id]: e.target.value }))}
+                      className="w-24 px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0b0f1a] text-right"
+                    />
+                    <span className="text-slate-600 dark:text-slate-400">giờ</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {perReqTotal > 0 && (
+              <button
+                type="button"
+                onClick={() => setActualHours(String(Math.round(perReqTotal * 10) / 10))}
+                className="mt-2 text-xs font-bold text-indigo-700 dark:text-cyan-300 underline cursor-pointer"
+              >
+                Dùng tổng {hours(perReqTotal)} làm số giờ thực tế
+              </button>
+            )}
+          </details>
+        )}
         <button
           type="submit"
           disabled={saving || !actualHours}
@@ -123,13 +190,25 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
               Đã lưu. Thực tế {hours(result.actual_hours)}, {diffText(result.actual_hours, result.estimated_p50)} ({hours(result.estimated_p50)}).
             </p>
-            {Math.abs(adjust) >= 0.5 && (
+            {learnedChanges(result).length > 0 && (
+              <div className="text-sm text-slate-700 dark:text-slate-300">
+                <p className="font-semibold">Đã học từ {result.learning?.requirements_recorded} yêu cầu của dự án này:</p>
+                <ul className="list-disc pl-5">
+                  {learnedChanges(result).map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {(Math.abs(adjust) >= 0.5 || learnedChanges(result).length > 0) && (
               <>
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  Từ giờ, dự toán mới cho dự án loại “{typeLabel(result.calibration.project_type)}” sẽ được điều chỉnh{' '}
-                  {adjust > 0 ? 'tăng' : 'giảm'} khoảng {pct(adjust)} (học từ {result.calibration.type_observations} dự án cùng loại; các loại
-                  khác điều chỉnh ít hơn).
-                </p>
+                {Math.abs(adjust) >= 0.5 && (
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    Từ giờ, dự toán mới cho dự án loại “{typeLabel(result.calibration.project_type)}” sẽ được điều chỉnh{' '}
+                    {adjust > 0 ? 'tăng' : 'giảm'} khoảng {pct(adjust)} (học từ {result.calibration.type_observations} dự án cùng loại; các
+                    loại khác điều chỉnh ít hơn).
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={onReestimate}

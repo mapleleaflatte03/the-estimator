@@ -51,10 +51,15 @@ export const answerClarification = (projectId: string, questionId: string, answe
     'Failed to answer clarification',
   );
 
-export const recordActuals = (projectId: string, actualHours: number, deviationReasons?: string[]) =>
+export const recordActuals = (
+  projectId: string,
+  actualHours: number,
+  deviationReasons?: string[],
+  requirementActuals?: Record<string, number>,
+) =>
   request<ActualsResult>(
     `${API_BASE}/projects/${projectId}/actuals`,
-    postJson({ actual_hours: actualHours, deviation_reasons: deviationReasons }),
+    postJson({ actual_hours: actualHours, deviation_reasons: deviationReasons, requirement_actuals: requirementActuals }),
     'Failed to record actuals',
   );
 

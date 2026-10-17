@@ -11,13 +11,18 @@ interface ScopeGraphScreenProps {
 
 const itemHours = (w: WorkItem) => typicalHours(w.optimistic_hours, w.most_likely_hours, w.pessimistic_hours);
 
-const aiNote = (req: RequirementNode): string | null => {
+const aiNotes = (req: RequirementNode): string[] => {
   const a = req.ai_reading;
-  if (!a) return null;
-  if (a.flagged_tentative) return `AI: có vẻ khách chưa chốt (${Math.round(a.tentative * 100)}%)`;
-  if (a.added_component) return `AI nhận ra: ${KIND_LABELS[a.kind] ?? a.kind}`;
-  if (a.suggested_component) return `AI gợi ý thêm: ${KIND_LABELS[a.kind] ?? a.kind} (xem Câu hỏi)`;
-  return null;
+  if (!a) return [];
+  const notes: string[] = [];
+  if (a.flagged_tentative) notes.push(`AI: có vẻ khách chưa chốt (${Math.round(a.tentative * 100)}%)`);
+  if (a.added_component) notes.push(`AI nhận ra: ${KIND_LABELS[a.kind] ?? a.kind}`);
+  if (a.suggested_component) notes.push(`AI gợi ý thêm: ${KIND_LABELS[a.kind] ?? a.kind} (xem Câu hỏi)`);
+  const f = req.adjustment_factor ?? 1;
+  if (req.risk_group === 2 && a.overrun != null)
+    notes.push(`AI: dễ tốn hơn vẻ ngoài (${Math.round(a.overrun * 100)}%) · +${Math.round((f - 1) * 100)}% giờ theo dữ liệu thật`);
+  else if (Math.abs(f - 1) >= 0.01) notes.push(`${f > 1 ? '+' : '−'}${Math.abs(Math.round((f - 1) * 100))}% giờ theo dữ liệu thật`);
+  return notes;
 };
 
 type Added = NonNullable<ManualEdits['added']>[number] & { dropped?: boolean };
@@ -181,7 +186,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
           const excluded = req.in_scope === false;
           const total = items.reduce((s, w) => s + itemHours(w), 0);
           const text = req.evidence[0]?.quote ?? req.title;
-          const note = aiNote(req);
+          const notes = aiNotes(req);
           const savedAdds = version.manual_edits?.added?.length ?? 0;
           const pendingAdds = editing ? draft.added.slice(savedAdds).filter((a) => a.req_id === req.req_id && !a.dropped) : [];
           return (
@@ -190,11 +195,11 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                 <div className="min-w-0">
                   <h2 className="font-bold leading-snug break-words">{req.req_id === 'REQ-00' ? req.title : text}</h2>
                   {req.req_id === 'REQ-00' && <p className="text-sm text-slate-600 dark:text-slate-400">{req.description}</p>}
-                  {note && (
-                    <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
-                      <Sparkles className="w-3.5 h-3.5" /> {note}
+                  {notes.map((note) => (
+                    <p key={note} className="mt-1 flex items-start gap-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-px" /> {note}
                     </p>
-                  )}
+                  ))}
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   {!excluded && (

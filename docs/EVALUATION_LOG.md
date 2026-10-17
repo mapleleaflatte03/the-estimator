@@ -157,20 +157,113 @@ An automated check rendered all six screens at 7 widths (320–1440 px) in light
   - Steps hidden off-screen.
   - A squeezed actuals table.
 
+### 10. Jev becomes required; a pool of keys
+
+The AI reader is now mandatory: an estimate is only produced once Jev has read every clause (otherwise the API
+answers 503 with the reason). Nine JevStation keys were provided; a probe found key 1 empty and keys 2–9 at 49
+credits each. A probe of the pricing found **1 credit for 1–5 questions and 3 credits for 6–10**, so the client now
+packs exactly 5 questions per call across clauses, runs calls in parallel and moves to the next key on HTTP 402.
+
+### 11. Incident: 60 credits spent on unreadable answers
+
+The first pilot run named questions `c0__open_scope` (double underscore). The API normalises answer keys to
+`c0_open_scope`, so 60 paid calls returned answers the client could not match, and nothing was cached.
+
+**Fix:**
+- Single underscores, plus loose key matching.
+- A circuit breaker: if a charged call yields no usable answer, the reader halts all further spending until a
+  human looks.
+- Both are covered by tests.
+
+The pilot was then re-run: 59 credits.
+
+### 12. Can Jev tell which estimates will overrun? (SiP, real outcomes)
+
+The question asked was whether Jev, reading only a task's one-line text, can tell which human estimates will run
+over. Population: SiP Development tasks estimated at ≥ 20 h: 579 before 2011, 219 from 2011.
+
+| Pilot, 75 training tasks | Spearman with log(actual/estimate) | AUC (overrun > 25%) |
+| --- | --- | --- |
+| open-ended / loosely defined | 0.106 | 0.631 |
+| builds something new | **0.302** | 0.595 |
+| depends on data moves / other parties | 0.190 | 0.598 |
+| **"would an experienced developer expect it to take longer than it looks?"** | 0.297 | **0.678** |
+
+The pre-written rule (highest Spearman) picked `new_build`; it was overridden for `overrun`, with the reason
+recorded before any test data was touched:
+- The Spearman values were a tie.
+- `overrun` had the higher AUC.
+- Nearly every clause of a greenfield brief is "new build".
+
+The journal keeps both entries.
+
+`overrun` was then asked of every remaining training task and all test tasks (141 credits). Thresholds came from
+training data (tertiles at p = 0.66 and 0.71). The test set was scored once:
+
+| Group | Training median actual/estimate | 2011–2014 median actual/estimate |
+| --- | --- | --- |
+| low | 0.590 (n=222) | 0.647 (n=110) |
+| medium | 0.655 (n=174) | 0.692 (n=50) |
+| high | 0.779 (n=183) | 0.952 (n=59) |
+
+| Metric on 219 unseen tasks | Human estimate | Ratio model, size only | Ratio model + Jev group |
+| --- | --- | --- | --- |
+| MAE | 56.9 h | 52.1 h | 52.7 h |
+| PRED(25) | 23.7% | 16.4% | 19.6% |
+| P10–P90 coverage | — | 76.3% | 76.7% |
+
+On unseen tasks the ranking holds (Spearman 0.197, AUC 0.62). High-risk work overran 1.47× as much as low-risk
+work, against 1.32× in training.
+
+As a point forecast, the change in MAE is not significant: the paired-bootstrap 95% CI of the gain is
+−1.9 to +0.7 h.
+
+**Used in the app:** the identical question is asked of every brief clause. Medium and high groups get the
+*training* ratios (×1.11, ×1.32 relative to low), and low-risk clauses keep their hours.
+
+### 13. Round 5: two new briefs, 24 new clauses
+
+The labels were committed on their own commit (`Round 5 held-out labels…`) before any reader ran.
+
+| Reader | Primary kind | Tentative caught | False alarms |
+| --- | --- | --- | --- |
+| Rules (incl. round-4 fixes, first held-out check) | 21/24 | 1/6 | 0 |
+| Jev alone | 18/24 | 6/6 | 0 |
+| **Shipped** | **21/24** (+2 as questions) | **5/6** | 0 |
+
+The shipped reader missed one tentative clause, "…thì để xem ngân sách đã". Jev gave it 0.53, below the 0.7
+threshold that was fixed in advance; the threshold was not changed.
+
+The round-4 fixes did not generalise to new hedges: the rules caught only 1/6. That confirms the AI reader is the
+part that catches uncommitted scope.
+
+Fixes from round 5 (dev):
+- Hedges: "để xem ngân sách", "đang tính có nên", "if there's time", "down the line", "not sure whether", "we may
+  want".
+- Branch-only visibility counts as permissions.
+- "Customers get an email" counts as a notification.
+- "entering their …" counts as a form.
+
+Rounds 1–4 and PROMISE odd projects are unchanged, number for number. Round 5 after its own fixes scores 24/24 and
+6/6, which is dev, not evidence.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
 | --- | --- |
 | Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, P10–P90 coverage 82.0% |
-| The shipped reader notices what the client has not committed to | Rounds 1, 2 and 4: **15/15** tentative clauses caught vs **5/15** with rules alone, **0** false alarms |
-| The shipped reader finds the main kind of work | Rounds 1, 2 and 4: **62/75** vs 59/75 with rules alone |
-| Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6% |
+| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4 and 5: **20/21** tentative clauses caught vs **6/21** with rules alone, **0** false alarms |
+| The shipped reader finds the main kind of work | Rounds 1, 2, 4 and 5: **83/99** vs 80/99 with rules alone |
+| Jev spots work that will take longer than it looks | SiP 2011–2014, 219 unseen tasks: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62); point-forecast MAE unchanged within noise |
+| Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
 
 ## Limitations
 
 - **Clause sets.** The sets were written by the developer in the style of client briefs, not taken from real client
-  documents. They total 102 clauses, which is small.
-- **Round-4 fixes.** They have no held-out confirmation yet; that needs a round 5 of fresh clauses and AI credits.
+  documents. They total 126 clauses, which is small.
+- **Round-5 fixes.** They have no held-out confirmation yet; that needs a round 6.
+- **Overrun transfer.** The overrun factors come from SiP maintenance tasks; per-requirement actuals in the app are
+  how they get corrected for greenfield work.
 - **Model version.** Jev results are for `jev-1.13.0`. Another model version needs a new run.
 - **Work-package level.** SiP shows no reliable gain at that level (7 holdout cases).
 
@@ -203,4 +296,16 @@ An automated check rendered all six screens at 7 widths (320–1440 px) in light
 | 22 | 2026-10-17 02:04 | `round4_rules_final` | `5f17422a06` | — | rules: kind 16/16, tentative 5/5, false 0 | Final rules: round-4 fixes + 'tìm … theo' search pattern (round 4 = dev). |
 | 23 | 2026-10-17 02:04 | `promise_final` | `5f17422a06` | — | odd projects: retention 100.0%, performance recall 51.6%, security recall 77.4%, false tentative 0/392 | Final rules regression check. |
 | 24 | 2026-10-17 02:07 | `round4_shipped_final` | `5f17422a06` | jev-1.13.0 | rules: kind 14/14, tentative 4/4, false 0<br>jev: kind 11/14, tentative 4/4, false 0<br>shipped: kind 14/14, tentative 4/4, false 0 | Final shipped reader (final rules + cached Jev readings, no API calls) on round 4; rule fixes were derived from round 4, so this is dev, not held-out. (scored 14/16, API calls 0, credits left None) |
+| 25 | 2026-10-17 13:53 | `sip_jev_pilot` | `` | jev-1.13.0 | open_scope@v1: Spearman 0.106, AUC 0.631<br>new_build@v1: Spearman 0.302, AUC 0.595<br>coupling@v1: Spearman 0.19, AUC 0.598<br>overrun@v1: Spearman 0.297, AUC 0.678 | Pilot on 75 TRAINING tasks only (estimated before 2011): choose the question to scale up. Chosen: new_build@v1 |
+| 26 | 2026-10-17 13:53 | `sip_jev_pilot` | `` | jev-1.13.0 | open_scope@v1: Spearman 0.106, AUC 0.631<br>new_build@v1: Spearman 0.302, AUC 0.595<br>coupling@v1: Spearman 0.19, AUC 0.598<br>overrun@v1: Spearman 0.297, AUC 0.678 | Pilot on 75 TRAINING tasks only (estimated before 2011), test tasks untouched. Chosen: overrun@v1. Reason: Tie on Spearman (new_build 0.302 vs overrun 0.297); overrun has the higher AUC for >25% overruns (0.678 vs 0.595) and transfers to greenfield briefs, where nearly every clause is new_build. Decided on training data only. |
+| 27 | 2026-10-17 13:54 | `sip_jev_holdout` | `` | jev-1.13.0 | human: MAE 56.92 h, PRED(25) 23.7%, P10–P90 —<br>size-only: MAE 52.11 h, PRED(25) 16.4%, P10–P90 76.3<br>jev:overrun@v1: MAE 52.65 h, PRED(25) 19.6%, P10–P90 76.7 | Held-out test 2011-2014. Jev overrun@v1 tertile split fitted on training tasks only. MAE gain vs size-only -0.54 h (95% CI [-1.91, 0.73]); test Spearman 0.197, AUC 0.62. |
+| 28 | 2026-10-17 14:01 | `round5_rules_before` | `74c1409f3b` | — | rules: kind 21/24, tentative 1/6, false 0 | Round 5: 24 new clauses (labels committed before the run). Rules as shipped incl. round-4 fixes: first held-out check of those fixes. |
+| 29 | 2026-10-17 14:02 | `round5_heldout` | `74c1409f3b` | jev-1.13.0 | rules: kind 21/24, tentative 1/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 21/24, tentative 5/6, false 0 | Round 5 held-out: 24 new clauses (VN + EN), labels committed before any reader ran. Shipped reader = rules + Jev via the 9-key pool. (scored 24/24, API calls 10, credits left 108) |
+| 30 | 2026-10-17 14:03 | `round1_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 29/31, tentative 6/6, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
+| 31 | 2026-10-17 14:03 | `round2_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 28/30, tentative 5/5, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
+| 32 | 2026-10-17 14:03 | `round3_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 23/25, tentative 4/4, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
+| 33 | 2026-10-17 14:03 | `round4_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 16/16, tentative 5/5, false 0 | Regression check after round-5 rule fixes (round 5 = dev, derived from it). |
+| 34 | 2026-10-17 14:03 | `round5_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 24/24, tentative 6/6, false 0 | Round 5 after its own rule fixes: dev, not evidence. |
+| 35 | 2026-10-17 14:03 | `promise_after_round5_fixes` | `dd175964ab` | — | odd projects: retention 100.0%, performance recall 51.6%, security recall 77.4%, false tentative 0/392 | Regression check after round-5 rule fixes. |
+| 36 | 2026-10-17 14:03 | `round5_shipped_final` | `dd175964ab` | jev-1.13.0 | rules: kind 24/24, tentative 6/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 24/24, tentative 6/6, false 0 | Final shipped reader (rules after round-5 fixes + cached Jev answers, no API calls) on round 5: dev, not held-out. (scored 24/24, API calls 0, credits left None) |
 <!-- AUTO:journal:end -->
