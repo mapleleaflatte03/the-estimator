@@ -24,6 +24,7 @@ its numbers are exactly what the evaluation scripts recorded.
 | Does it notice what the client has **not** committed to? | Same sets | Tentative clauses caught, false alarms |
 | Does it keep every requirement in real English specs? | PROMISE_exp: 969 requirements from 47 projects (Lima et al., 2019) | Retention, NFR recall, false alarms |
 | Can a zero-shot size reading predict story points as well as a model trained for that? | Choetkiertikul et al. 2019: 23,313 issues, 16 projects, authors' test split (doi:10.1109/TSE.2018.2792473) | MAE vs Deep-SE and vs a median baseline. One project-level MAE is not a paired test |
+| Does a pre-registered correction beat the shipped size-only hour model? | SiP tasks estimated in 2010 (557), models fit on 2004–2009 | MAE vs size-only, P10–P90 coverage, paired bootstrap CI. 2011–2014 is scored only if the 2010 rule promotes a candidate |
 
 ## Timeline
 
@@ -526,6 +527,48 @@ Data Management is the case that shows why the two medians must not be mixed: Je
 median and behind Deep-SE. The product still estimates hours from a brief plus the team's own actuals. This
 run does not show that a size score read from text should be added to that hour model.
 
+### 26. Other hour corrections (negative result, not shipped)
+
+**Question.** On tasks estimated in 2010, does any correction listed in advance have a lower MAE than the shipped
+size-only model?
+
+**What this run does not repeat.** The hierarchical factor grid (section 24), turning an overrun reading into extra
+hours, the conformal step, and the story-point reader. No Jev calls.
+
+**Protocol.** `datasets/eval/sip_correction_protocol_v1.json`, committed in `4668353` before the score. Eight
+candidates: trailing windows that ignore ratios from before 2006, 2007, or 2008; shrinking each size-bucket ratio
+toward the pooled ratio (k = 30 and k = 100); a round-versus-odd split inside the shipped size buckets; and two
+other bucket edges (powers of two, and 8 h / 40 h). Fit on tasks estimated before 2010. Score 2010 only (557 tasks).
+A candidate is promoted only when its P10–P90 coverage is at least 75%, its MAE is strictly below size-only, and
+the paired bootstrap 95% CI of the MAE gain is entirely above 0 (5,000 resamples, seed 20261017). Otherwise
+2011–2014 stays closed.
+
+**2010 result.** Size-only MAE 8.189 h, coverage 82.76%. Human MAE 8.738 h. Every gain CI includes 0, so nobody
+was promoted. `datasets/eval/sip_correction_choice.json` records `holdout_scored: false`. Tasks estimated in
+2011–2014 were not scored.
+
+| Candidate | MAE (h) | P10–P90 | MAE gain vs size-only, 95% CI |
+| --- | --- | --- | --- |
+| size-only (shipped) | **8.189** | 82.76% | — |
+| recent-2006 | 8.204 | 80.61% | [−0.043, 0.012] |
+| recent-2007 | 8.174 | 79.35% | [−0.025, 0.058] |
+| recent-2008 | 8.185 | 79.53% | [−0.046, 0.050] |
+| shrink-k30 | 8.225 | 82.23% | [−0.189, 0.105] |
+| shrink-k100 | 8.276 | 81.51% | [−0.453, 0.246] |
+| round-by-bucket | 7.955 | 82.59% | [−0.202, 0.739] |
+| edges-pow2 | 8.262 | 80.79% | [−0.166, 0.016] |
+| edges-coarse | 8.149 | 80.61% | [−0.106, 0.184] |
+
+A positive gain is a lower MAE than size-only. The lowest point estimate is round-by-bucket, 7.955 h against
+8.189 h. Its interval runs from a loss of 0.202 h to a gain of 0.739 h. Wilcoxon against size-only is p = 0.24,
+and against the human estimate p = 0.568 (the p in journal row 48). No candidate has p < 0.05 against
+size-only. The smallest of those p-values is 0.157, for edges-pow2, and that MAE is higher than size-only.
+Eight candidates shared this screen. A single CI lying entirely above 0 would still not have been a
+family-wise 95% claim. No lower bound was above 0.
+
+**Decision.** Not shipped. The screen does not replace the size-only model. These rows already contain a human
+estimate, so the result does not speak to a brief that has no estimate and no actual hours.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
@@ -601,4 +644,5 @@ run does not show that a size score read from text should be added to that hour 
 | 45 | 2026-10-17 18:49 | `sip_conformal_holdout` | `` | — | fixed ranges: 80% range holds 85.0%, worst size bucket off by 9.7 pts, mean width 14.4 h<br>adaptive (gamma 0.05): 80% range holds 80.4%, worst size bucket off by 5.2 pts, mean width 18.9 h | Held-out production replay 2011-2014, gamma fixed on 2008-2010. Coverage by size bucket: 0-4h: 84.3% -> 80.0%; 20-50h: 78.5% -> 79.9%; 4-8h: 89.7% -> 81.3%; 8-20h: 89.1% -> 82.2%; >= 50h: 88.9% -> 85.2% |
 | 46 | 2026-10-17 18:50 | `sip_hierarchical_holdout` | `` | — | human: MAE 10.337 h, PRED(25) 44.88%, SA 48.64%, P10–P90 —<br>size-only: MAE 9.255 h, PRED(25) 45.42%, SA 54.02%, P10–P90 82.03<br>hierarchical: MAE 9.339 h, PRED(25) 42.62%, SA 53.6%, P10–P90 78.11, Wilcoxon p 1.06e-07 | Hierarchical correction chosen on 2010 validation only (hier[bucket+assignee] k=5), fitted on pre-2011, tested once on 2011-2014. Wilcoxon vs size-only p=9.86e-18, MAE gain vs size-only CI [-0.343, 0.185] h. |
 | 47 | 2026-10-17 19:17 | `storypoint_benchmark` | `` | jev-1.13.0 | MAE 2.542 vs Deep-SE 2.087 vs recomputed median 2.556; lower MAE than Deep-SE on 4/16, lower MAE than the recomputed median on 10/16 | Zero-shot Jev size score (variant bins10 chosen on validation), test split once. Deep-SE MAE from the authors' preprint Table 3 (doi:10.1109/TSE.2018.2792473). |
+| 48 | 2026-10-17 21:22 | `sip_correction_validation` | `sip_correction_protocol_v1` | — | human: MAE 8.738 h, PRED(25) 51.53%, SA 53.8%, P10–P90 —<br>size-only: MAE 8.189 h, PRED(25) 52.06%, SA 56.71%, P10–P90 82.76<br>round-by-bucket: MAE 7.955 h, PRED(25) 52.24%, SA 57.94%, P10–P90 82.59, Wilcoxon p 0.568 | No correction promoted on 2010. Lowest MAE was round-by-bucket 7.955 h vs size-only 8.189 h, coverage 82.59%, MAE-gain 95% CI [-0.202, 0.739]. 2011-2014 was not scored. |
 <!-- AUTO:journal:end -->

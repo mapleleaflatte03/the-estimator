@@ -49,6 +49,12 @@ what the company actually used, i.e. its developers' estimates before the work s
   test against Deep-SE: the paper publishes one MAE per project. It is not shipped. GPT2SP is not used as
   a comparison: Tawosi, Moussa and Sarro (IEEE TSE 2023, arXiv:2201.05401) reported an evaluation bug in
   those numbers.
+- **Trailing windows, softer buckets, round-number splits, and two other bucket edges.** Eight corrections were
+  frozen in `datasets/eval/sip_correction_protocol_v1.json` before any of them was scored (commit `4668353`).
+  Fit on 2004–2009, scored on 2010 (557 tasks). A candidate had to beat the shipped size-only model on MAE,
+  keep P10–P90 coverage at least 75%, and have a paired bootstrap 95% CI for the MAE gain entirely above 0.
+  None did. The lowest point estimate was a round-versus-odd split inside each size bucket: MAE **7.955 h**
+  vs **8.189 h**, CI **[−0.202, 0.739]**, Wilcoxon against size-only p = 0.24. Tasks from 2011–2014 were not scored. Not shipped.
 - **Keyword rules don't keep up with new phrasing.** Rules tuned through round 4 caught 1/6 uncommitted clauses in round
   5; Jev caught 6/6. This is why the AI reader is mandatory.
 - **A costly bug.** The API rewrote our question keys, and 60 paid calls were unusable. The reader now halts the moment
