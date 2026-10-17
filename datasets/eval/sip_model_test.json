@@ -1,0 +1,39 @@
+{
+ "chosen": "hier[bucket+assignee] k=5",
+ "train": "estimated before 2011-01-01 (7774)",
+ "test": 2248,
+ "human": {
+  "n": 2248,
+  "mae": 10.337,
+  "mdae": 1.0,
+  "sa": 48.64,
+  "pred_25": 44.88,
+  "mdape": 33.33
+ },
+ "size_only": {
+  "n": 2248,
+  "mae": 9.255,
+  "mdae": 1.0,
+  "sa": 54.02,
+  "pred_25": 45.42,
+  "mdape": 33.33,
+  "coverage_p10_p90": 82.03,
+  "mean_width": 25.13
+ },
+ "hierarchical": {
+  "n": 2248,
+  "mae": 9.339,
+  "mdae": 1.037,
+  "sa": 53.6,
+  "pred_25": 42.62,
+  "mdape": 36.01,
+  "coverage_p10_p90": 78.11,
+  "mean_width": 25.59
+ },
+ "wilcoxon_hier_vs_human_p": 1.06e-07,
+ "wilcoxon_hier_vs_size_only_p": 9.86e-18,
+ "mae_gain_vs_size_only_95ci": [
+  -0.343,
+  0.185
+ ]
+}

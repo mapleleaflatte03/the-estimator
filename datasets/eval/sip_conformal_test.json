@@ -1,0 +1,67 @@
+{
+ "gamma": 0.05,
+ "without": {
+  "overall_coverage": 85.0,
+  "worst_bucket_gap": 9.7,
+  "mean_width_h": 14.4,
+  "by_bucket": {
+   "0-4h": {
+    "n": 905,
+    "coverage": 84.3,
+    "mean_width_h": 2.6
+   },
+   "20-50h": {
+    "n": 144,
+    "coverage": 78.5,
+    "mean_width_h": 52.9
+   },
+   "4-8h": {
+    "n": 214,
+    "coverage": 89.7,
+    "mean_width_h": 10.1
+   },
+   "8-20h": {
+    "n": 101,
+    "coverage": 89.1,
+    "mean_width_h": 28.8
+   },
+   ">= 50h": {
+    "n": 27,
+    "coverage": 88.9,
+    "mean_width_h": 183.6
+   }
+  }
+ },
+ "with": {
+  "overall_coverage": 80.4,
+  "worst_bucket_gap": 5.2,
+  "mean_width_h": 18.9,
+  "by_bucket": {
+   "0-4h": {
+    "n": 905,
+    "coverage": 80.0,
+    "mean_width_h": 2.5
+   },
+   "20-50h": {
+    "n": 144,
+    "coverage": 79.9,
+    "mean_width_h": 108.7
+   },
+   "4-8h": {
+    "n": 214,
+    "coverage": 81.3,
+    "mean_width_h": 7.3
+   },
+   "8-20h": {
+    "n": 101,
+    "coverage": 82.2,
+    "mean_width_h": 23.3
+   },
+   ">= 50h": {
+    "n": 27,
+    "coverage": 85.2,
+    "mean_width_h": 163.7
+   }
+  }
+ }
+}

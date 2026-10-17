@@ -190,6 +190,13 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
               <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
               Đã lưu. Thực tế {hours(result.actual_hours)}, {diffText(result.actual_hours, result.estimated_p50)} ({hours(result.estimated_p50)}).
             </p>
+            {result.calibration.range_checks != null && (
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                Giờ thực tế {result.inside_p10_p90 ? 'nằm trong' : 'nằm ngoài'} khoảng đã báo, nên khoảng cho các dự toán sau sẽ{' '}
+                {result.inside_p10_p90 ? 'hẹp lại' : 'rộng ra'} một chút (đã trúng {result.calibration.range_hits}/
+                {result.calibration.range_checks} dự án; mục tiêu 8/10).
+              </p>
+            )}
             {learnedChanges(result).length > 0 && (
               <div className="text-sm text-slate-700 dark:text-slate-300">
                 <p className="font-semibold">Đã học từ {result.learning?.requirements_recorded} yêu cầu của dự án này:</p>

@@ -131,6 +131,7 @@ def synthesize_forecast(
     seed: int = 42,
     systemic_ratio_pool: Sequence[float] | None = None,
     uncertainty_source: str | None = None,
+    interval_alpha: float = 0.2,
 ) -> ProbabilisticForecast:
     samples = simulate_totals(
         wbs,
@@ -139,7 +140,12 @@ def synthesize_forecast(
         seed=seed,
         systemic_ratio_pool=systemic_ratio_pool,
     )
-    p10, p50, p80, p90 = (float(x) for x in np.percentile(samples, [10, 50, 80, 90]))
+    # The "80% range" uses the adaptively calibrated level: alpha 0.2 gives P10-P90; if past ranges missed
+    # too often alpha shrinks and the range widens (and vice versa).
+    a = min(0.95, max(0.0, interval_alpha))
+    lo_pct, hi_pct = 100 * a / 2, 100 * (1 - a / 2)
+    p10, p50, p80, p90 = (float(x) for x in np.percentile(samples, [lo_pct, 50, 80, hi_pct]))
+    p80 = min(max(p80, p50), p90)
     curve = np.percentile(samples, CURVE_PERCENTILES)
     bu_p50 = p50
     reference = None
@@ -197,4 +203,5 @@ def synthesize_forecast(
         tail_start_hours=round(float(np.percentile(samples, 97.5)), 2),
         critical_path_hours=cp_hours,
         critical_path_ids=cp_ids,
+        range_percentiles=[round(lo_pct, 2), round(hi_pct, 2)],
     )

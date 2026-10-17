@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from . import empirical, risk
+from .conformal import AdaptiveLevel
 from .evaluation.benchmark import PredictionRecord, evaluate_predictions
 from .extractor import MODEL_TAG, clause_texts, extract_scope_and_wbs, proposed_kinds
 from .jev import JevReader
@@ -34,6 +35,7 @@ class AIReaderUnavailable(RuntimeError):
     """The AI reader could not read every clause; estimates are not produced without it."""
 
 MULTIPLIER_BOUNDS = (0.5, 2.0)
+INTERVAL_GAMMA = 0.05  # chosen on SiP 2008-2010 replay, confirmed on 2011-2014 (datasets/eval/sip_conformal_*.json)
 # An AI suggestion kind is muted once users answered it at least this often and rarely accept it.
 SUPPRESS_MIN_ANSWERS = 3
 SUPPRESS_MAX_ACCEPTANCE = 0.3
@@ -154,6 +156,7 @@ class ParallaxService:
             manual_edits=manual_edits,
             ai_suppressed=self.suppressed_ai_kinds(),
             adjustments=self.adjustments(),
+            interval_alpha=self.repo.get_calibration().interval_alpha,
         )
 
     def feedback_summary(self) -> dict:
@@ -322,12 +325,19 @@ class ParallaxService:
         after = shrunk_multiplier([o.log_ratio for o in observations], state.prior_strength)
         type_before = hierarchical_multiplier(state.observations, project.project_type, state.prior_strength)[0]
         type_after, type_n = hierarchical_multiplier(observations, project.project_type, state.prior_strength)
+        # Adaptive conformal update of the "80% range" (gamma fixed on SiP 2008-2010, scripts/sip_conformal_replay.py).
+        level = AdaptiveLevel(gamma=INTERVAL_GAMMA, alpha={"all": state.interval_alpha})
+        hit = fc.p10_hours <= actual_hours <= fc.p90_hours
+        level.update("all", fc.p10_hours, fc.p90_hours, actual_hours)
         self.repo.save_calibration(
             CalibrationState(
                 multiplier=after,
                 prior_strength=state.prior_strength,
                 observations=observations,
                 updated_at=datetime.now(timezone.utc),
+                interval_alpha=round(min(0.95, max(0.0, level.level("all"))), 4),
+                interval_updates=state.interval_updates + 1,
+                interval_hits=state.interval_hits + int(hit),
             )
         )
 
@@ -360,6 +370,10 @@ class ParallaxService:
                 "n_observations": len(observations),
                 "prior_strength": state.prior_strength,
                 "applies_to": "new estimates and re-estimates; existing versions stay unchanged",
+                "range_level_before": round(1 - state.interval_alpha, 4),
+                "range_level_after": round(1 - min(0.95, max(0.0, level.level("all"))), 4),
+                "range_hits": state.interval_hits + int(hit),
+                "range_checks": state.interval_updates + 1,
             },
             "learning": {
                 "requirements_recorded": len(req_obs),
@@ -377,6 +391,9 @@ class ParallaxService:
             by_type.append({"project_type": t, "multiplier": round(m, 4), "n_observations": n})
         return {
             "multiplier": round(state.multiplier, 4),
+            "range_level": round(1 - state.interval_alpha, 4),
+            "range_hits": state.interval_hits,
+            "range_checks": state.interval_updates,
             "by_type": by_type,
             "n_observations": len(state.observations),
             "prior_strength": state.prior_strength,

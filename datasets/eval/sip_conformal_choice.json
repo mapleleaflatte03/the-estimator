@@ -1,0 +1,199 @@
+{
+ "rule": "smallest worst-bucket |coverage - 80|, ties: narrower",
+ "period": "2008-2010",
+ "chosen_gamma": 0.05,
+ "candidates": {
+  "0.0": {
+   "overall_coverage": 85.5,
+   "worst_bucket_gap": 7.3,
+   "mean_width_h": 14.3,
+   "by_bucket": {
+    "0-4h": {
+     "n": 1181,
+     "coverage": 87.3,
+     "mean_width_h": 2.3
+    },
+    "20-50h": {
+     "n": 161,
+     "coverage": 77.0,
+     "mean_width_h": 51.8
+    },
+    "4-8h": {
+     "n": 320,
+     "coverage": 84.7,
+     "mean_width_h": 12.0
+    },
+    "8-20h": {
+     "n": 98,
+     "coverage": 81.6,
+     "mean_width_h": 27.9
+    },
+    ">= 50h": {
+     "n": 42,
+     "coverage": 81.0,
+     "mean_width_h": 191.3
+    }
+   }
+  },
+  "0.002": {
+   "overall_coverage": 81.7,
+   "worst_bucket_gap": 3.4,
+   "mean_width_h": 14.0,
+   "by_bucket": {
+    "0-4h": {
+     "n": 1181,
+     "coverage": 81.9,
+     "mean_width_h": 2.0
+    },
+    "20-50h": {
+     "n": 161,
+     "coverage": 77.0,
+     "mean_width_h": 52.3
+    },
+    "4-8h": {
+     "n": 320,
+     "coverage": 83.4,
+     "mean_width_h": 11.3
+    },
+    "8-20h": {
+     "n": 98,
+     "coverage": 81.6,
+     "mean_width_h": 27.8
+    },
+    ">= 50h": {
+     "n": 42,
+     "coverage": 81.0,
+     "mean_width_h": 191.1
+    }
+   }
+  },
+  "0.005": {
+   "overall_coverage": 81.0,
+   "worst_bucket_gap": 3.4,
+   "mean_width_h": 13.8,
+   "by_bucket": {
+    "0-4h": {
+     "n": 1181,
+     "coverage": 80.7,
+     "mean_width_h": 1.9
+    },
+    "20-50h": {
+     "n": 161,
+     "coverage": 78.3,
+     "mean_width_h": 52.3
+    },
+    "4-8h": {
+     "n": 320,
+     "coverage": 83.4,
+     "mean_width_h": 10.9
+    },
+    "8-20h": {
+     "n": 98,
+     "coverage": 80.6,
+     "mean_width_h": 27.9
+    },
+    ">= 50h": {
+     "n": 42,
+     "coverage": 81.0,
+     "mean_width_h": 190.7
+    }
+   }
+  },
+  "0.01": {
+   "overall_coverage": 80.5,
+   "worst_bucket_gap": 2.5,
+   "mean_width_h": 13.8,
+   "by_bucket": {
+    "0-4h": {
+     "n": 1181,
+     "coverage": 80.3,
+     "mean_width_h": 1.9
+    },
+    "20-50h": {
+     "n": 161,
+     "coverage": 78.3,
+     "mean_width_h": 52.8
+    },
+    "4-8h": {
+     "n": 320,
+     "coverage": 82.5,
+     "mean_width_h": 10.9
+    },
+    "8-20h": {
+     "n": 98,
+     "coverage": 80.6,
+     "mean_width_h": 27.8
+    },
+    ">= 50h": {
+     "n": 42,
+     "coverage": 81.0,
+     "mean_width_h": 189.9
+    }
+   }
+  },
+  "0.02": {
+   "overall_coverage": 80.4,
+   "worst_bucket_gap": 1.9,
+   "mean_width_h": 13.7,
+   "by_bucket": {
+    "0-4h": {
+     "n": 1181,
+     "coverage": 80.1,
+     "mean_width_h": 1.8
+    },
+    "20-50h": {
+     "n": 161,
+     "coverage": 78.9,
+     "mean_width_h": 52.9
+    },
+    "4-8h": {
+     "n": 320,
+     "coverage": 81.9,
+     "mean_width_h": 10.6
+    },
+    "8-20h": {
+     "n": 98,
+     "coverage": 80.6,
+     "mean_width_h": 27.5
+    },
+    ">= 50h": {
+     "n": 42,
+     "coverage": 81.0,
+     "mean_width_h": 190.7
+    }
+   }
+  },
+  "0.05": {
+   "overall_coverage": 80.0,
+   "worst_bucket_gap": 1.1,
+   "mean_width_h": 14.1,
+   "by_bucket": {
+    "0-4h": {
+     "n": 1181,
+     "coverage": 80.0,
+     "mean_width_h": 1.9
+    },
+    "20-50h": {
+     "n": 161,
+     "coverage": 78.9,
+     "mean_width_h": 54.3
+    },
+    "4-8h": {
+     "n": 320,
+     "coverage": 80.6,
+     "mean_width_h": 10.7
+    },
+    "8-20h": {
+     "n": 98,
+     "coverage": 79.6,
+     "mean_width_h": 31.7
+    },
+    ">= 50h": {
+     "n": 42,
+     "coverage": 81.0,
+     "mean_width_h": 187.0
+    }
+   }
+  }
+ }
+}

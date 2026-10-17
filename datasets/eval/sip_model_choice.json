@@ -1,0 +1,510 @@
+{
+ "rule": "lowest validation MAE among candidates with P10-P90 coverage >= 75%",
+ "validation": "fit 2004-2009, score 2010 (all inside the training period)",
+ "chosen": {
+  "model": "hier[bucket+assignee] k=5",
+  "factors": [
+   "bucket",
+   "assignee"
+  ],
+  "k": 5,
+  "n": 557,
+  "mae": 7.995,
+  "mdae": 0.602,
+  "sa": 57.73,
+  "pred_25": 51.17,
+  "mdape": 23.09,
+  "coverage_p10_p90": 80.61,
+  "mean_width": 20.27
+ },
+ "candidates": [
+  {
+   "model": "human",
+   "n": 557,
+   "mae": 8.738,
+   "mdae": 0.5,
+   "sa": 53.8,
+   "pred_25": 51.53,
+   "mdape": 21.95
+  },
+  {
+   "model": "size-only (shipped)",
+   "n": 557,
+   "mae": 8.189,
+   "mdae": 0.75,
+   "sa": 56.71,
+   "pred_25": 52.06,
+   "mdape": 20.69,
+   "coverage_p10_p90": 82.76,
+   "mean_width": 21.21
+  },
+  {
+   "model": "hier[bucket] k=5",
+   "factors": [
+    "bucket"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.172,
+   "mdae": 0.726,
+   "sa": 56.8,
+   "pred_25": 51.35,
+   "mdape": 23.08,
+   "coverage_p10_p90": 80.07,
+   "mean_width": 19.42
+  },
+  {
+   "model": "hier[bucket] k=20",
+   "factors": [
+    "bucket"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.203,
+   "mdae": 0.723,
+   "sa": 56.63,
+   "pred_25": 51.17,
+   "mdape": 22.76,
+   "coverage_p10_p90": 80.25,
+   "mean_width": 20.08
+  },
+  {
+   "model": "hier[bucket] k=50",
+   "factors": [
+    "bucket"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.265,
+   "mdae": 0.718,
+   "sa": 56.3,
+   "pred_25": 51.35,
+   "mdape": 23.08,
+   "coverage_p10_p90": 80.61,
+   "mean_width": 21.28
+  },
+  {
+   "model": "hier[bucket+category] k=5",
+   "factors": [
+    "bucket",
+    "category"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.283,
+   "mdae": 0.901,
+   "sa": 56.21,
+   "pred_25": 46.14,
+   "mdape": 27.13,
+   "coverage_p10_p90": 80.07,
+   "mean_width": 20.42
+  },
+  {
+   "model": "hier[bucket+category] k=20",
+   "factors": [
+    "bucket",
+    "category"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.332,
+   "mdae": 0.905,
+   "sa": 55.95,
+   "pred_25": 46.14,
+   "mdape": 27.14,
+   "coverage_p10_p90": 80.25,
+   "mean_width": 21.15
+  },
+  {
+   "model": "hier[bucket+category] k=50",
+   "factors": [
+    "bucket",
+    "category"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.392,
+   "mdae": 0.94,
+   "sa": 55.63,
+   "pred_25": 49.01,
+   "mdape": 26.84,
+   "coverage_p10_p90": 80.61,
+   "mean_width": 22.28
+  },
+  {
+   "model": "hier[bucket+subcategory] k=5",
+   "factors": [
+    "bucket",
+    "subcategory"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.201,
+   "mdae": 0.879,
+   "sa": 56.65,
+   "pred_25": 49.55,
+   "mdape": 25.08,
+   "coverage_p10_p90": 80.25,
+   "mean_width": 20.29
+  },
+  {
+   "model": "hier[bucket+subcategory] k=20",
+   "factors": [
+    "bucket",
+    "subcategory"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.253,
+   "mdae": 0.908,
+   "sa": 56.37,
+   "pred_25": 50.45,
+   "mdape": 24.29,
+   "coverage_p10_p90": 80.43,
+   "mean_width": 20.79
+  },
+  {
+   "model": "hier[bucket+subcategory] k=50",
+   "factors": [
+    "bucket",
+    "subcategory"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.323,
+   "mdae": 0.89,
+   "sa": 56.0,
+   "pred_25": 50.99,
+   "mdape": 23.89,
+   "coverage_p10_p90": 80.43,
+   "mean_width": 22.14
+  },
+  {
+   "model": "hier[bucket+project] k=5",
+   "factors": [
+    "bucket",
+    "project"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.113,
+   "mdae": 0.694,
+   "sa": 57.11,
+   "pred_25": 50.45,
+   "mdape": 24.07,
+   "coverage_p10_p90": 80.43,
+   "mean_width": 20.35
+  },
+  {
+   "model": "hier[bucket+project] k=20",
+   "factors": [
+    "bucket",
+    "project"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.138,
+   "mdae": 0.666,
+   "sa": 56.97,
+   "pred_25": 52.24,
+   "mdape": 21.12,
+   "coverage_p10_p90": 80.61,
+   "mean_width": 21.14
+  },
+  {
+   "model": "hier[bucket+project] k=50",
+   "factors": [
+    "bucket",
+    "project"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.2,
+   "mdae": 0.643,
+   "sa": 56.65,
+   "pred_25": 51.89,
+   "mdape": 20.7,
+   "coverage_p10_p90": 80.97,
+   "mean_width": 22.35
+  },
+  {
+   "model": "hier[bucket+assignee] k=5",
+   "factors": [
+    "bucket",
+    "assignee"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 7.995,
+   "mdae": 0.602,
+   "sa": 57.73,
+   "pred_25": 51.17,
+   "mdape": 23.09,
+   "coverage_p10_p90": 80.61,
+   "mean_width": 20.27
+  },
+  {
+   "model": "hier[bucket+assignee] k=20",
+   "factors": [
+    "bucket",
+    "assignee"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.087,
+   "mdae": 0.615,
+   "sa": 57.25,
+   "pred_25": 51.89,
+   "mdape": 22.13,
+   "coverage_p10_p90": 80.61,
+   "mean_width": 20.94
+  },
+  {
+   "model": "hier[bucket+assignee] k=50",
+   "factors": [
+    "bucket",
+    "assignee"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.149,
+   "mdae": 0.593,
+   "sa": 56.92,
+   "pred_25": 51.71,
+   "mdape": 22.33,
+   "coverage_p10_p90": 80.43,
+   "mean_width": 21.49
+  },
+  {
+   "model": "hier[bucket+subcategory+project] k=5",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.14,
+   "mdae": 0.968,
+   "sa": 56.97,
+   "pred_25": 47.04,
+   "mdape": 26.2,
+   "coverage_p10_p90": 80.43,
+   "mean_width": 20.49
+  },
+  {
+   "model": "hier[bucket+subcategory+project] k=20",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.223,
+   "mdae": 0.99,
+   "sa": 56.53,
+   "pred_25": 47.58,
+   "mdape": 25.43,
+   "coverage_p10_p90": 80.43,
+   "mean_width": 20.77
+  },
+  {
+   "model": "hier[bucket+subcategory+project] k=50",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.291,
+   "mdae": 0.959,
+   "sa": 56.17,
+   "pred_25": 50.09,
+   "mdape": 25.0,
+   "coverage_p10_p90": 80.79,
+   "mean_width": 22.23
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee] k=5",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.102,
+   "mdae": 0.869,
+   "sa": 57.17,
+   "pred_25": 48.65,
+   "mdape": 26.24,
+   "coverage_p10_p90": 80.97,
+   "mean_width": 21.15
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee] k=20",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.23,
+   "mdae": 0.868,
+   "sa": 56.49,
+   "pred_25": 49.55,
+   "mdape": 25.55,
+   "coverage_p10_p90": 81.15,
+   "mean_width": 21.9
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee] k=50",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.306,
+   "mdae": 0.878,
+   "sa": 56.09,
+   "pred_25": 50.09,
+   "mdape": 24.93,
+   "coverage_p10_p90": 80.79,
+   "mean_width": 22.14
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee+priority+round] k=5",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee",
+    "priority",
+    "round"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.111,
+   "mdae": 0.874,
+   "sa": 57.12,
+   "pred_25": 47.04,
+   "mdape": 28.39,
+   "coverage_p10_p90": 81.33,
+   "mean_width": 21.36
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee+priority+round] k=20",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee",
+    "priority",
+    "round"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.237,
+   "mdae": 0.882,
+   "sa": 56.45,
+   "pred_25": 49.01,
+   "mdape": 26.98,
+   "coverage_p10_p90": 80.97,
+   "mean_width": 21.82
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee+priority+round] k=50",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee",
+    "priority",
+    "round"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.314,
+   "mdae": 0.885,
+   "sa": 56.05,
+   "pred_25": 48.83,
+   "mdape": 26.16,
+   "coverage_p10_p90": 80.79,
+   "mean_width": 21.89
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee+raiser+authoriser+priority+round] k=5",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee",
+    "raiser",
+    "authoriser",
+    "priority",
+    "round"
+   ],
+   "k": 5,
+   "n": 557,
+   "mae": 8.182,
+   "mdae": 0.825,
+   "sa": 56.75,
+   "pred_25": 45.78,
+   "mdape": 30.45,
+   "coverage_p10_p90": 81.33,
+   "mean_width": 21.39
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee+raiser+authoriser+priority+round] k=20",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee",
+    "raiser",
+    "authoriser",
+    "priority",
+    "round"
+   ],
+   "k": 20,
+   "n": 557,
+   "mae": 8.245,
+   "mdae": 0.838,
+   "sa": 56.41,
+   "pred_25": 46.68,
+   "mdape": 28.78,
+   "coverage_p10_p90": 81.33,
+   "mean_width": 21.66
+  },
+  {
+   "model": "hier[bucket+subcategory+project+assignee+raiser+authoriser+priority+round] k=50",
+   "factors": [
+    "bucket",
+    "subcategory",
+    "project",
+    "assignee",
+    "raiser",
+    "authoriser",
+    "priority",
+    "round"
+   ],
+   "k": 50,
+   "n": 557,
+   "mae": 8.339,
+   "mdae": 0.816,
+   "sa": 55.92,
+   "pred_25": 47.04,
+   "mdape": 28.18,
+   "coverage_p10_p90": 82.05,
+   "mean_width": 22.36
+  }
+ ]
+}

@@ -608,6 +608,7 @@ def extract_scope_and_wbs(
     manual_edits: Optional[dict] = None,
     ai_suppressed: Optional[set[str]] = None,
     adjustments: Optional[Adjustments] = None,
+    interval_alpha: float = 0.2,
 ) -> EstimateVersion:
     """Analyse the brief (and extra documents) into a validated EstimateVersion."""
     sources = {k: v for k, v in (source_docs or {}).items() if v and v.strip()}
@@ -925,6 +926,7 @@ def extract_scope_and_wbs(
         calibration_multiplier=calibration_multiplier,
         seed=42,
         systemic_ratio_pool=systemic_ratio_pool,
+        interval_alpha=interval_alpha,
     )
 
     version = EstimateVersion(

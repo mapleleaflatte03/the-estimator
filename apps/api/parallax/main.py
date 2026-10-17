@@ -210,7 +210,8 @@ def reader_evaluation():
     out["feedback"] = service.feedback_summary()
     study = ROOT_DIR / "datasets" / "eval" / "sip_jev_study.json"
     out["sip_study"] = json.loads(study.read_text(encoding="utf-8")) if study.exists() else None
-    for key, name in (("itemlet_replication", "itemlet_replication.json"), ("operational_replay", "sip_operational_replay.json")):
+    for key, name in (("itemlet_replication", "itemlet_replication.json"), ("operational_replay", "sip_operational_replay.json"),
+                      ("conformal", "sip_conformal_test.json"), ("hierarchical", "sip_model_test.json")):
         path = ROOT_DIR / "datasets" / "eval" / name
         out[key] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
     out["learning"] = service.adjustments().as_dict()

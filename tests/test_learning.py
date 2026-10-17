@@ -59,6 +59,26 @@ def test_user_edit_wins_over_learned_factor():
     assert (e.optimistic_hours + 4 * e.most_likely_hours + e.pessimistic_hours) / 6 == pytest.approx(50, abs=1)
 
 
+def test_ranges_widen_after_misses_and_narrow_after_hits(tmp_path):
+    from parallax.service import ParallaxService
+    from parallax.storage import StorageRepository
+
+    svc = ParallaxService(StorageRepository(tmp_path / "s.json"))
+    brief = "- Báo cáo doanh thu theo tháng.\n- Gửi email nhắc lịch hẹn."
+    first = None
+    for i in range(3):  # three projects finishing far outside their range
+        p = svc.create_project(f"P{i}", brief)
+        v = svc.estimate_project(p.project_id)
+        first = first or v
+        r = svc.record_actuals(p.project_id, v.forecast.p90_hours * 3)
+    assert r["calibration"]["range_level_after"] > 0.8 and r["calibration"]["range_checks"] == 3
+    p = svc.create_project("After misses", brief)
+    wide = svc.estimate_project(p.project_id).forecast
+    assert wide.range_percentiles[0] < 10 and wide.range_percentiles[1] > 90
+    width = lambda f: (f.p90_hours - f.p10_hours) / f.p50_hours  # noqa: E731
+    assert width(wide) > width(first.forecast)
+
+
 def test_requirement_actuals_teach_component_factors(tmp_path):
     from parallax.service import ParallaxService
     from parallax.storage import StorageRepository

@@ -267,6 +267,10 @@ export interface ActualsResult {
     type_multiplier_before: number;
     type_multiplier_after: number;
     type_observations: number;
+    range_level_before?: number;
+    range_level_after?: number;
+    range_hits?: number;
+    range_checks?: number;
   };
   learning?: { requirements_recorded: number; before: Learning; after: Learning };
 }
@@ -389,11 +393,23 @@ export interface ReaderEvaluation {
     mae_with_sip_factors: number;
     mae_gain_95ci: number[];
   } | null;
+  conformal?: {
+    gamma: number;
+    without: ConformalRun;
+    with: ConformalRun;
+  } | null;
   operational_replay?: {
     all_tasks: Record<'human' | 'frozen' | 'online', ReplayMetrics>;
     dev_tasks_20h_read_by_jev: Record<'human' | 'online' | 'online+jev', ReplayMetrics>;
     by_year: { year: number; n: number; human: number; frozen: number; online: number }[];
   } | null;
+}
+
+export interface ConformalRun {
+  overall_coverage: number;
+  worst_bucket_gap: number;
+  mean_width_h: number;
+  by_bucket: Record<string, { n: number; coverage: number; mean_width_h: number }>;
 }
 
 export interface ReplayMetrics {

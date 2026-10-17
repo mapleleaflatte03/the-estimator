@@ -25,6 +25,9 @@ def result(entry: dict) -> str:
                 f"P10–P90 coverage {first.get('interval_coverage')}%")
     if "retention_pct" in first:
         return f"retention {first['retention_pct']}%, false tentative {first['false_tentative']}"
+    if "overall_coverage" in first:
+        return "<br>".join(f"{r['reader']}: 80% range holds {r['overall_coverage']}%, worst size bucket off by "
+                           f"{r['worst_bucket_gap']} pts, mean width {r['mean_width_h']} h" for r in entry["summary"])
     if "high_vs_low_ratio_p50" in first:
         return (f"read {first['n_read']}/{first['n_population']}: high/low median ratio x{first['high_vs_low_ratio_p50']}, "
                 f"Spearman {first['spearman']}, AUC {first['auc_overrun_25pct']}<br>MAE raw {first['mae_raw_estimate']} h "

@@ -16,7 +16,8 @@ were wrong.
 | Claim | Tested on (never used to build it) | Result |
 | --- | --- | --- |
 | Learning from actual hours beats the developers' own estimates | 2,248 real tasks, 2011–2014 (SiP), model fitted on earlier years | MAE **10.34 → 9.26 h (−10.4%)** · SA **48.6 → 54.0%** · Wilcoxon **p = 3×10⁻⁶** · P10–P90 interval holds **82.0%** of actuals |
-| …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 · interval holds **85.0%** |
+| …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 |
+| The "80% range" really holds 80%, for every size of work | same production replay; each finished task adjusts the next ranges (adaptive conformal, step chosen on 2008–2010) | **80.4%** overall (fixed ranges: 85.0%); every size bucket with ≥ 100 tasks within **2.2 points** of 80% (was up to 9.7 off) |
 | The AI reader catches scope the client has not committed to | 7 rounds of new brief clauses, 160 clauses (Vietnamese, English, no diacritics, incl. a private-equity onboarding brief), labels committed first | **30/31** caught vs **14/31** with keyword rules · **0** false alarms |
 | It finds the main kind of work in each clause | same 160 clauses | **133/160** (rules alone 121/160); private-equity round: Jev alone **13/13** |
 | It stops the rules from adding work nobody asked for | rounds 7 and 8, 48 new clauses; threshold fixed on earlier rounds | kind precision **73.1% → 83.3%** and **84.6% → 95.8%**, recall up too |
@@ -35,6 +36,8 @@ what the company actually used, i.e. its developers' estimates before the work s
     held (28.6% of flagged work overran by > 25% vs 19.9% of the rest) but the signal was weak (AUC 0.54), and the
     SiP-based extra hours made error worse (MAE 18.4 → 19.5 h, 95% CI of the change entirely negative).
   - **So the app flags such clauses for senior review and only adds hours once your own actuals show it.**
+- **"This person always under-estimates."** Effects per assignee and per project were chosen on 2010 and tested once
+  on 2011–2014. They did not beat the size-only model (MAE 9.34 vs 9.26 h), so they were not shipped.
 - **Keyword rules don't keep up with new phrasing.** Rules tuned through round 4 caught 1/6 uncommitted clauses in round
   5; Jev caught 6/6. This is why the AI reader is mandatory.
 - **A costly bug.** The API rewrote our question keys, and 60 paid calls were unusable. The reader now halts the moment
@@ -66,7 +69,7 @@ A 3-minute tour:
 git clone https://github.com/mapleleaflatte03/the-estimator && cd the-estimator
 python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
 cp .env.example .env          # JEVSTATION_API_KEY, JEVSTATION_API_KEY_2, ... or TYPESAFE_API_KEY
-pytest -q                     # 79 tests, no network, no credits
+pytest -q                     # 80 tests, no network, no credits
 uvicorn parallax.main:app --app-dir apps/api --port 8000
 cd apps/web && npm ci && npm run dev    # UI on :3000
 ```
@@ -108,8 +111,10 @@ flowchart LR
   - Three-point estimates per work item, simulated 10,000 times.
   - The shared "everything ran over" shock is resampled from 56 real SiP work packages, not assumed.
   - The critical path limits how much adding people can shorten the timeline.
-- **Learning** (`service.py`, `risk.py`):
+- **Learning** (`service.py`, `risk.py`, `conformal.py`):
   - A bias multiplier learned from finished projects, per project type, partially pooled.
+  - The width of the "80% range" self-corrects: every finished project that lands outside widens the next ranges,
+    every hit narrows them.
   - Optional per-requirement actuals teach per-kind factors (e.g. "our reporting work runs 30% over") and the weight of
     the AI's risk flag. Both start at 1.0 and move with evidence; your manual edits always win.
 - **Versions** are immutable. Answers to questions and edits accumulate. Accuracy is always judged against the estimate
@@ -121,6 +126,8 @@ flowchart LR
 | --- | --- | --- |
 | SiP holdout, SA, Wilcoxon | `POST /api/v1/benchmark/run` or Evidence tab → *Chạy kiểm tra* | 0 |
 | Production replay | `python scripts/sip_operational_replay.py` | 0 |
+| Honest ranges (adaptive conformal) | `python scripts/sip_conformal_replay.py select` then `test` | 0 |
+| Person/project effects (negative) | `python scripts/sip_model_search.py search` then `test` | 0 |
 | Reader rounds 1–6 | `python scripts/evaluate_readers.py --labels datasets/eval/clause_labels_v5.json --tag x` | 0 (cached) |
 | PROMISE_exp | `python scripts/evaluate_promise.py --tag x` | 0 |
 | Jev on SiP tasks | `python scripts/sip_jev_study.py report` | 0 (cached) |
@@ -153,7 +160,7 @@ TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet repli
 ## Roadmap
 
 From our research report ([`reports/`](reports/)):
-- **Intervals with guaranteed coverage:** conformal prediction per kind of work, adaptive as actuals arrive.
+- **Conformal ranges per kind of work** (today they adapt per project and, in the validation, per size).
 - **Retrieval of similar finished tasks** as the outside view and as examples for the AI.
 - **Import actuals** from Jira, Toggl or Harvest, with stable task ids.
 - **A pilot with a Vietnamese software outsourcing company.**

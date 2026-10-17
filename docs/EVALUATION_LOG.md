@@ -409,6 +409,59 @@ real estate in English.
 - **Verification is confirmed a second time on held-out data:** precision rose by 11 points.
 - **Adding near-certain kinds was neutral on this round.** It is kept, because it helped on dev and did no harm here.
 
+### 23. Honest ranges for every size of work (adaptive conformal)
+
+**Problem.** In the SiP holdout, the "80%" range held 82% of actuals overall, but only 66% for tasks of 50 h or more
+and 85–90% for small ones. That is overconfident where it matters most and too cautious elsewhere.
+
+**Method.** Adaptive Conformal Inference (Gibbs & Candès 2021), one level per size bucket (`parallax/conformal.py`).
+When a task completes, the level moves by γ·(target miss − miss), so the long-run hit rate converges to 80% even
+under drift.
+
+**Choosing γ.** It was chosen on a production replay of the training period, 2008–2010
+(`scripts/sip_conformal_replay.py select`). The rule was the smallest worst-bucket gap to 80%: γ = 0.05.
+
+**Held-out test.** One production replay of 2011–2014 (1,391 tasks with completion dates); each outcome updates the
+level on its completion day.
+
+| Size | n | Fixed ranges | Adaptive ranges | Mean width |
+| --- | --- | --- | --- | --- |
+| 0–4 h | 905 | 84.3% | **80.0%** | 2.6 → 2.5 h |
+| 4–8 h | 214 | 89.7% | **81.3%** | 10.1 → 7.3 h |
+| 8–20 h | 101 | 89.1% | **82.2%** | 28.8 → 23.3 h |
+| 20–50 h | 144 | 78.5% | **79.9%** | 52.9 → 108.7 h |
+| ≥ 50 h | 27 | 88.9% | 85.2% | 183.6 → 163.7 h |
+| **all** | 1,391 | 85.0% | **80.4%** | 14.4 → 18.9 h |
+
+- Every bucket with enough data lands within 2.2 points of 80%.
+- The trade-off: ranges for 20–50 h work almost doubled, while small work got narrower ranges.
+- The ≥ 50 h bucket is too small (27 tasks) to conclude anything.
+
+**In the app.** Each recorded project updates the level with the same γ, and the next estimates use the adapted
+percentiles (`range_percentiles`). The UI tells the user whether the last range was hit and how the next ones change.
+
+### 24. Person and project effects (negative result, not shipped)
+
+**Idea.** Would a senior estimator's tacit knowledge, such as "this project runs over" or "this person under-estimates",
+help? We tested it as partially pooled effects on log(actual/estimate) (`parallax/hierarchical.py`).
+
+**Choosing the model.** Inside the training period: fit 2004–2009, validate on 2010 (557 tasks), 27 candidates. The
+rule was the lowest validation MAE with coverage ≥ 75%. It picked size + assignee, k = 5: validation MAE 7.995 vs
+8.189 for size only.
+
+**Held-out test (2011–2014, once).**
+
+| | Human | Size only (shipped) | Size + assignee |
+| --- | --- | --- | --- |
+| MAE | 10.34 h | **9.26 h** | 9.34 h |
+| SA | 48.6% | **54.0%** | 53.6% |
+| PRED(25) | 44.9% | **45.4%** | 42.6% |
+| P10–P90 coverage | — | 82.0% | 78.1% |
+
+The person effects did not carry over to later years; staff and habits change. The gain CI against size only is −0.34
+to +0.19 h, so it is not shipped. The app's per-project-type and per-kind learning use the same pooling but start
+from no effect and only move with the team's own data.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
@@ -416,6 +469,7 @@ real estate in English.
 | Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, SA 48.6 → 54.0%, Wilcoxon p = 3.2×10⁻⁶, P10–P90 coverage 82.0%. Production replay (1,391 tasks): SA 56.3 → 61.1%, p = 0.006, coverage 85.0% |
 | The shipped reader notices what the client has not committed to | Rounds 1, 2, 4–8: **30/31** tentative clauses caught vs **14/31** with rules alone, **0** false alarms |
 | The shipped reader finds the main kind of work | Rounds 1, 2, 4–8: **133/160** vs 121/160 with rules alone |
+| The 80% range is honest for every size of work | Production replay 2011–2014 with adaptive conformal ranges: 85.0% → **80.4%** overall; every bucket with n ≥ 100 within 2.2 points of 80% (was up to 9.7 off) |
 | AI verification removes kinds the client did not ask for | Round 7: kind precision 73.1% → **83.3%**; round 8: 84.6% → **95.8%**; recall up in both |
 | Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, all 2,032 issues): same direction, weak (AUC 0.535). No MAE gain anywhere, so it is a review flag, not extra hours |
 | Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
@@ -478,4 +532,7 @@ real estate in English.
 | 41 | 2026-10-17 16:55 | `round6_heldout` | `f0608239a4` | jev-1.13.0 | rules: kind 10/13, tentative 2/3, false 0<br>jev: kind 13/13, tentative 3/3, false 0<br>shipped: kind 12/13 (precision 54.5%), tentative 3/3, false 0 | Round 6 held-out: private-equity investor onboarding (challenge host's domain), 13 new clauses, labels committed in 60fbfe8 before any reader ran. Jev jev-1.13.0 via TypeSafe direct (same pinned model). (scored 13/13, API calls 2, credits left None) |
 | 42 | 2026-10-17 17:01 | `round7_heldout` | `b226aede6c` | jev-1.13.0 | rules: kind 15/24, tentative 4/4, false 0<br>jev: kind 19/24, tentative 4/4, false 0<br>shipped: kind 16/24 (precision 73.1%), tentative 4/4, false 0<br>shipped+verify: kind 17/24 (precision 83.3%), tentative 4/4, false 0 | Round 7 held-out: 24 new clauses (VI + EN), labels committed in 9779516 before any reader ran. First held-out test of AI verification of rule kinds (VERIFY_MIN 0.4 fixed on rounds 1-6). Jev jev-1.13.0 via TypeSafe. (scored 24/24, API calls 4, credits left None) |
 | 43 | 2026-10-17 17:11 | `round8_heldout` | `0d839b7e12` | jev-1.13.0 | rules: kind 16/24, tentative 2/3, false 0<br>jev: kind 22/24, tentative 3/3, false 0<br>shipped: kind 20/24 (precision 84.6%), tentative 3/3, false 0<br>shipped+verify: kind 21/24 (precision 95.8%), tentative 3/3, false 0<br>shipped+verify+add: kind 21/24 (precision 95.8%), tentative 3/3, false 0 | Round 8 held-out: 24 new clauses (VI + EN), labels committed before any reader ran. Tests adding Jev's kind directly at confidence >= 0.95 (fixed on rounds 1-7) on top of verification. Jev jev-1.13.0 via TypeSafe. (scored 24/24, API calls 4, credits left None) |
+| 44 | 2026-10-17 18:48 | `sip_conformal_select` | `` | — | gamma 0.0: 80% range holds 85.5%, worst size bucket off by 7.3 pts, mean width 14.3 h<br>gamma 0.002: 80% range holds 81.7%, worst size bucket off by 3.4 pts, mean width 14.0 h<br>gamma 0.005: 80% range holds 81.0%, worst size bucket off by 3.4 pts, mean width 13.8 h<br>gamma 0.01: 80% range holds 80.5%, worst size bucket off by 2.5 pts, mean width 13.8 h<br>gamma 0.02: 80% range holds 80.4%, worst size bucket off by 1.9 pts, mean width 13.7 h<br>gamma 0.05: 80% range holds 80.0%, worst size bucket off by 1.1 pts, mean width 14.1 h | Choosing the adaptive-conformal step on the training period only (replay 2008-2010). Chosen gamma 0.05. |
+| 45 | 2026-10-17 18:49 | `sip_conformal_holdout` | `` | — | fixed ranges: 80% range holds 85.0%, worst size bucket off by 9.7 pts, mean width 14.4 h<br>adaptive (gamma 0.05): 80% range holds 80.4%, worst size bucket off by 5.2 pts, mean width 18.9 h | Held-out production replay 2011-2014, gamma fixed on 2008-2010. Coverage by size bucket: 0-4h: 84.3% -> 80.0%; 20-50h: 78.5% -> 79.9%; 4-8h: 89.7% -> 81.3%; 8-20h: 89.1% -> 82.2%; >= 50h: 88.9% -> 85.2% |
+| 46 | 2026-10-17 18:50 | `sip_hierarchical_holdout` | `` | — | human: MAE 10.337 h, PRED(25) 44.88%, SA 48.64%, P10–P90 —<br>size-only: MAE 9.255 h, PRED(25) 45.42%, SA 54.02%, P10–P90 82.03<br>hierarchical: MAE 9.339 h, PRED(25) 42.62%, SA 53.6%, P10–P90 78.11, Wilcoxon p 1.06e-07 | Hierarchical correction chosen on 2010 validation only (hier[bucket+assignee] k=5), fitted on pre-2011, tested once on 2011-2014. Wilcoxon vs size-only p=9.86e-18, MAE gain vs size-only CI [-0.343, 0.185] h. |
 <!-- AUTO:journal:end -->

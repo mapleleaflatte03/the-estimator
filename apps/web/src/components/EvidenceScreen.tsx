@@ -159,6 +159,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const rep = study?.report;
   const st = ev.status;
   const replay = ev.operational_replay;
+  const conf = ev.conformal;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
@@ -435,6 +436,40 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
             {vn(replay.all_tasks.online.coverage_p10_p90)} giờ thực tế. Với việc lớn AI đã đọc, lớp “dễ vượt giờ” không làm sai lệch giảm (
             {replay.dev_tasks_20h_read_by_jev.online.mae} → {replay.dev_tasks_20h_read_by_jev['online+jev'].mae} giờ), nên không được dùng để cộng
             giờ.
+          </p>
+        </section>
+      )}
+
+      {conf && (
+        <section className={`${card} p-6 space-y-4`}>
+          <div>
+            <h2 className="text-lg font-bold">Khoảng “80% chắc chắn” có trung thực không?</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Cùng phép chạy như vận hành thật 2011–2014. Mỗi khi một việc hoàn thành, app kiểm tra giờ thực tế có nằm trong khoảng đã
+              báo không và tự nới hoặc thu hẹp khoảng cho những dự toán sau (Adaptive Conformal Inference). Bước điều chỉnh được chọn trên
+              2008–2010.
+            </p>
+          </div>
+          <GroupedBars
+            series={[
+              { key: 'without', label: 'Khoảng cố định', tone: 'muted' },
+              { key: 'with', label: 'Khoảng tự điều chỉnh (đang dùng)', tone: 'good' },
+            ]}
+            groups={['0-4h', '4-8h', '8-20h', '20-50h', '>= 50h']
+              .filter((b) => conf.without.by_bucket[b])
+              .map((b) => ({
+                key: b,
+                label: `Việc ${b.replace('>= ', '≥ ').replace('h', ' giờ')} (${conf.without.by_bucket[b].n} việc): tỷ lệ giờ thực tế nằm trong khoảng`,
+                values: [
+                  { series: 'without', value: conf.without.by_bucket[b].coverage / 100, display: vn(conf.without.by_bucket[b].coverage) },
+                  { series: 'with', value: conf.with.by_bucket[b].coverage / 100, display: vn(conf.with.by_bucket[b].coverage) },
+                ],
+              }))}
+          />
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Tổng: {vn(conf.without.overall_coverage)} → <strong>{vn(conf.with.overall_coverage)}</strong> (mục tiêu 80%); cỡ việc lệch nhiều
+            nhất: {conf.without.worst_bucket_gap} → {conf.with.worst_bucket_gap} điểm. Đánh đổi: khoảng cho việc 20–50 giờ rộng gần gấp đôi, việc
+            nhỏ hẹp lại. Nhóm ≥ 50 giờ chỉ có {conf.with.by_bucket['>= 50h']?.n ?? 0} việc nên chưa kết luận được.
           </p>
         </section>
       )}

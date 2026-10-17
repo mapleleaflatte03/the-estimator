@@ -128,6 +128,8 @@ class ProbabilisticForecast(BaseModel):
     tail_start_hours: Optional[float] = None  # histogram upper edge (P97.5)
     critical_path_hours: Optional[float] = None  # longest dependent chain, PERT means, uncalibrated
     critical_path_ids: list[str] = Field(default_factory=list)
+    # Percentiles behind p10_hours/p90_hours: [10, 90] by default, adapted from recorded outcomes.
+    range_percentiles: list[float] = Field(default_factory=lambda: [10.0, 90.0])
 
     @model_validator(mode="after")
     def sorted_quantiles(self):
@@ -289,6 +291,10 @@ class CalibrationState(BaseModel):
     prior_strength: float = Field(default=3.0, gt=0)
     observations: list[CalibrationObservation] = Field(default_factory=list)
     updated_at: Optional[datetime] = None
+    # Adaptive conformal level of the "80% range": share of outcomes it is allowed to miss (parallax/conformal.py).
+    interval_alpha: float = Field(default=0.2, ge=0, le=0.95)
+    interval_updates: int = 0
+    interval_hits: int = 0
 
 
 class WbsItemOverride(BaseModel):
