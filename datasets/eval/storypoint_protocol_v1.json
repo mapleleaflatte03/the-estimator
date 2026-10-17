@@ -1,0 +1,43 @@
+{
+ "dataset": "Choetkiertikul et al. 2019, doi:10.1109/TSE.2018.2792473; github.com/morakotch/datasets @ 133a5f5",
+ "splits": "authors' chronological 60/20/20 split files (<project>_3sets.txt)",
+ "n_issues": {
+  "mesos": 1680,
+  "usergrid": 482,
+  "appceleratorstudio": 2919,
+  "aptanastudio": 829,
+  "titanium": 2251,
+  "duracloud": 666,
+  "bamboo": 521,
+  "clover": 384,
+  "jirasoftware": 352,
+  "moodle": 1166,
+  "datamanagement": 4667,
+  "mule": 889,
+  "mulestudio": 732,
+  "springxd": 3526,
+  "talenddataquality": 1381,
+  "talendesb": 868
+ },
+ "question": {
+  "tag": "size@v1",
+  "instructions": "`{ref}` describes one piece of software work (a requirement, task or issue, possibly with technical details). How much development work does it take to complete?",
+  "levels": [
+   "Trivial: a typo, a config value or a one-line fix; well under an hour",
+   "Small: a contained change in one place; a few hours",
+   "Medium: a feature or fix touching several parts; about one or two days",
+   "Large: a substantial feature or refactoring across components; several days to a week",
+   "Very large: a new subsystem, a major redesign or many unknowns; more than a week"
+  ]
+ },
+ "input": "title + first 1500 characters of the description",
+ "mapping_variants": [
+  "level",
+  "bins5",
+  "bins10",
+  "bins20"
+ ],
+ "selection": "lowest mean VALIDATION MAE over the 16 projects; then one run on TEST",
+ "published_comparison": "Table 3 of the authors' preprint: Deep-SE, Mean, Median test MAE",
+ "primary_metric": "test MAE per project vs Deep-SE (published) and vs Mean/Median computed on the same split"
+}

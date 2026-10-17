@@ -119,9 +119,9 @@ KIND_INSTRUCTIONS = (
 class Question:
     qid: str
     version: str
-    type: str  # "choice" | "noul"
+    type: str  # "choice" | "noul" | "score"
     instructions: str  # "{ref}" is replaced by the state key holding the text
-    criteria: Optional[dict] = None
+    criteria: Optional[dict | tuple] = None  # choice: {option: description}; score: ordered level descriptions
 
     @property
     def tag(self) -> str:
@@ -130,7 +130,7 @@ class Question:
     def spec(self, ref: str) -> dict:
         spec = {"type": self.type, "instructions": self.instructions.format(ref=ref)}
         if self.criteria:
-            spec["criteria"] = self.criteria
+            spec["criteria"] = list(self.criteria) if isinstance(self.criteria, tuple) else self.criteria
         return spec
 
 
@@ -154,6 +154,23 @@ COMPONENT_TO_KIND: dict[str, str] = {
     **{c: k for k, c in KIND_TO_COMPONENT.items() if c},
     "audit": "permissions_audit", "security": "permissions_audit", "migration": "data_import", "rag": "ai_assistant",
 }
+
+
+# How much work a piece of text asks for, on concrete levels (Jev "score"; the docs warn that bare
+# numeric levels perform badly). Used for sizing; validated on the Deep-SE story-point benchmark
+# (scripts/storypoint_benchmark.py) before any product use.
+SIZE_Q = Question(
+    "size", "v1", "score",
+    "`{ref}` describes one piece of software work (a requirement, task or issue, possibly with technical details). "
+    "How much development work does it take to complete?",
+    (
+        "Trivial: a typo, a config value or a one-line fix; well under an hour",
+        "Small: a contained change in one place; a few hours",
+        "Medium: a feature or fix touching several parts; about one or two days",
+        "Large: a substantial feature or refactoring across components; several days to a week",
+        "Very large: a new subsystem, a major redesign or many unknowns; more than a week",
+    ),
+)
 
 
 def verify_question(kind: str) -> Question:
@@ -509,6 +526,9 @@ class JevReader:
                            "probabilities": {k: round(float(v), 4) for k, v in top.items()}}
                 elif q.type == "noul" and "noul" in raw:
                     ans = {"noul": round(float(raw["noul"]), 4)}
+                elif q.type == "score" and "score" in raw:
+                    ans = {"score": round(float(raw["score"]), 4), "confidence": round(float(raw.get("confidence", 0.0)), 4),
+                           "probabilities": {k: round(float(v), 4) for k, v in (raw.get("probabilities") or {}).items()}}
                 else:
                     continue
                 entry = {"answer": ans, "q": q.tag, "model": model, "provider": key.provider}
