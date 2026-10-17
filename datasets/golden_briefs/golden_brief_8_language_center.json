@@ -1,0 +1,17 @@
+{
+  "brief_id": "GOLDEN-08",
+  "title": "Quản lý trung tâm tiếng Anh",
+  "project_type": "internal_tool",
+  "brief_text": "Dự án: phần mềm quản lý chuỗi trung tâm tiếng Anh (3 cơ sở).\n- Học viên đăng ký khóa học và chọn lớp theo lịch còn chỗ.\n- Giáo viên điểm danh trên điện thoại ngay trong giờ học.\n- Phụ huynh nhận tin nhắn Zalo khi con vắng mặt.\n- Thu học phí qua chuyển khoản và tự đối soát với sao kê ngân hàng.\n- Bao cao doanh thu va so hoc vien theo tung co so hang thang.\n- Quản lý chi nhánh chỉ xem được lớp của cơ sở mình.\n- Lưu lịch sử thay đổi điểm số, ai sửa và sửa lúc nào.\n- Nhập danh sách học viên cũ từ file Excel.\n- Có thể sau này làm thêm bài kiểm tra trình độ online tự chấm điểm.\n- Tìm học viên theo tên, số điện thoại hoặc mã lớp.\n- Chưa chốt có cần app riêng cho học viên không.\n- Giáo viên xuất bảng điểm ra file PDF để gửi phụ huynh.",
+  "expected_confirmed_quotes": [
+    "chọn lớp theo lịch",
+    "Zalo",
+    "sao kê ngân hàng",
+    "file Excel"
+  ],
+  "expected_ambiguities": [
+    "online placement test later",
+    "student app undecided"
+  ],
+  "min_wbs_items": 12
+}

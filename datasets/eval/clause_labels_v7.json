@@ -1,0 +1,30 @@
+{
+  "description": "Round 7 held-out clause set: every clause of GOLDEN-08 (English language centre, Vietnamese incl. one undiacritised clause) and GOLDEN-09 (construction site inspection, English). Written and labelled on 2026-10-17 BEFORE any reader (rules or Jev) was run on them; committed before the run. Purpose: first held-out check of (a) AI verification of rule-proposed kinds, threshold VERIFY_MIN = 0.4 fixed on rounds 1-6 (dev), and (b) the round-5 hedge fixes. First listed kind = primary.",
+  "version": 7,
+  "clauses": [
+    {"text": "Học viên đăng ký khóa học và chọn lớp theo lịch còn chỗ.", "kinds": ["scheduling", "data_management"], "tentative": false},
+    {"text": "Giáo viên điểm danh trên điện thoại ngay trong giờ học.", "kinds": ["data_management", "mobile_app"], "tentative": false},
+    {"text": "Phụ huynh nhận tin nhắn Zalo khi con vắng mặt.", "kinds": ["notification"], "tentative": false},
+    {"text": "Thu học phí qua chuyển khoản và tự đối soát với sao kê ngân hàng.", "kinds": ["payment", "external_integration"], "tentative": false},
+    {"text": "Bao cao doanh thu va so hoc vien theo tung co so hang thang.", "kinds": ["reporting"], "tentative": false},
+    {"text": "Quản lý chi nhánh chỉ xem được lớp của cơ sở mình.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Lưu lịch sử thay đổi điểm số, ai sửa và sửa lúc nào.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Nhập danh sách học viên cũ từ file Excel.", "kinds": ["data_import"], "tentative": false},
+    {"text": "Có thể sau này làm thêm bài kiểm tra trình độ online tự chấm điểm.", "kinds": ["data_management"], "tentative": true},
+    {"text": "Tìm học viên theo tên, số điện thoại hoặc mã lớp.", "kinds": ["search"], "tentative": false},
+    {"text": "Chưa chốt có cần app riêng cho học viên không.", "kinds": ["mobile_app"], "tentative": true},
+    {"text": "Giáo viên xuất bảng điểm ra file PDF để gửi phụ huynh.", "kinds": ["file_export"], "tentative": false},
+    {"text": "Inspectors fill in safety checklists on a tablet at the site, even without signal.", "kinds": ["data_management", "offline_sync", "mobile_app"], "tentative": false},
+    {"text": "Each checklist item can have photos with GPS coordinates attached.", "kinds": ["data_management", "maps_location"], "tentative": false},
+    {"text": "Site managers approve or send back each inspection report.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Open defects are assigned to a subcontractor with a due date.", "kinds": ["workflow_approval", "scheduling"], "tentative": false},
+    {"text": "Subcontractors get an SMS when a defect is assigned to them.", "kinds": ["notification"], "tentative": false},
+    {"text": "A weekly PDF report per project is generated for the client.", "kinds": ["reporting", "file_export"], "tentative": false},
+    {"text": "Sync projects and subcontractors from our ERP every night.", "kinds": ["external_integration"], "tentative": false},
+    {"text": "Head office sees all projects; site managers only their own sites.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "We might add a client portal later so owners can view the reports themselves.", "kinds": ["reporting"], "tentative": true},
+    {"text": "Search past inspections by site, date or inspector.", "kinds": ["search"], "tentative": false},
+    {"text": "The system must handle 500 inspectors submitting at the same time at month end.", "kinds": ["performance"], "tentative": false},
+    {"text": "If budget allows, use AI to detect missing safety gear in the photos.", "kinds": ["ai_assistant"], "tentative": true}
+  ]
+}

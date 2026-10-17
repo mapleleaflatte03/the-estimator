@@ -1,0 +1,17 @@
+{
+  "brief_id": "GOLDEN-09",
+  "title": "Site inspection app for a construction company",
+  "project_type": "field_service",
+  "brief_text": "Project: site inspection app for a construction company.\n- Inspectors fill in safety checklists on a tablet at the site, even without signal.\n- Each checklist item can have photos with GPS coordinates attached.\n- Site managers approve or send back each inspection report.\n- Open defects are assigned to a subcontractor with a due date.\n- Subcontractors get an SMS when a defect is assigned to them.\n- A weekly PDF report per project is generated for the client.\n- Sync projects and subcontractors from our ERP every night.\n- Head office sees all projects; site managers only their own sites.\n- We might add a client portal later so owners can view the reports themselves.\n- Search past inspections by site, date or inspector.\n- The system must handle 500 inspectors submitting at the same time at month end.\n- If budget allows, use AI to detect missing safety gear in the photos.",
+  "expected_confirmed_quotes": [
+    "even without signal",
+    "approve or send back",
+    "from our ERP",
+    "500 inspectors"
+  ],
+  "expected_ambiguities": [
+    "client portal later",
+    "AI safety-gear detection if budget allows"
+  ],
+  "min_wbs_items": 12
+}

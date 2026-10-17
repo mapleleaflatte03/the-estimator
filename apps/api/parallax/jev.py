@@ -144,6 +144,23 @@ OVERRUN_Q = Question(
 CLAUSE_QUESTIONS: tuple[Question, ...] = (KIND_Q, TENTATIVE_Q, OVERRUN_Q)
 
 
+# Fixed on rounds 1-6 (dev, scripts/verify_kinds_dev.py) before the round-7 held-out check.
+VERIFY_MIN = 0.4
+# Extractor component -> reader kind, for verifying the components keyword rules propose.
+COMPONENT_TO_KIND: dict[str, str] = {
+    **{c: k for k, c in KIND_TO_COMPONENT.items() if c},
+    "audit": "permissions_audit", "security": "permissions_audit", "migration": "data_import", "rag": "ai_assistant",
+}
+
+
+def verify_question(kind: str) -> Question:
+    """Yes/no check that a clause itself asks for a kind of work the keyword rules proposed."""
+    return Question(
+        f"needs_{kind}", "v1", "noul",
+        "Does the requirement in `{ref}` itself ask for this kind of software work: " + KINDS[kind] + "? "
+        "Answer no if it is only mentioned in passing or the requirement is mainly about something else.")
+
+
 @dataclass
 class ClauseReading:
     kind: str
@@ -372,6 +389,26 @@ class JevReader:
                 out[text] = reading
         return out
 
+    def verify(self, readings: dict[str, ClauseReading], proposed: dict[str, set[str]]) -> None:
+        """Ask Jev whether each clause really asks for the kinds the rules proposed (other than its own kind);
+        answers land in reading.extra as needs_<kind>."""
+        by_kind: dict[str, list[str]] = {}
+        for text, kinds in proposed.items():
+            reading = readings.get(text)
+            if reading is None:
+                continue
+            for kind in kinds:
+                if kind != reading.kind and kind in KINDS:
+                    by_kind.setdefault(kind, []).append(text)
+        pairs = [(t, verify_question(k)) for k, texts in by_kind.items() for t in texts]
+        todo = [(t, q) for t, q in pairs if self.answer(t, q) is None]
+        if todo and self.configured:
+            self.ask_pairs(todo)
+        for text, q in pairs:
+            a = self.answer(text, q)
+            if a is not None and "noul" in a["answer"]:
+                readings[text].extra[q.qid] = float(a["answer"]["noul"])
+
     def missing(self, texts: Sequence[str], questions: Sequence[Question]) -> list[tuple[str, Question]]:
         return [(t, q) for t in dict.fromkeys(x.strip() for x in texts if x.strip()) for q in questions
                 if self.answer(t, q) is None]
@@ -382,7 +419,10 @@ class JevReader:
 
         Returns the fresh answers keyed by (text, question id).
         """
-        todo = self.missing(texts, questions)
+        return self.ask_pairs(self.missing(texts, questions), max_calls=max_calls, workers=workers)
+
+    def ask_pairs(self, todo: list[tuple[str, Question]], max_calls: Optional[int] = None,
+                  workers: int = 8) -> dict[tuple[str, str], dict]:
         # Token-billed providers take big packs; per-credit JevStation is cheapest at 5 questions.
         direct = any(not k.per_credit and self._usable(k) for k in self.keys)
         size = QUESTIONS_PER_CALL_DIRECT if direct else QUESTIONS_PER_CALL
@@ -414,9 +454,12 @@ class JevReader:
                       and (n_questions <= QUESTIONS_PER_CALL or not k.per_credit)]
             if not usable:
                 return None
-            # Prefer keys with the largest known balance; unknown balances count as fresh.
-            usable.sort(key=lambda k: -(k.credits if k.credits is not None else 10**6))
-            top = [k for k in usable if (k.credits or 10**6) == (usable[0].credits or 10**6)]
+            # Token-billed keys first (cheapest), then the largest known balance; unknown balances count as fresh.
+            def rank(k: JevKey) -> tuple:
+                return (k.per_credit, -(k.credits if k.credits is not None else 10**6))
+
+            usable.sort(key=rank)
+            top = [k for k in usable if rank(k) == rank(usable[0])]
             self._rr += 1
             return top[self._rr % len(top)]
 
