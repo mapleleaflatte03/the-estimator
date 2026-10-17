@@ -1,0 +1,18 @@
+{
+  "brief_id": "GOLDEN-06",
+  "title": "Returns portal for a furniture retailer",
+  "project_type": "ecommerce",
+  "brief_text": "Project: returns portal for an online furniture retailer.\n- Customers start a return on our website by entering their order number and email.\n- Each return goes through requested, approved, picked up and refunded states.\n- Warehouse staff approve or reject returns after inspecting photos uploaded by the customer.\n- Refunds are issued automatically through Stripe once the item is received.\n- Book the pickup with our courier through their API.\n- Customers get an email at every status change.\n- We'd love a dashboard showing return reasons by product, if there's time.\n- Support agents can search returns by customer name, order number or date.\n- Down the line we may want to plug this into our ERP.\n- Single sign-on with our Microsoft accounts for staff.\n- Export the monthly refunds list to CSV for finance.\n- Not sure yet whether we need a mobile app for the drivers.",
+  "expected_confirmed_quotes": [
+    "requested, approved, picked up and refunded",
+    "Stripe",
+    "courier through their API",
+    "Single sign-on"
+  ],
+  "expected_ambiguities": [
+    "dashboard if there's time",
+    "ERP later",
+    "driver app undecided"
+  ],
+  "min_wbs_items": 12
+}

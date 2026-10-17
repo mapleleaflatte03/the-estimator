@@ -1,0 +1,30 @@
+{
+  "description": "Round 5 held-out clause set: every clause of the two new sample briefs (GOLDEN-05 dental chain, Vietnamese with one undiacritised clause; GOLDEN-06 returns portal, English). Written by the developer in the style of real client briefs and labelled on 2026-10-17 BEFORE any reader (rules or Jev) was run on them; committed before the run. First held-out check of the round-4 rule fixes. Traps: 'có thể' and 'can' meaning 'is able to'; 'số điện thoại' (phone number, not a mobile app).",
+  "version": 5,
+  "clauses": [
+    {"text": "Lễ tân đặt lịch hẹn cho bệnh nhân theo bác sĩ, ghế nha và khung giờ trống.", "kinds": ["scheduling"], "tentative": false},
+    {"text": "Bệnh nhân nhận tin nhắn Zalo nhắc lịch trước 24 giờ.", "kinds": ["notification"], "tentative": false},
+    {"text": "Bác sĩ ghi hồ sơ điều trị theo từng răng, kèm ảnh X-quang.", "kinds": ["data_management"], "tentative": false},
+    {"text": "Thu ngân lập hóa đơn và nhận thanh toán qua mã QR VNPay.", "kinds": ["payment"], "tentative": false},
+    {"text": "Mỗi chi nhánh chỉ xem được bệnh nhân của chi nhánh mình, quản lý chuỗi xem được tất cả.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Báo cáo doanh thu theo bác sĩ và theo dịch vụ hằng tháng.", "kinds": ["reporting"], "tentative": false},
+    {"text": "Chuyển dữ liệu bệnh nhân từ phần mềm cũ (khoảng 25.000 hồ sơ).", "kinds": ["data_import"], "tentative": false},
+    {"text": "Có lẽ năm sau mới làm app cho bệnh nhân tự đặt lịch.", "kinds": ["mobile_app", "scheduling"], "tentative": true},
+    {"text": "Ben em dang tinh co nen ket noi voi phan mem ke toan MISA khong.", "kinds": ["external_integration"], "tentative": true},
+    {"text": "Nhân viên có thể tìm bệnh nhân theo số điện thoại hoặc tên.", "kinds": ["search"], "tentative": false},
+    {"text": "Kho vật tư cảnh báo khi thuốc tê hoặc vật liệu sắp hết.", "kinds": ["notification", "data_management"], "tentative": false},
+    {"text": "Chatbot trả lời câu hỏi giá dịch vụ trên fanpage thì để xem ngân sách đã.", "kinds": ["ai_assistant"], "tentative": true},
+    {"text": "Customers start a return on our website by entering their order number and email.", "kinds": ["data_management", "workflow_approval"], "tentative": false},
+    {"text": "Each return goes through requested, approved, picked up and refunded states.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Warehouse staff approve or reject returns after inspecting photos uploaded by the customer.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Refunds are issued automatically through Stripe once the item is received.", "kinds": ["payment"], "tentative": false},
+    {"text": "Book the pickup with our courier through their API.", "kinds": ["external_integration", "scheduling"], "tentative": false},
+    {"text": "Customers get an email at every status change.", "kinds": ["notification"], "tentative": false},
+    {"text": "We'd love a dashboard showing return reasons by product, if there's time.", "kinds": ["reporting"], "tentative": true},
+    {"text": "Support agents can search returns by customer name, order number or date.", "kinds": ["search"], "tentative": false},
+    {"text": "Down the line we may want to plug this into our ERP.", "kinds": ["external_integration"], "tentative": true},
+    {"text": "Single sign-on with our Microsoft accounts for staff.", "kinds": ["auth"], "tentative": false},
+    {"text": "Export the monthly refunds list to CSV for finance.", "kinds": ["file_export"], "tentative": false},
+    {"text": "Not sure yet whether we need a mobile app for the drivers.", "kinds": ["mobile_app"], "tentative": true}
+  ]
+}
