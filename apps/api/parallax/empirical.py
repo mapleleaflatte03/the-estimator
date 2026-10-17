@@ -30,7 +30,7 @@ from typing import Optional, Sequence
 
 import numpy as np
 
-from .evaluation.benchmark import PredictionRecord, evaluate_predictions
+from .evaluation.benchmark import PredictionRecord, evaluate_predictions, standardized_accuracy, wilcoxon_signed_rank
 
 DATASET_DIR = Path(__file__).resolve().parents[3] / "datasets" / "sip"
 DATASET_INFO = {
@@ -226,6 +226,10 @@ def _evaluate(model: Optional[RatioQuantileModel], test: Sequence, label: str, s
             p10, p50, p90 = model.predict(t.estimate_hours)
         records.append(PredictionRecord(case_id, t.actual_hours, p50, p10, p90))
     out = _metrics_dict(evaluate_predictions(label, records, split=split))
+    actuals = [r.actual_hours for r in records]
+    points = [r.pred_p50 for r in records]
+    out["mdae"] = round(float(np.median(np.abs(np.asarray(actuals) - np.asarray(points)))), 2)
+    out["sa"] = round(standardized_accuracy(actuals, points), 1)
     if model is None:
         # A single number has no interval; report coverage as not applicable.
         out["interval_coverage"] = None
@@ -252,6 +256,16 @@ def run_sip_benchmark() -> dict:
         "n_test": len(test),
         "baseline": _evaluate(None, test, "human-estimate", "test"),
         "calibrated": _evaluate(model, test, "parallax-empirical", "test"),
+    }
+    human_err = [abs(t.actual_hours - t.estimate_hours) for t in test]
+    model_err = [abs(t.actual_hours - model.predict(t.estimate_hours)[1]) for t in test]
+    w = wilcoxon_signed_rank(human_err, model_err)
+    holdout["wilcoxon_human_vs_calibrated"] = {
+        "n_nonzero_pairs": w["n"],
+        "p_value": float(f"{w['p_value']:.3g}") if w["p_value"] is not None else None,
+        "effect_size": round(w["effect_size"], 3) if w["effect_size"] is not None else None,
+        "share_calibrated_closer": round(float(np.mean([m < h for h, m in zip(human_err, model_err)])) * 100, 1),
+        "share_human_closer": round(float(np.mean([h < m for h, m in zip(human_err, model_err)])) * 100, 1),
     }
 
     # Per-bucket view on the same holdout, to show where calibration helps or hurts.

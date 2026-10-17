@@ -1,0 +1,36 @@
+{
+  "n_read": 465,
+  "n_population": 2032,
+  "projects": 30,
+  "groups": [
+    {
+      "group": 0,
+      "n": 289,
+      "ratio_p50": 0.76,
+      "share_overrun_25pct": 18.0
+    },
+    {
+      "group": 1,
+      "n": 88,
+      "ratio_p50": 0.855,
+      "share_overrun_25pct": 20.5
+    },
+    {
+      "group": 2,
+      "n": 88,
+      "ratio_p50": 0.87,
+      "share_overrun_25pct": 30.7
+    }
+  ],
+  "high_vs_low_ratio_p50": 1.145,
+  "spearman": 0.053,
+  "auc_overrun_25pct": 0.559,
+  "mae_raw_estimate": 18.64,
+  "mae_with_sip_factors": 19.86,
+  "mae_gain_95ci": [
+    -1.81,
+    -0.66
+  ],
+  "mdae_raw": 13.2,
+  "mdae_with_sip_factors": 14.11
+}

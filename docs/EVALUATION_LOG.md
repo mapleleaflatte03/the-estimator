@@ -247,14 +247,88 @@ Fixes from round 5 (dev):
 Rounds 1–4 and PROMISE odd projects are unchanged, number for number. Round 5 after its own fixes scores 24/24 and
 6/6, which is dev, not evidence.
 
+### 14. Standard statistics on the SiP holdout
+
+The holdout result is now also reported with the statistics reviewers expect. The baseline is the developers' own
+estimate, i.e. what the company actually used.
+
+- **SA** (accuracy relative to random guessing; Shepperd & MacDonell): 48.6% → 54.0%.
+- **MdAE:** 1.0 h → 1.0 h. Most tasks are small and exact.
+- **Wilcoxon signed-rank on per-task absolute errors:** p = 3.2×10⁻⁶, effect size 0.21. The model is closer on 16.3%
+  of tasks and the human on 12.3%; the rest tie.
+
+### 15. Production replay (completion-date aware)
+
+The temporal split above had a small gap: a task estimated before 2011 but finished later still counted as training
+data. `scripts/sip_operational_replay.py` closes it. Every 2011–2014 estimate is made on its estimate date, using
+only tasks *completed* before that date, and the model is refitted daily. That is what the app does in production.
+
+Result on the 1,391 tasks with a completion date:
+
+| | Human | Frozen at 2011 | Online (app) |
+| --- | --- | --- | --- |
+| MAE | 4.33 h | 3.82 h | 3.85 h |
+| SA | 56.3% | 61.4% | 61.1% |
+| P10–P90 coverage | — | 85.3% | 85.0% |
+| Wilcoxon vs human | — | p = 0.002 | p = 0.006 |
+
+- The calibrated forecast beats the developers' estimates in production conditions.
+- Refitting daily did not beat a model frozen at 2011 in this period. The process was stable, so learning
+  mainly guards against drift.
+- On the 105 large development tasks Jev had read, Jev's overrun groups did not reduce MAE (23.8 h without, 24.7 h
+  with).
+
+### 16. Independent replication on other organisations (Itemlet, interim)
+
+`scripts/itemlet_jev_replication.py` tests whether the SiP finding carries over to other organisations.
+
+- **Data:** Itemlet (CC BY 4.0), 2,032 issues of ≥ 20 h from open-source Jira projects. The original estimate is
+  recovered from Jira's `workratio`.
+- **Pre-registered** in `d9e5a7f` before any call: SiP thresholds and factors applied unchanged, and issues read in a
+  fixed random order.
+- **Interim:** the credits ran out after 465 issues (30 projects), which is still a random sample. We committed to
+  reading the full population regardless of this result.
+
+| Jev overrun group | n | Median actual/estimate | Share overrunning > 25% |
+| --- | --- | --- | --- |
+| low | 289 | 0.76 | 18.0% |
+| medium | 88 | 0.86 | 20.5% |
+| high | 88 | 0.87 | 30.7% |
+
+- **Direction replicates:** high-risk work overran more often.
+- **The signal is much weaker:** Spearman 0.05, AUC 0.56.
+- **The SiP factors hurt:** multiplying estimates by them made MAE worse (18.6 → 19.9 h, gain CI −1.8..−0.7 h).
+
+### 17. Decision: the overrun reading is a flag, not hours
+
+Three tests agree:
+- SiP holdout: no MAE gain.
+- Production replay: no MAE gain.
+- Itemlet: MAE significantly worse with the SiP factors.
+
+The app therefore no longer multiplies hours by the SiP factors. Requirements Jev rates high-risk are flagged for
+senior review. Their group factor starts at 1.0 and moves only with the team's own per-requirement actuals (partial
+pooling).
+
+This decision was made on replication data, so it is reported as such. The SiP factors stay visible as evidence.
+
+### 18. Round 6: the challenge host's domain (rules only so far)
+
+GOLDEN-07 is an investor onboarding portal for a private equity fund: 13 clauses, 3 tentative. Its labels were
+committed in `60fbfe8` before any run.
+
+- Rules incl. round-5 fixes: 10/13 kinds, 2/3 tentative, 0 false alarms. This is the first held-out check of the
+  round-5 fixes.
+- The Jev run is pending credits.
+
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
 | --- | --- |
-| Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, P10–P90 coverage 82.0% |
+| Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, SA 48.6 → 54.0%, Wilcoxon p = 3.2×10⁻⁶, P10–P90 coverage 82.0%. Production replay (1,391 tasks): SA 56.3 → 61.1%, p = 0.006, coverage 85.0% |
 | The shipped reader notices what the client has not committed to | Rounds 1, 2, 4 and 5: **20/21** tentative clauses caught vs **6/21** with rules alone, **0** false alarms |
 | The shipped reader finds the main kind of work | Rounds 1, 2, 4 and 5: **83/99** vs 80/99 with rules alone |
-| Jev spots work that will take longer than it looks | SiP 2011–2014, 219 unseen tasks: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62); point-forecast MAE unchanged within noise |
+| Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, interim n=465): same direction, much weaker (AUC 0.56). No MAE gain anywhere, so it is a review flag, not extra hours |
 | Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
 
 ## Limitations
@@ -308,4 +382,7 @@ Rounds 1–4 and PROMISE odd projects are unchanged, number for number. Round 5 
 | 34 | 2026-10-17 14:03 | `round5_rules_after_round5_fixes` | `dd175964ab` | — | rules: kind 24/24, tentative 6/6, false 0 | Round 5 after its own rule fixes: dev, not evidence. |
 | 35 | 2026-10-17 14:03 | `promise_after_round5_fixes` | `dd175964ab` | — | odd projects: retention 100.0%, performance recall 51.6%, security recall 77.4%, false tentative 0/392 | Regression check after round-5 rule fixes. |
 | 36 | 2026-10-17 14:03 | `round5_shipped_final` | `dd175964ab` | jev-1.13.0 | rules: kind 24/24, tentative 6/6, false 0<br>jev: kind 18/24, tentative 6/6, false 0<br>shipped: kind 24/24, tentative 6/6, false 0 | Final shipped reader (rules after round-5 fixes + cached Jev answers, no API calls) on round 5: dev, not held-out. (scored 24/24, API calls 0, credits left None) |
+| 37 | 2026-10-17 14:51 | `itemlet_replication_interim` | `` | jev-1.13.0 | read 465/2032: high/low median ratio x1.145, Spearman 0.053, AUC 0.559<br>MAE raw 18.64 h → with SiP factors 19.86 h (gain CI [-1.81, -0.66]) | Independent replication on Itemlet (30 open-source Jira projects), SiP thresholds and factors unchanged, protocol committed before the run. Read 465/2032 (random prefix). |
+| 38 | 2026-10-17 14:52 | `sip_operational_replay` | `` | jev-1.13.0 (cached) | human: MAE 4.33 h, PRED(25) 51.5%, SA 56.3%, P10–P90 —<br>frozen: MAE 3.82 h, PRED(25) 51.1%, SA 61.4%, P10–P90 85.3, Wilcoxon p 0.00208<br>online: MAE 3.85 h, PRED(25) 50.9%, SA 61.1%, P10–P90 85.0, Wilcoxon p 0.00552<br>dev>=20h human: MAE 26.89 h, PRED(25) 27.6%, SA 18.5%, P10–P90 —<br>dev>=20h online: MAE 23.81 h, PRED(25) 21.9%, SA 27.8%, P10–P90 81.0, Wilcoxon p 0.0155<br>dev>=20h online+jev: MAE 24.7 h, PRED(25) 22.9%, SA 25.1%, P10–P90 81.0, Wilcoxon p 0.0106 | Production replay: every estimate uses only work completed before its estimate date. Online = refit daily (what the app does); frozen = fitted on work completed before 2011. |
+| 39 | 2026-10-17 14:56 | `round6_rules_before` | `f0608239a4` | — | rules: kind 10/13, tentative 2/3, false 0 | Round 6 (private-equity onboarding, 13 new clauses, labels committed in 60fbfe8 before the run). Rules incl. round-5 fixes: first held-out check of those fixes. |
 <!-- AUTO:journal:end -->

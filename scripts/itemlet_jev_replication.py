@@ -2,7 +2,7 @@
 
 Question: does Jev's "would an experienced developer expect this to take longer than it
 looks?" (OVERRUN_Q, chosen and thresholded on SiP only) still separate overrunning work
-when applied, *unchanged*, to 58 open-source Jira projects?
+when applied, *unchanged*, to open-source Jira projects of other organisations?
 
 Data: Itemlet (Abebe & Rusiecki 2026, doi:10.5281/zenodo.19411554, CC BY 4.0), Jira issues
 with logged hours and `workratio` (= time spent / original estimate x 100), from which the
@@ -69,7 +69,7 @@ def load_population() -> list[dict]:
 
 def journal(tag, summary, note):
     entry = {"date": datetime.now(timezone(timedelta(hours=7))).isoformat(timespec="minutes"), "tag": tag,
-             "labels": "Itemlet Jira issues, estimate >= 20h (real actuals, 58 projects)", "rules_version": None,
+             "labels": "Itemlet Jira issues, estimate >= 20h (real actuals)", "rules_version": None,
              "model": "jev-1.13.0", "summary": summary, "note": note}
     with open(ROOT / "datasets" / "eval" / "journal.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -169,7 +169,7 @@ def cmd_report(args) -> int:
     if not args.no_journal:
         journal(args.tag, [{"reader": "jev:overrun@v1 (SiP thresholds)", **{k: v for k, v in report.items() if k != "groups"}},
                            *[{"reader": f"group {x['group']}", **x} for x in groups]],
-                f"Independent replication on Itemlet (58 open-source Jira projects), SiP thresholds and factors unchanged, "
+                f"Independent replication on Itemlet ({report['projects']} open-source Jira projects), SiP thresholds and factors unchanged, "
                 f"protocol committed before the run. Read {len(rows)}/{protocol['n_population']} (random prefix).")
     return 0
 

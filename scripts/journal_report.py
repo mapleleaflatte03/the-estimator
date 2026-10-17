@@ -25,12 +25,18 @@ def result(entry: dict) -> str:
                 f"P10–P90 coverage {first.get('interval_coverage')}%")
     if "retention_pct" in first:
         return f"retention {first['retention_pct']}%, false tentative {first['false_tentative']}"
+    if "high_vs_low_ratio_p50" in first:
+        return (f"read {first['n_read']}/{first['n_population']}: high/low median ratio x{first['high_vs_low_ratio_p50']}, "
+                f"Spearman {first['spearman']}, AUC {first['auc_overrun_25pct']}<br>MAE raw {first['mae_raw_estimate']} h "
+                f"→ with SiP factors {first['mae_with_sip_factors']} h (gain CI {first['mae_gain_95ci']})")
     if "spearman_log_ratio" in first:
         return "<br>".join(f"{r['question']}: Spearman {r['spearman_log_ratio']}, AUC {r['auc_overrun_25pct']}"
                            for r in entry["summary"])
     if first.get("reader") == "human":
-        return "<br>".join(f"{r['reader']}: MAE {r['mae']} h, PRED(25) {r['pred_25']}%, "
-                           f"P10–P90 {r['coverage_p10_p90'] if r['coverage_p10_p90'] is not None else '—'}"
+        return "<br>".join(f"{r['reader']}: MAE {r['mae']} h, PRED(25) {r['pred_25']}%"
+                           + (f", SA {r['sa']}%" if "sa" in r else "")
+                           + f", P10–P90 {r['coverage_p10_p90'] if r['coverage_p10_p90'] is not None else '—'}"
+                           + (f", Wilcoxon p {r['wilcoxon_vs_human_p']}" if r.get("wilcoxon_vs_human_p") is not None else "")
                            for r in entry["summary"])
     parts = []
     for r in entry["summary"]:

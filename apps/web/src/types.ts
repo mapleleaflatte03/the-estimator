@@ -376,6 +376,34 @@ export interface ReaderEvaluation {
   journal?: JournalEntry[];
   sip_study?: SipStudy | null;
   learning?: Learning;
+  itemlet_replication?: {
+    n_read: number;
+    n_population: number;
+    projects: number;
+    groups: { group: number; n: number; ratio_p50: number | null; share_overrun_25pct: number | null }[];
+    high_vs_low_ratio_p50: number | null;
+    spearman: number;
+    auc_overrun_25pct: number;
+    mae_raw_estimate: number;
+    mae_with_sip_factors: number;
+    mae_gain_95ci: number[];
+  } | null;
+  operational_replay?: {
+    all_tasks: Record<'human' | 'frozen' | 'online', ReplayMetrics>;
+    dev_tasks_20h_read_by_jev: Record<'human' | 'online' | 'online+jev', ReplayMetrics>;
+    by_year: { year: number; n: number; human: number; frozen: number; online: number }[];
+  } | null;
+}
+
+export interface ReplayMetrics {
+  n: number;
+  mae: number;
+  mdae: number;
+  sa: number;
+  pred_25: number;
+  coverage_p10_p90: number | null;
+  wilcoxon_vs_human_p?: number | null;
+  effect_vs_human?: number | null;
 }
 
 export interface SystemStatus {

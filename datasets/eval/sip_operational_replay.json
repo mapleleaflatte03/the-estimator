@@ -1,0 +1,93 @@
+{
+  "what": "Operational replay of SiP 2011-2014: each estimate uses only tasks completed before its estimate date",
+  "all_tasks": {
+    "human": {
+      "n": 1391,
+      "mae": 4.33,
+      "mdae": 0.5,
+      "sa": 56.3,
+      "pred_25": 51.5,
+      "coverage_p10_p90": null
+    },
+    "frozen": {
+      "n": 1391,
+      "mae": 3.82,
+      "mdae": 0.5,
+      "sa": 61.4,
+      "pred_25": 51.1,
+      "coverage_p10_p90": 85.3,
+      "wilcoxon_vs_human_p": 0.00208,
+      "effect_vs_human": 0.215
+    },
+    "online": {
+      "n": 1391,
+      "mae": 3.85,
+      "mdae": 0.5,
+      "sa": 61.1,
+      "pred_25": 50.9,
+      "coverage_p10_p90": 85.0,
+      "wilcoxon_vs_human_p": 0.00552,
+      "effect_vs_human": 0.194
+    }
+  },
+  "dev_tasks_20h_read_by_jev": {
+    "human": {
+      "n": 105,
+      "mae": 26.89,
+      "mdae": 16.76,
+      "sa": 18.5,
+      "pred_25": 27.6,
+      "coverage_p10_p90": null
+    },
+    "online": {
+      "n": 105,
+      "mae": 23.81,
+      "mdae": 14.93,
+      "sa": 27.8,
+      "pred_25": 21.9,
+      "coverage_p10_p90": 81.0,
+      "wilcoxon_vs_human_p": 0.0155,
+      "effect_vs_human": 0.272
+    },
+    "online+jev": {
+      "n": 105,
+      "mae": 24.7,
+      "mdae": 15.67,
+      "sa": 25.1,
+      "pred_25": 22.9,
+      "coverage_p10_p90": 81.0,
+      "wilcoxon_vs_human_p": 0.0106,
+      "effect_vs_human": 0.287
+    }
+  },
+  "by_year": [
+    {
+      "year": 2011,
+      "n": 424,
+      "human": 2.82,
+      "frozen": 2.8,
+      "online": 2.8
+    },
+    {
+      "year": 2012,
+      "n": 322,
+      "human": 7.61,
+      "frozen": 6.35,
+      "online": 6.46
+    },
+    {
+      "year": 2013,
+      "n": 361,
+      "human": 4.34,
+      "frozen": 3.88,
+      "online": 3.88
+    },
+    {
+      "year": 2014,
+      "n": 284,
+      "human": 2.84,
+      "frozen": 2.41,
+      "online": 2.41
+    }
+  ]
+}

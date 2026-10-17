@@ -76,16 +76,17 @@ class ParallaxService:
         cache = repository.data_path.with_name("jev_cache.json") if repository.data_path else None
         self.reader = reader if reader is not None else JevReader(cache_path=cache)
 
-    def _readings(self, project: Project) -> dict:
+    def _readings(self, project: Project, reader: Optional[JevReader] = None) -> dict:
+        reader = reader or self.reader
         texts = list(dict.fromkeys(t.strip() for t in clause_texts(project.brief_text, project.documents) if t.strip()))
         try:
-            readings = self.reader.read(texts)
+            readings = reader.read(texts)
         except Exception as exc:
             logger.warning("AI reader failed: %s", exc)
             readings = {}
         missing = [t for t in texts if t not in readings]
         if missing and self.jev_required:
-            status = self.reader.status()
+            status = reader.status()
             if not status["configured"]:
                 reason = "chưa cấu hình khóa API Jev (JEVSTATION_API_KEY…)"
             elif status.get("halted"):
@@ -131,7 +132,7 @@ class ParallaxService:
         return [c.actual_hours for c in cases] or None
 
     def _build_version(self, project: Project, answers: dict[str, bool],
-                       manual_edits: Optional[dict] = None) -> EstimateVersion:
+                       manual_edits: Optional[dict] = None, reader: Optional[JevReader] = None) -> EstimateVersion:
         existing = self.repo.get_versions(project.project_id)
         if manual_edits is None:
             manual_edits = dict(existing[-1].manual_edits) if existing else {}
@@ -145,7 +146,7 @@ class ParallaxService:
             calibration_multiplier=self.multiplier_for(project.project_type),
             historical_cases=self._comparable_hours(project),
             systemic_ratio_pool=self._systemic_pool(),
-            readings=self._readings(project),
+            readings=self._readings(project, reader),
             manual_edits=manual_edits,
             ai_suppressed=self.suppressed_ai_kinds(),
             adjustments=self.adjustments(),
@@ -188,13 +189,13 @@ class ParallaxService:
         )
         return self.repo.save_project(project)
 
-    def estimate_project(self, project_id: str) -> EstimateVersion:
+    def estimate_project(self, project_id: str, reader: Optional[JevReader] = None) -> EstimateVersion:
         project = self.repo.get_project(project_id)
         if not project:
             raise KeyError(f"Project {project_id} not found")
         existing = self.repo.get_versions(project_id)
         answers = dict(existing[-1].clarification_answers) if existing else {}
-        return self.repo.add_version(self._build_version(project, answers))
+        return self.repo.add_version(self._build_version(project, answers, reader=reader))
 
     def answer_clarification(
         self,
@@ -202,6 +203,7 @@ class ParallaxService:
         question_id: str,
         answer: bool,
         notes: Optional[str] = None,
+        reader: Optional[JevReader] = None,
     ) -> EstimateVersion:
         project = self.repo.get_project(project_id)
         if not project:
@@ -221,12 +223,12 @@ class ParallaxService:
             if comp:
                 self.repo.add_feedback([FeedbackEvent(event="ai_suggestion", component=comp, accepted=answer,
                                                       project_id=project_id, version_id=parent.version_id)])
-        version = self.repo.add_version(self._build_version(project, answers))
+        version = self.repo.add_version(self._build_version(project, answers, reader=reader))
         project.status = "clarified"
         self.repo.save_project(project)
         return version
 
-    def update_wbs(self, project_id: str, edits: dict) -> EstimateVersion:
+    def update_wbs(self, project_id: str, edits: dict, reader: Optional[JevReader] = None) -> EstimateVersion:
         """New immutable version with the user's WBS edits; edits persist across later versions."""
         project = self.repo.get_project(project_id)
         if not project:
@@ -251,7 +253,7 @@ class ParallaxService:
                 events.append(FeedbackEvent(event="ai_item_removed", component=comp, accepted=False,
                                             project_id=project_id, version_id=parent.version_id))
         self.repo.add_feedback(events)
-        return self.repo.add_version(self._build_version(project, dict(parent.clarification_answers), edits))
+        return self.repo.add_version(self._build_version(project, dict(parent.clarification_answers), edits, reader))
 
     def record_actuals(
         self,

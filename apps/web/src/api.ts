@@ -13,13 +13,37 @@ import type {
 } from './types';
 
 const API_BASE = '/api/v1';
+const KEY_STORAGE = 'parallax_jev_key';
+
+/** The visitor's own Jev key: kept in this browser tab only and sent with requests that read briefs. */
+export const visitorKey = {
+  get: () => sessionStorage.getItem(KEY_STORAGE) ?? '',
+  set: (k: string) => (k.trim() ? sessionStorage.setItem(KEY_STORAGE, k.trim()) : sessionStorage.removeItem(KEY_STORAGE)),
+};
+
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export let lastVisitorCredits: number | null = null;
 
 async function request<T>(url: string, init?: RequestInit, fallbackError = 'Request failed'): Promise<T> {
-  const res = await fetch(url, init);
+  const key = visitorKey.get();
+  // Only requests that may read a brief carry the key.
+  const reads = !!init?.method && init.method !== 'GET';
+  const withKey: RequestInit =
+    key && reads ? { ...init, headers: { ...(init?.headers ?? {}), 'X-Jev-Key': key } } : init ?? {};
+  const res = await fetch(url, withKey);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: fallbackError }));
-    throw new Error(typeof err.detail === 'string' ? err.detail : fallbackError);
+    throw new ApiError(typeof err.detail === 'string' ? err.detail : fallbackError, res.status);
   }
+  const credits = res.headers.get('X-Jev-Credits-Remaining');
+  if (credits != null) lastVisitorCredits = Number(credits);
   return res.json();
 }
 

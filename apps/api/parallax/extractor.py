@@ -305,7 +305,8 @@ _TEXT = {
         "c_qa": "Thời gian kiểm thử chiếm {share:.0f}% tổng.",
         "c_nfr": "Mô tả chưa nói về tốc độ, bảo mật hay nơi đặt máy chủ. Nên bổ sung.",
         "c_breadth": "“{title}” gồm {n} việc nhỏ nên được tính nhiều giờ hơn.",
-        "c_overrun": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%). Trên dữ liệu thật, những việc AI đánh giá như vậy vượt giờ hơn việc ít rủi ro khoảng {pct}%, đã cộng vào.",
+        "c_overrun": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%). Theo giờ thực tế nhóm bạn đã nhập, loại việc này vượt giờ hơn việc ít rủi ro khoảng {pct}%, đã cộng vào.",
+        "c_overrun_flag": "AI đánh giá “{title}” dễ tốn thời gian hơn vẻ ngoài ({p}%). Nên để người có kinh nghiệm xem kỹ phần này. Số giờ chưa được cộng thêm, vì mức chênh mới được kiểm chứng ở một công ty; app sẽ tự học khi bạn nhập giờ thực tế theo từng yêu cầu.",
     },
     "en": {
         "foundation": "Engineering foundation & delivery",
@@ -332,7 +333,8 @@ _TEXT = {
         "c_qa": "QA is {share:.0f}% of development hours (minimum threshold 15%).",
         "c_nfr": "The brief states no non-functional requirements (performance, security, hosting). Default assumptions may be wrong.",
         "c_breadth": "“{title}” lists {n} actions/objects; template hours scaled by {factor:.2f} for breadth.",
-        "c_overrun": "AI rates “{title}” as likely to take longer than it looks ({p}%). In real data, work rated like this overran about {pct}% more than low-risk work; added to the estimate.",
+        "c_overrun": "AI rates “{title}” as likely to take longer than it looks ({p}%). Your team's recorded actuals show such work overrunning about {pct}% more than low-risk work; added to the estimate.",
+        "c_overrun_flag": "AI rates “{title}” as likely to take longer than it looks ({p}%). Worth a senior review. Hours are not increased: the size of the effect held at one company but not at others; the app learns it once you record actual hours per requirement.",
     },
 }
 
@@ -543,10 +545,13 @@ def _apply_adjustments(drafts: list["_Draft"], items: list[WorkItem], adj: Optio
         d.req.adjustment_factor = round(sum(_pert_mean(i) for i in own) / raw, 3) if raw else None
         p = (d.req.ai_reading or {}).get("overrun")
         if g == 2 and p is not None:
+            learned = group_factor > 1.005
             critics.append(CriticFinding(
                 finding_id=f"CRITIC-{d.req.req_id}-OVERRUN", category="overrun_risk",
-                claim=L["c_overrun"].format(title=d.req.title, p=round(p * 100), pct=round((group_factor - 1) * 100)),
-                verified_by_evidence=True, supporting_evidence=d.req.evidence, action_taken="applied_to_wbs",
+                claim=(L["c_overrun"] if learned else L["c_overrun_flag"]).format(
+                    title=d.req.title, p=round(p * 100), pct=round((group_factor - 1) * 100)),
+                verified_by_evidence=True, supporting_evidence=d.req.evidence,
+                action_taken="applied_to_wbs" if learned else "flagged_for_human_review",
             ))
 
 

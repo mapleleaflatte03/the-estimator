@@ -19,9 +19,10 @@ const aiNotes = (req: RequirementNode): string[] => {
   if (a.added_component) notes.push(`AI nhận ra: ${KIND_LABELS[a.kind] ?? a.kind}`);
   if (a.suggested_component) notes.push(`AI gợi ý thêm: ${KIND_LABELS[a.kind] ?? a.kind} (xem Câu hỏi)`);
   const f = req.adjustment_factor ?? 1;
+  const learned = Math.abs(f - 1) >= 0.01 ? ` · ${f > 1 ? '+' : '−'}${Math.abs(Math.round((f - 1) * 100))}% giờ, học từ giờ thực tế của nhóm` : '';
   if (req.risk_group === 2 && a.overrun != null)
-    notes.push(`AI: dễ tốn hơn vẻ ngoài (${Math.round(a.overrun * 100)}%) · +${Math.round((f - 1) * 100)}% giờ theo dữ liệu thật`);
-  else if (Math.abs(f - 1) >= 0.01) notes.push(`${f > 1 ? '+' : '−'}${Math.abs(Math.round((f - 1) * 100))}% giờ theo dữ liệu thật`);
+    notes.push(`AI: dễ tốn hơn vẻ ngoài (${Math.round(a.overrun * 100)}%), nên xem kỹ${learned}`);
+  else if (learned) notes.push(learned.slice(3));
   return notes;
 };
 

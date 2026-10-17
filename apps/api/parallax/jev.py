@@ -25,6 +25,7 @@ environment; `load_dotenv()` fills it from a git-ignored `.env`.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import logging
@@ -171,10 +172,13 @@ def _cache_key(text: str, question: Question) -> str:
 # --------------------------------------------------------------------------- #
 # Key pool
 # --------------------------------------------------------------------------- #
+# Pinned: every threshold and factor was measured on jev-1.13.0, and the "jev"/"jev-latest" alias
+# moves to newer versions. JEV_MODEL overrides it (re-run the evaluations if you do).
+JEV_MODEL = os.environ.get("JEV_MODEL", "jev-1.13.0")
 PROVIDERS = (
-    ("JEVSTATION_API_KEY", "jevstation", "https://jevstation.com/api/v1/systemone", "jev"),
-    ("TYPESAFE_API_KEY", "typesafe", "https://api.typesafe.ai/v1/systemone", "jev-1.13.0"),
-    ("AI_GATEWAY_API_KEY", "vercel", "https://ai-gateway.vercel.sh/typesafe/v1/systemone", "typesafe-ai/jev-1.13.0"),
+    ("JEVSTATION_API_KEY", "jevstation", "https://jevstation.com/api/v1/systemone", JEV_MODEL),
+    ("TYPESAFE_API_KEY", "typesafe", "https://api.typesafe.ai/v1/systemone", JEV_MODEL),
+    ("AI_GATEWAY_API_KEY", "vercel", "https://ai-gateway.vercel.sh/typesafe/v1/systemone", f"typesafe-ai/{JEV_MODEL}"),
 )
 
 
@@ -254,6 +258,16 @@ class JevReader:
                     self.cache.update(json.loads(path.read_text(encoding="utf-8")))
                 except (OSError, ValueError) as exc:
                     logger.warning("Ignoring unreadable Jev cache %s: %s", path, exc)
+
+    def with_key(self, secret: str, provider: str = "jevstation") -> "JevReader":
+        """A reader that spends only the given (visitor's) key but shares this reader's answer cache."""
+        spec = next((p for p in PROVIDERS if p[1] == provider), PROVIDERS[0])
+        clone = copy.copy(self)
+        clone.keys = [JevKey("visitor", spec[1], spec[2], spec[3], secret.strip())]
+        clone.call_times, clone.calls_made, clone.credits_charged = [], 0, 0
+        clone.halted, clone.last_error = None, None
+        clone.max_calls_per_hour = None  # their own credits, their own limit
+        return clone
 
     # ------------------------------------------------------------------ status
     @property

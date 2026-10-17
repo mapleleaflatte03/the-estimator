@@ -20,19 +20,33 @@ def req(version):
 def test_sip_prior_is_loaded_and_ordered():
     prior = risk.sip_prior()
     assert prior is not None and prior.question == "overrun@v1"
-    assert prior.factors[0] == 1.0 < prior.factors[1] < prior.factors[2]
+    assert prior.factors[0] == 1.0 < prior.factors[1] < prior.factors[2]  # kept as evidence, not applied
     assert prior.thresholds[0] <= prior.thresholds[1]
 
 
-def test_high_overrun_reading_adds_hours_and_explains_why():
+def test_high_overrun_reading_is_flagged_without_adding_hours_by_default():
+    # SiP factors did not transfer to other organisations (Itemlet replication), so the default is a flag only.
     adj = risk.learn([])
     low = extract_scope_and_wbs("p", f"- {CLAUSE}", readings={CLAUSE: reading(0.1)}, adjustments=adj)
     high = extract_scope_and_wbs("p", f"- {CLAUSE}", readings={CLAUSE: reading(0.95)}, adjustments=adj)
     assert req(low).risk_group == 0 and req(high).risk_group == 2
-    assert req(low).estimated_hours_raw == req(high).estimated_hours_raw
-    assert req(high).adjustment_factor > 1.2 and req(low).adjustment_factor == 1.0
-    assert high.forecast.p50_hours > low.forecast.p50_hours
-    assert any(f.category == "overrun_risk" for f in high.critic_findings)
+    assert req(high).adjustment_factor == req(low).adjustment_factor == 1.0
+    flag = next(f for f in high.critic_findings if f.category == "overrun_risk")
+    assert flag.action_taken == "flagged_for_human_review"
+
+
+def test_overrun_hours_come_from_the_teams_own_actuals():
+    class Obs:
+        def __init__(self, g, ratio):
+            import math
+            self.risk_group, self.components, self.log_ratio = g, ["crud"], math.log(ratio)
+
+    # Flagged requirements kept taking 1.6x their estimate, the others were on target.
+    adj = risk.learn([Obs(2, 1.6)] * 6 + [Obs(0, 1.0)] * 6)
+    assert adj.group_factors[2] > 1.1 and adj.group_factors[0] < 1.0
+    high = extract_scope_and_wbs("p", f"- {CLAUSE}", readings={CLAUSE: reading(0.95)}, adjustments=adj)
+    assert req(high).adjustment_factor > 1.1
+    assert next(f for f in high.critic_findings if f.category == "overrun_risk").action_taken == "applied_to_wbs"
 
 
 def test_user_edit_wins_over_learned_factor():

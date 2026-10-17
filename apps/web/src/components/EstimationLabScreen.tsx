@@ -356,7 +356,7 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
           tế của các dự án đã xong, các dự toán sau sẽ tự điều chỉnh theo từng loại dự án
           {forecast.calibration_multiplier !== 1 && ` (hiện đang nhân ×${forecast.calibration_multiplier.toFixed(2)})`}.
           {version.reader === 'rules+jev'
-            ? ' AI Jev đọc từng câu của mô tả như một người ước lượng lâu năm: đây là loại việc gì, khách đã chốt chưa, và việc này có dễ tốn thời gian hơn vẻ ngoài không. Câu hỏi cuối được kiểm chứng trên 798 công việc thật (SiP): những việc AI đánh giá rủi ro cao đã thực sự vượt giờ nhiều hơn, nên phần đó được cộng thêm giờ theo đúng mức đo được.'
+            ? ' AI Jev đọc từng câu của mô tả như một người ước lượng lâu năm: đây là loại việc gì, khách đã chốt chưa, và việc này có dễ tốn thời gian hơn vẻ ngoài không. Phần AI đánh giá dễ vượt giờ được gắn cờ để xem kỹ; số giờ chỉ được cộng thêm khi giờ thực tế của chính nhóm bạn cho thấy điều đó (kiểm chứng trên dữ liệu thật cho thấy mức chênh không giống nhau giữa các công ty).'
             : ' Phần đọc mô tả dùng luật nhận diện từ khóa.'}
         </p>
       </details>

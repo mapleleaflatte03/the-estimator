@@ -1,17 +1,16 @@
-"""Turn Jev's "this will take longer than it looks" reading into hours, using real outcomes.
+"""Jev's "this will take longer than it looks" reading: a flag first, hours only when your data says so.
 
-Prior: scripts/sip_jev_study.py asked Jev the same question (OVERRUN_Q) about 798
-real SiP development tasks. On the training years, tasks were split into three
-groups by Jev's probability; each group's median actual/estimate ratio, divided
-by that of the low-risk group, is the group's factor: low-risk work keeps its
-hours and flagged work gets the extra overrun measured on real tasks. The later,
-unseen years confirmed the ordering (scripts/sip_jev_study.py report).
-
-Learning: when a finished project's hours are recorded per requirement, each
-requirement becomes an observation (estimated vs actual hours). Group factors and
-per-component factors are then pulled from the SiP prior towards this
-workspace's own record with partial pooling, so a few projects nudge the
-numbers and many projects take over.
+Evidence (datasets/eval/, docs/EVALUATION_LOG.md):
+  * SiP (scripts/sip_jev_study.py): on unseen years the high-risk group overran 1.47x as
+    much as the low-risk group, so the reading ranks risk. But using it as a point forecast
+    did not reduce MAE (CI -1.9..+0.7 h).
+  * Itemlet replication (scripts/itemlet_jev_replication.py, other organisations): same
+    direction, much weaker; multiplying hours by the SiP factors made MAE significantly worse.
+  * Operational replay (scripts/sip_operational_replay.py): no MAE gain either.
+So the default factor for every group is 1.0: the app shows the flag (and the SiP evidence)
+but does not add hours. When a finished project's hours are recorded per requirement, each
+requirement becomes an observation (estimated vs actual hours), and the group and
+per-component factors move from 1.0 towards this workspace's own record with partial pooling.
 """
 from __future__ import annotations
 
@@ -107,7 +106,7 @@ def learn(observations: Iterable) -> Adjustments:
     """
     obs = list(observations)
     prior = sip_prior()
-    base = prior.factors if prior else (1.0, 1.0, 1.0)
+    base = (1.0, 1.0, 1.0)  # SiP factors did not transfer (see module docstring); learn from your own actuals
     centre = sum(o.log_ratio for o in obs) / len(obs) if obs else 0.0
     groups, counts = [], []
     for g in range(3):

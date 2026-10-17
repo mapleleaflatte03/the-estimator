@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -67,6 +67,20 @@ def ai_unavailable(_request, exc: AIReaderUnavailable):
     from fastapi.responses import JSONResponse
 
     return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+def visitor_reader(
+    x_jev_key: Optional[str] = Header(default=None, description="Your own Jev API key; used for this request only, never stored"),
+    x_jev_provider: Optional[str] = Header(default=None, description="jevstation (default) or typesafe"),
+):
+    if x_jev_key and x_jev_key.strip():
+        return service.reader.with_key(x_jev_key, (x_jev_provider or "jevstation").strip().lower())
+    return None
+
+
+def _report_visitor_credits(response: Response, reader) -> None:
+    if reader is not None and reader.keys and reader.keys[0].credits is not None:
+        response.headers["X-Jev-Credits-Remaining"] = str(reader.keys[0].credits)
 
 
 @app.get("/health", tags=["System"])
@@ -131,9 +145,10 @@ def get_project(project_id: str):
 
 
 @app.post("/api/v1/projects/{project_id}/estimate", response_model=EstimateVersion, tags=["Estimation"])
-def estimate_project(project_id: str):
+def estimate_project(project_id: str, response: Response, reader=Depends(visitor_reader)):
     try:
-        version = service.estimate_project(project_id)
+        version = service.estimate_project(project_id, reader=reader)
+        _report_visitor_credits(response, reader)
         return version
     except KeyError:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -144,10 +159,10 @@ def estimate_project(project_id: str):
 
 
 @app.put("/api/v1/projects/{project_id}/wbs", response_model=EstimateVersion, tags=["Estimation"])
-def update_wbs(project_id: str, payload: ManualEdits):
+def update_wbs(project_id: str, payload: ManualEdits, reader=Depends(visitor_reader)):
     """Replace the user's WBS edits (hours, names, removed and added items) and re-estimate."""
     try:
-        return service.update_wbs(project_id, payload.model_dump(exclude_none=True))
+        return service.update_wbs(project_id, payload.model_dump(exclude_none=True), reader=reader)
     except KeyError:
         raise HTTPException(status_code=404, detail="Project not found")
     except ValueError as e:
@@ -195,6 +210,9 @@ def reader_evaluation():
     out["feedback"] = service.feedback_summary()
     study = ROOT_DIR / "datasets" / "eval" / "sip_jev_study.json"
     out["sip_study"] = json.loads(study.read_text(encoding="utf-8")) if study.exists() else None
+    for key, name in (("itemlet_replication", "itemlet_replication.json"), ("operational_replay", "sip_operational_replay.json")):
+        path = ROOT_DIR / "datasets" / "eval" / name
+        out[key] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
     out["learning"] = service.adjustments().as_dict()
     journal = ROOT_DIR / "datasets" / "eval" / "journal.jsonl"
     out["journal"] = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines() if line.strip()] \
@@ -218,13 +236,14 @@ def get_version(project_id: str, version_id: str):
 
 
 @app.post("/api/v1/projects/{project_id}/clarify", response_model=EstimateVersion, tags=["Clarification"])
-def answer_clarification(project_id: str, payload: ClarificationAnswer):
+def answer_clarification(project_id: str, payload: ClarificationAnswer, reader=Depends(visitor_reader)):
     try:
         new_version = service.answer_clarification(
             project_id=project_id,
             question_id=payload.question_id,
             answer=payload.answer,
             notes=payload.notes,
+            reader=reader,
         )
         return new_version
     except KeyError:

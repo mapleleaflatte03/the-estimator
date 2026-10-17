@@ -144,6 +144,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
   const study = ev.sip_study;
   const rep = study?.report;
   const st = ev.status;
+  const replay = ev.operational_replay;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
@@ -163,13 +164,13 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
           value={`${tShip}/${tAll}`}
           sub={`Chỉ dùng luật: ${tRules}/${tAll}. Không báo nhầm câu nào.`}
         />
-        {rep && rep.groups_test.length === 3 && (
+        {replay && (
           <Kpi
-            tone="ai"
+            tone="good"
             icon={<Gauge className="w-4 h-4" />}
-            label="AI nhận ra việc dễ vượt giờ"
-            value={`+${Math.round((rep.groups_test[2].test_ratio_p50 / rep.groups_test[0].test_ratio_p50 - 1) * 100)}%`}
-            sub={`${rep.groups_test.reduce((s, g) => s + g.n_test, 0)} công việc thật chưa từng thấy: việc AI đánh giá rủi ro cao vượt giờ hơn việc ít rủi ro.`}
+            label="Vận hành thật 2011–2014"
+            value={`${vn(replay.all_tasks.online.sa)}`}
+            sub={`Độ chính xác so với đoán ngẫu nhiên; ước lượng của lập trình viên: ${vn(replay.all_tasks.human.sa)} (${replay.all_tasks.human.n.toLocaleString('vi-VN')} việc).`}
           />
         )}
         {sip && (
@@ -279,10 +280,19 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
                 lần (so với ước tính) việc ít rủi ro. Tương quan thứ hạng {rep.spearman_test.toLocaleString('vi-VN')}, AUC{' '}
                 {rep.auc_overrun_25pct_test.toLocaleString('vi-VN')} cho việc vượt quá 25%.
               </p>
-              <p>
-                App dùng đúng các tỷ lệ học từ năm trước (×{(rep.groups_train[1].ratio_p50 / rep.groups_train[0].ratio_p50).toFixed(2)} và ×
-                {(rep.groups_train[2].ratio_p50 / rep.groups_train[0].ratio_p50).toFixed(2)}) để cộng giờ cho những câu AI đánh giá rủi ro, rồi
-                tự điều chỉnh khi bạn nhập giờ thực tế theo từng yêu cầu.
+              {ev.itemlet_replication && (
+                <p>
+                  Thử lại nguyên câu hỏi và ngưỡng đó trên {ev.itemlet_replication.n_read} việc của {ev.itemlet_replication.projects} dự án
+                  mã nguồn mở khác (Itemlet): cùng chiều nhưng yếu hơn nhiều (tỷ lệ cao/thấp ×
+                  {ev.itemlet_replication.high_vs_low_ratio_p50?.toLocaleString('vi-VN')}, tương quan{' '}
+                  {ev.itemlet_replication.spearman.toLocaleString('vi-VN')}), và nhân giờ theo hệ số của SiP làm sai lệch tăng (
+                  {ev.itemlet_replication.mae_raw_estimate.toLocaleString('vi-VN')} →{' '}
+                  {ev.itemlet_replication.mae_with_sip_factors.toLocaleString('vi-VN')} giờ).
+                </p>
+              )}
+              <p className="font-semibold">
+                Vì vậy app chỉ gắn cờ những câu AI đánh giá dễ vượt giờ để xem kỹ, không tự cộng giờ. Mức cộng (nếu có) được học từ giờ thực tế
+                của chính nhóm bạn.
               </p>
               <p className="text-xs text-slate-600 dark:text-slate-400">
                 Nói thẳng: dự báo từng việc chưa chính xác hơn rõ rệt (sai lệch trung bình {rep.calibrated_size_only.mae.toLocaleString('vi-VN')} →{' '}
@@ -372,6 +382,48 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
           </div>
         )}
       </section>
+
+      {replay && (
+        <section className={`${card} p-6 space-y-4`}>
+          <div>
+            <h2 className="text-lg font-bold">Chạy thử như đang vận hành thật (2011–2014)</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Phát lại {replay.all_tasks.human.n.toLocaleString('vi-VN')} công việc thật theo đúng ngày: mỗi dự toán chỉ được học từ những
+              việc <strong>đã xong</strong> trước ngày ước tính, giờ thực tế được nạp vào đúng ngày việc hoàn thành.
+            </p>
+          </div>
+          <GroupedBars
+            series={[
+              { key: 'human', label: 'Ước lượng của lập trình viên', tone: 'muted' },
+              { key: 'online', label: 'App học liên tục', tone: 'good' },
+            ]}
+            groups={[
+              {
+                key: 'mae',
+                label: 'Sai lệch trung bình mỗi việc',
+                values: [
+                  { series: 'human', value: 1, display: hours1(replay.all_tasks.human.mae) },
+                  { series: 'online', value: replay.all_tasks.online.mae / replay.all_tasks.human.mae, display: hours1(replay.all_tasks.online.mae) },
+                ],
+              },
+              {
+                key: 'sa',
+                label: 'Độ chính xác so với đoán ngẫu nhiên (SA, cao hơn là tốt)',
+                values: [
+                  { series: 'human', value: replay.all_tasks.human.sa / 100, display: vn(replay.all_tasks.human.sa) },
+                  { series: 'online', value: replay.all_tasks.online.sa / 100, display: vn(replay.all_tasks.online.sa) },
+                ],
+              },
+            ]}
+          />
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Kiểm định Wilcoxon (từng cặp việc): p = {replay.all_tasks.online.wilcoxon_vs_human_p}. Khoảng 80% (P10–P90) chứa đúng{' '}
+            {vn(replay.all_tasks.online.coverage_p10_p90)} giờ thực tế. Với việc lớn AI đã đọc, lớp “dễ vượt giờ” không làm sai lệch giảm (
+            {replay.dev_tasks_20h_read_by_jev.online.mae} → {replay.dev_tasks_20h_read_by_jev['online+jev'].mae} giờ), nên không được dùng để cộng
+            giờ.
+          </p>
+        </section>
+      )}
 
       <section className={`${card} p-6 space-y-3`}>
         <h2 className="text-lg font-bold">Phản hồi từ người dùng trong app</h2>

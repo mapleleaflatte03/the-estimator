@@ -69,6 +69,59 @@ def evaluate_predictions(
     )
 
 
+def standardized_accuracy(actuals: Sequence[float], predictions: Sequence[float], runs: int = 1000,
+                          seed: int = 0) -> float:
+    """SA (Shepperd & MacDonell 2012): 1 - MAE / MAE of random guessing, in percent.
+
+    Random guessing predicts each case with the actual of another, randomly drawn case.
+    """
+    a = np.asarray(actuals, dtype=float)
+    p = np.asarray(predictions, dtype=float)
+    if len(a) < 2:
+        return float("nan")
+    rng = np.random.default_rng(seed)
+    n = len(a)
+    guesses = []
+    for _ in range(runs):
+        idx = rng.integers(0, n - 1, n)
+        idx = idx + (idx >= np.arange(n))  # never the case itself
+        guesses.append(np.mean(np.abs(a - a[idx])))
+    return float((1 - np.mean(np.abs(a - p)) / np.mean(guesses)) * 100)
+
+
+def wilcoxon_signed_rank(errors_a: Sequence[float], errors_b: Sequence[float]) -> dict:
+    """Paired two-sided Wilcoxon signed-rank test (normal approximation with tie correction).
+
+    Returns the p-value and the matched-pairs rank-biserial effect size (positive: a has larger errors).
+    """
+    d = np.asarray(errors_a, dtype=float) - np.asarray(errors_b, dtype=float)
+    d = d[d != 0]
+    n = len(d)
+    if n < 10:
+        return {"n": n, "p_value": None, "effect_size": None}
+    abs_d = np.abs(d)
+    order = np.argsort(abs_d)
+    ranks = np.empty(n)
+    sorted_abs = abs_d[order]
+    i = 0
+    tie_term = 0.0
+    while i < n:
+        j = i
+        while j + 1 < n and sorted_abs[j + 1] == sorted_abs[i]:
+            j += 1
+        ranks[order[i: j + 1]] = (i + j) / 2 + 1
+        t = j - i + 1
+        tie_term += t ** 3 - t
+        i = j + 1
+    w_plus = float(ranks[d > 0].sum())
+    total = n * (n + 1) / 2
+    mean = total / 2
+    var = n * (n + 1) * (2 * n + 1) / 24 - tie_term / 48
+    z = (w_plus - mean) / math.sqrt(var) if var > 0 else 0.0
+    p = math.erfc(abs(z) / math.sqrt(2))
+    return {"n": n, "p_value": p, "effect_size": (2 * w_plus - total) / total}
+
+
 def calibration_gate_decision(
     before: BenchmarkMetrics,
     after: BenchmarkMetrics,

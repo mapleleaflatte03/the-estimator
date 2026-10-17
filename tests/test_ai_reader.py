@@ -158,6 +158,30 @@ def test_key_pool_discovers_numbered_keys(monkeypatch):
     assert all("secret" not in str(k.public()) for k in jev.discover_keys())
 
 
+def test_visitor_brings_own_key_through_api(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from parallax.main import app
+
+    seen = []
+
+    def fake_post(self, key, body):
+        seen.append((key.name, key.secret))
+        return FakeReader._post(FakeReader(), jev.JevKey("v", "fake", "u", "jev", "s", credits=10), body)
+
+    monkeypatch.setenv("JEV_REQUIRED", "1")
+    monkeypatch.setattr(JevReader, "_post", fake_post)
+    client = TestClient(app)
+    brief = "- Theo dõi bảo hành thiết bị cho từng khách hàng.\n- Gửi email nhắc lịch bảo trì định kỳ."
+    pid = client.post("/api/v1/projects", json={"title": "Visitor", "brief_text": brief}).json()["project_id"]
+    no_key = client.post(f"/api/v1/projects/{pid}/estimate")
+    assert no_key.status_code == 503 and "Jev" in no_key.json()["detail"]
+    ok = client.post(f"/api/v1/projects/{pid}/estimate", headers={"X-Jev-Key": "visitor-secret"})
+    assert ok.status_code == 200 and ok.json()["reader"] == "rules+jev"
+    assert seen and all(name == "visitor" and secret == "visitor-secret" for name, secret in seen)
+    assert ok.headers.get("X-Jev-Credits-Remaining") is not None
+
+
 def test_estimate_requires_ai_reader(monkeypatch, tmp_path):
     from parallax.service import AIReaderUnavailable, ParallaxService
     from parallax.storage import StorageRepository

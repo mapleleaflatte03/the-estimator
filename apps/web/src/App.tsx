@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { PlusCircle, FolderOpen, Sun, Moon, Loader2 } from 'lucide-react';
+import { PlusCircle, FolderOpen, Sun, Moon, Loader2, KeyRound } from 'lucide-react';
 import type { Project, EstimateVersion, ManualEdits } from './types';
 import {
   fetchProjects,
@@ -9,7 +9,10 @@ import {
   recordActuals,
   runBenchmark,
   updateWbs,
+  ApiError,
+  visitorKey,
 } from './api';
+import { JevKeyDialog } from './components/JevKeyDialog';
 import { IntakeScreen } from './components/IntakeScreen';
 import { ScopeGraphScreen } from './components/ScopeGraphScreen';
 import { EstimationLabScreen } from './components/EstimationLabScreen';
@@ -27,6 +30,8 @@ export const App: React.FC = () => {
   const [currentVersion, setCurrentVersion] = useState<EstimateVersion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [keyDialog, setKeyDialog] = useState<{ open: boolean; reason?: string | null }>({ open: false });
+  const [hasKey, setHasKey] = useState(() => !!visitorKey.get());
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('parallax_theme');
@@ -51,7 +56,10 @@ export const App: React.FC = () => {
       setCurrentVersion(vList[vList.length - 1]);
       setActiveTab('estimation');
     } catch (err) {
-      console.error('Error loading project versions:', err);
+      setVersions([]);
+      setCurrentVersion(null);
+      if (err instanceof ApiError && err.status === 503) setKeyDialog({ open: true, reason: err.message });
+      else console.error('Error loading project versions:', err);
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +85,8 @@ export const App: React.FC = () => {
     try {
       await work();
     } catch (err) {
-      alert(`Có lỗi xảy ra: ${(err as Error).message}`);
+      if (err instanceof ApiError && err.status === 503) setKeyDialog({ open: true, reason: err.message });
+      else alert(`Có lỗi xảy ra: ${(err as Error).message}`);
     } finally {
       setIsLoading(false);
       setStatusMessage(null);
@@ -185,6 +194,18 @@ export const App: React.FC = () => {
               <span className="hidden sm:inline">Dự án mới</span>
             </button>
             <button
+              onClick={() => setKeyDialog({ open: true })}
+              aria-label="Khóa AI Jev"
+              title={hasKey ? 'Đang dùng khóa Jev của bạn' : 'Dùng khóa Jev của bạn'}
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center cursor-pointer ${
+                hasKey
+                  ? 'bg-violet-50 dark:bg-violet-950/50 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <KeyRound className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => setIsDarkMode(!isDarkMode)}
               aria-label={isDarkMode ? 'Chuyển sang nền sáng' : 'Chuyển sang nền tối'}
               className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-pointer"
@@ -263,6 +284,17 @@ export const App: React.FC = () => {
         )}
         {activeTab === 'evidence' && <EvidenceScreen onRunBenchmark={runBenchmark} />}
       </main>
+      {keyDialog.open && (
+        <JevKeyDialog
+          reason={keyDialog.reason}
+          onClose={() => {
+            setKeyDialog({ open: false });
+            setHasKey(!!visitorKey.get());
+            // A brief that could not be read yet is read again right away with the new key.
+            if (visitorKey.get() && currentProject && !currentVersion) handleReestimate();
+          }}
+        />
+      )}
     </div>
   );
 };
