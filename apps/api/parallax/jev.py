@@ -146,6 +146,9 @@ CLAUSE_QUESTIONS: tuple[Question, ...] = (KIND_Q, TENTATIVE_Q, OVERRUN_Q)
 
 # Fixed on rounds 1-6 (dev, scripts/verify_kinds_dev.py) before the round-7 held-out check.
 VERIFY_MIN = 0.4
+# Fixed on rounds 1-7 (dev, scripts/confident_kind_dev.py) before the round-8 held-out check: a kind the rules
+# missed is added directly (not only offered as a question) when Jev is at least this confident.
+AI_ADD_MIN = 0.95
 # Extractor component -> reader kind, for verifying the components keyword rules propose.
 COMPONENT_TO_KIND: dict[str, str] = {
     **{c: k for k, c in KIND_TO_COMPONENT.items() if c},

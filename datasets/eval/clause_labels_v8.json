@@ -1,0 +1,30 @@
+{
+  "description": "Round 8 held-out clause set (restaurant, HR/payroll and delivery in Vietnamese incl. one undiacritised clause; clinic and real estate in English). Written and labelled on 2026-10-17 BEFORE any reader (rules or Jev) was run on them; committed before the run. Purpose: held-out check of adding Jev's kind directly when its confidence >= AI_ADD_MIN = 0.95 (fixed on rounds 1-7), on top of verification (VERIFY_MIN 0.4). First listed kind = primary.",
+  "version": 8,
+  "clauses": [
+    {"text": "Khách thanh toán hóa đơn tại bàn bằng ví MoMo hoặc thẻ.", "kinds": ["payment"], "tentative": false},
+    {"text": "Quản lý nhà hàng xem báo cáo món bán chạy theo tuần.", "kinds": ["reporting"], "tentative": false},
+    {"text": "Nhân viên chấm công bằng khuôn mặt qua camera ở cửa hàng.", "kinds": ["ai_assistant", "data_management"], "tentative": false},
+    {"text": "Tính lương tự động từ bảng chấm công và gửi phiếu lương qua email.", "kinds": ["data_management", "notification"], "tentative": false},
+    {"text": "Kết nối với phần mềm kế toán MISA để đẩy bút toán lương.", "kinds": ["external_integration"], "tentative": false},
+    {"text": "Nhân viên chỉ xem được phiếu lương của chính mình.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Co le can them app cho nhan vien xin nghi phep tren dien thoai.", "kinds": ["mobile_app", "workflow_approval"], "tentative": true},
+    {"text": "Đơn xin nghỉ phép phải được trưởng bộ phận duyệt.", "kinds": ["workflow_approval"], "tentative": false},
+    {"text": "Tài xế cập nhật vị trí theo thời gian thực để khách theo dõi đơn hàng trên bản đồ.", "kinds": ["maps_location"], "tentative": false},
+    {"text": "Khách nhận thông báo đẩy khi đơn hàng được giao.", "kinds": ["notification"], "tentative": false},
+    {"text": "Hệ thống phải chịu được 5.000 đơn mỗi giờ vào dịp Tết.", "kinds": ["performance"], "tentative": false},
+    {"text": "Xuất danh sách đơn hàng giao thất bại ra Excel cho bộ phận chăm sóc khách hàng.", "kinds": ["file_export"], "tentative": false},
+    {"text": "Patients book appointments with a specific doctor through the website.", "kinds": ["scheduling"], "tentative": false},
+    {"text": "Prescriptions are sent electronically to the national pharmacy system.", "kinds": ["external_integration"], "tentative": false},
+    {"text": "Nurses record vital signs on a tablet at the bedside.", "kinds": ["data_management", "mobile_app"], "tentative": false},
+    {"text": "Only the treating doctor can view a patient's full medical history.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "Every access to a medical record is logged for compliance audits.", "kinds": ["permissions_audit"], "tentative": false},
+    {"text": "We are still deciding whether patients should be able to pay online.", "kinds": ["payment"], "tentative": true},
+    {"text": "Listing agents upload property photos and floor plans.", "kinds": ["data_management"], "tentative": false},
+    {"text": "Buyers search properties by district, price range and number of bedrooms.", "kinds": ["search"], "tentative": false},
+    {"text": "Show each property's location on a map with nearby schools.", "kinds": ["maps_location"], "tentative": false},
+    {"text": "Import 3,000 existing listings from the old WordPress site.", "kinds": ["data_import"], "tentative": false},
+    {"text": "A chatbot answers common buyer questions about the listings, possibly in phase 2.", "kinds": ["ai_assistant"], "tentative": true},
+    {"text": "Agents receive an email when a buyer requests a viewing.", "kinds": ["notification"], "tentative": false}
+  ]
+}
