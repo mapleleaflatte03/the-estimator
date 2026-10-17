@@ -75,6 +75,10 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
     by_req: dict[str, list[WorkItem]] = {}
     for w in v.wbs:
         by_req.setdefault(w.req_ids[0], []).append(w)
+    shared_by: dict[str, list[WorkItem]] = {}
+    for w in v.wbs:
+        for rid in w.req_ids[1:]:
+            shared_by.setdefault(rid, []).append(w)
     roles = ROLE_EN if en else ROLE_VI
 
     def hh(h: float) -> str:
@@ -128,10 +132,31 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
         if req.in_scope is False:
             excluded.append(quote)
             continue
+        heading = req.title if req.req_id == "REQ-00" else quote
+        shared = shared_by.get(req.req_id, [])
+        if not items and shared:
+            tag = ""
+            if req.status.value == "assumed" and req.req_id != "REQ-00":
+                tag = " *(not committed)*" if en else " *(chưa chốt)*"
+            lines.append(f"### {heading}{tag}")
+            lines.append("")
+            intro = (
+                "In scope. The hours are already counted above, and are not added again:"
+                if en else
+                "Nằm trong phạm vi. Số giờ đã được tính ở trên, không cộng thêm:"
+            )
+            lines.append(intro)
+            lines.append("")
+            for w in shared:
+                owner = next((r for r in v.requirements if r.req_id == w.req_ids[0]), None)
+                owner_quote = (owner.evidence[0].quote if owner and owner.evidence else owner.title) if owner else w.req_ids[0]
+                where = f", under “{owner_quote}”" if en else f", trong mục “{owner_quote}”"
+                lines.append(f"- {w.name} ({hh(pert_mean(w))}){where}")
+            lines.append("")
+            continue
         if not items:
             continue
         total = sum(pert_mean(w) for w in items)
-        heading = req.title if req.req_id == "REQ-00" else quote
         if req.status.value == "assumed" and req.req_id != "REQ-00":
             tag = " *(not committed)*" if en else " *(chưa chốt)*"
         else:
@@ -208,8 +233,13 @@ def wbs_csv(v: EstimateVersion, lang: str = "vi") -> str:
     for w in v.wbs:
         if not in_scope.get(w.req_ids[0], True):
             continue
+        covered = []
+        for rid in w.req_ids:
+            quote = quotes.get(rid, "")
+            if quote and quote not in covered:
+                covered.append(quote)
         writer.writerow([
-            quotes.get(w.req_ids[0], ""), w.name, roles.get(w.role, w.role), round(pert_mean(w), 1),
+            " | ".join(covered), w.name, roles.get(w.role, w.role), round(pert_mean(w), 1),
             w.optimistic_hours, w.pessimistic_hours, yes if w.item_id in critical else "",
         ])
     return buf.getvalue()

@@ -64,6 +64,14 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
   const [draft, setDraft] = useState<Draft>(() => fromVersion(version));
   const [newItem, setNewItem] = useState<Record<string, { name: string; hours: string }>>({});
 
+  const coveredBy = useMemo(() => {
+    const map = new Map<string, WorkItem[]>();
+    version.wbs.forEach((w) => {
+      w.req_ids.slice(1).forEach((id) => map.set(id, [...(map.get(id) || []), w]));
+    });
+    return map;
+  }, [version.wbs]);
+
   const groups = useMemo(() => {
     const byReq = new Map<string, WorkItem[]>();
     version.wbs.forEach((w) => {
@@ -149,8 +157,8 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
           <h1 className="text-2xl font-extrabold tracking-tight">{t('Công việc cần làm', 'Work to do')}</h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
             {t(
-              `${featureCount} yêu cầu từ mô tả · ${version.wbs.length} công việc · tổng khoảng ${hours(grandTotal)} (chưa tính rủi ro)`,
-              `${featureCount} requirements from the brief · ${version.wbs.length} work items · about ${hours(grandTotal)} in total (before risk)`,
+              `${featureCount} yêu cầu từ mô tả · ${version.wbs.length} công việc · tổng khoảng ${hours(grandTotal)} (chưa tính rủi ro). Trang Dự toán ghi ${hours(version.forecast.p50_hours)} sau 10.000 kịch bản.`,
+              `${featureCount} requirements from the brief · ${version.wbs.length} work items · about ${hours(grandTotal)} in total (before risk). The Estimate page shows ${hours(version.forecast.p50_hours)} after 10,000 outcomes.`,
             )}
             {editCount > 0 && t(` · ${editCount} chỉnh sửa tay`, ` · ${editCount} manual edits`)}
           </p>
@@ -212,6 +220,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
       <div className="space-y-4">
         {groups.map(({ req, items }) => {
           const excluded = req.in_scope === false;
+          const shared = coveredBy.get(req.req_id) || [];
           const total = items.reduce((s, w) => s + itemHours(w), 0);
           const text = req.evidence[0]?.quote ?? req.title;
           const notes = aiNotes(req, t, kinds, components);
@@ -230,9 +239,14 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                   ))}
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  {!excluded && (
+                  {!excluded && shared.length === 0 && (
                     <span className={`whitespace-nowrap ${req.req_id === biggestFeature ? 'text-xl font-extrabold text-indigo-700 dark:text-indigo-300' : 'font-bold'}`}>
                       {hours(total)}
+                    </span>
+                  )}
+                  {!excluded && items.length === 0 && shared.length > 0 && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100">
+                      {t('Đã tính ở trên', 'Already counted')}
                     </span>
                   )}
                   {req.req_id === biggestFeature && !excluded && (
@@ -256,6 +270,24 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                     style={{ width: `${(total / maxReq) * 100}%` }}
                   />
                 </div>
+              )}
+              {!excluded && items.length === 0 && shared.length > 0 && (
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+                  {t(
+                    'Câu này nằm trong phạm vi. Giờ đã nằm ở việc dùng chung, không cộng thêm:',
+                    'This sentence is in scope. Its hours are in shared work and are not added again:',
+                  )}
+                </p>
+              )}
+              {!excluded && items.length === 0 && shared.length > 0 && (
+                <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
+                  {shared.map((w) => (
+                    <li key={w.item_id} className="py-2 flex items-start justify-between gap-3 text-sm">
+                      <span className="min-w-0 break-words text-slate-800 dark:text-slate-200">{w.name}</span>
+                      <span className="text-slate-600 dark:text-slate-400 whitespace-nowrap">{hours(itemHours(w))}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
               {items.length > 0 && (
                 <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">

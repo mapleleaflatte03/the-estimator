@@ -33,8 +33,14 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
     const h = Math.round(q.sensitivity_spread_hours);
     const included = q.answer ?? q.current_assumption;
     return included
-      ? t(`Chọn “Không” sẽ bớt khoảng ${hours(h)}`, `Choosing “No” removes about ${hours(h)}`)
-      : t(`Chọn “Có” sẽ thêm khoảng ${hours(h)}`, `Choosing “Yes” adds about ${hours(h)}`);
+      ? t(
+          `Chọn “Không” sẽ bớt khoảng ${hours(h)} của việc này. Phần chuẩn bị và kiểm thử đổi theo, nên tổng ở trang Dự toán lệch hơn con số này.`,
+          `Choosing “No” removes about ${hours(h)} of this work. Setup and testing move with it, so the total on the Estimate page changes by more.`,
+        )
+      : t(
+          `Chọn “Có” sẽ thêm khoảng ${hours(h)} của việc này. Phần chuẩn bị và kiểm thử đổi theo, nên tổng ở trang Dự toán lệch hơn con số này.`,
+          `Choosing “Yes” adds about ${hours(h)} of this work. Setup and testing move with it, so the total on the Estimate page changes by more.`,
+        );
   };
 
   const maxSpread = Math.max(...version.clarifications.map((q) => q.sensitivity_spread_hours), 1);

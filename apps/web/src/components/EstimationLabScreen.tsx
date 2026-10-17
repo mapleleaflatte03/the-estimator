@@ -114,6 +114,12 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
       })
       .sort((a, b) => b.value - a.value);
   }, [version, lang, hours, t]);
+  const countedElsewhere = useMemo(() => {
+    const owners = new Set(version.wbs.map((w) => w.req_ids[0]));
+    return version.requirements.filter(
+      (r) => r.req_id !== 'REQ-00' && r.in_scope !== false && !owners.has(r.req_id) && version.wbs.some((w) => w.req_ids.includes(r.req_id)),
+    );
+  }, [version]);
   const breakdownTotal = breakdown.reduce((s, r) => s + r.value, 0) || 1;
   const topShare = breakdown[0] ? Math.round((breakdown[0].value / breakdownTotal) * 100) : 0;
 
@@ -202,6 +208,19 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
             </p>
           </div>
           <HBarList rows={breakdown} />
+          {countedElsewhere.length > 0 && (
+            <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+              <p>{t(
+                'Những câu này nằm trong giờ ở trên và không được cộng thêm:',
+                'These sentences are included in the hours above and are not added again:',
+              )}</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {countedElsewhere.map((r) => (
+                  <li key={r.req_id} className="break-words">{r.evidence[0]?.quote ?? r.title}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
             <li className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" aria-hidden="true" /> {t('chưa chốt', 'not committed')}

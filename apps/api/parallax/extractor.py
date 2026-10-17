@@ -77,7 +77,8 @@ COMPONENTS: tuple[Component, ...] = (
               r"|(?<!un)authori[sz]ed (?:users?|personnel|staff)|\bonly (?:the |an? )?\w+(?: \w+)? (?:can|shall|will|may) (?:access|view|modify|edit|change|adjust|update)|privileges?|revoked?",
               (T("BE", "Backend", "Role/permission model & policy enforcement", 8, 14, 26),
                T("FE", "Frontend", "Role-aware UI & role administration", 6, 10, 18)), shared=True),
-    Component("audit", "Audit trail", r"audit|nhat ky|lich su (thay doi|chinh sua|sua|dang nhap|truy cap)|lich su ai|ai da (sua|duyet|xoa)|truy vet|luu vet|activity log|change log|ghi nhan moi thay doi",
+    Component("audit", "Audit trail", r"audit|nhat ky|lich su (thay doi|chinh sua|sua|dang nhap|truy cap)|lich su ai|ai da (sua|duyet|xoa)|truy vet|luu vet|activity log|change log|ghi nhan moi thay doi"
+              r"|who (?:changed|edited|updated|modified)|record of who",
               (T("BE", "Backend", "Audit trail capture, storage & query", 6, 10, 20),), shared=True),
     Component("integration", "External integration", r"tich hop|integrat|hoa don dien tu|e-?invoice|\bapis?\b|webhook|dong bo (voi|tu|sang|du lieu (voi|tu|sang))|sync (with|to|from)|ket noi (voi|toi|den)|connector|\berp\b|\bsap\b|\bcrm\b|third[- ]party|ben thu ba|shopee|lazada|tiktok|shopify|woocommerce|salesforce|hubspot|zendesk|misa|odoo|haravan|quickbooks|xero",
               (T("RETRY", "Backend", "Retry, idempotency & reconciliation for external calls", 6, 12, 24),)),
@@ -93,7 +94,7 @@ COMPONENTS: tuple[Component, ...] = (
               r"sang he thong moi|tu (?:file|he thong|phan mem)\b.{0,25}\bcu\b",
               (T("BE", "Backend", "Legacy data mapping & migration scripts", 14, 26, 52),)),
     Component("notification", "Notifications", r"thong bao|notif|gui (email|mail|tin nhan|ma)|email (thong bao|nhac|xac nhan|hoa don)|send .{0,40}emails?|\bsms\b|push|nhac nho|\bnhac (lich|hen)|reminder|canh bao|\balerts?\b|zalo oa|tin nhan|livechat|live chat"
-              r"|(?:get|gets|receive|receives) an? (?:email|e-mail|text)\b|\bemails? (?:at|on|when|whenever) ",
+              r"|(?:get|gets|receive|receives) an? (?:email|e-mail|text)\b|\bemails? (?:at|on|when|whenever) |\bemail the\b|\balert(?:s|ed)?\b",
               (T("BE", "Backend", "Notification service: templates, queue & delivery tracking", 8, 16, 30),), shared=True),
     Component("scheduling", "Scheduling & dispatch", r"(?<!nhac )\blich\b(?! su)|lich trinh|calendar|schedul|dieu phoi|phan cong|dispatch|dat lich|dat ban|dat phong|booking|\bca lam|\bshifts?\b|roster",
               (T("BE", "Backend", "Scheduling engine: availability, assignment rules & conflicts", 16, 30, 60),
@@ -320,8 +321,8 @@ _TEXT = {
         "detected": "Detected components",
         "excluded": "Excluded from scope by clarification answer.",
         "q_scope": "Is “{title}” in scope for this delivery?",
-        "q_scope_why": "The brief uses tentative wording (“{hedge}”). The estimate currently includes it; answering “No” removes {n} work item(s).",
-        "q_scope_why_ai": "{hedge}. The estimate currently includes it; answering “No” removes {n} work item(s).",
+        "q_scope_why": "The brief uses tentative wording (“{hedge}”). The estimate currently includes it; answering “No” removes {items}.",
+        "q_scope_why_ai": "{hedge}. The estimate currently includes it; answering “No” removes {items}.",
         "q_ai_kind": "Does “{title}” also need {kind}?",
         "q_ai_kind_why": "AI reads this clause as involving {kind} ({p}% confident), which the estimate does not include yet.",
         "c_hedge_ai": "“{title}” looks uncommitted: {hedge}. Answer the question to settle it.",
@@ -496,10 +497,12 @@ def _build_items(req_id: str, title: str, components: list[Component], systems: 
 
 def _scope_question(L: dict, qid: str, req_id: str, title: str, hedge: str, items: list[WorkItem],
                     evidence: list[EvidenceSpan], answers: dict[str, bool], ai: bool = False) -> ClarificationQuestion:
+    n = len(items)
+    items_label = f"{n} work item" if n == 1 else f"{n} work items"
     return ClarificationQuestion(
         question_id=qid, assumption_id=f"ASSUMP-{req_id}-SCOPE",
         question_text=L["q_scope"].format(title=title),
-        context_reason=L["q_scope_why_ai" if ai else "q_scope_why"].format(hedge=hedge, n=len(items)),
+        context_reason=L["q_scope_why_ai" if ai else "q_scope_why"].format(hedge=hedge, n=n, items=items_label),
         hours_if_false=0.0, hours_if_true=round(sum(_pert_mean(i) for i in items), 1),
         affected_item_ids=[i.item_id for i in items], evidence=evidence,
         current_assumption=True, answer=answers.get(qid),
@@ -728,7 +731,7 @@ def extract_scope_and_wbs(
                 basis="Brief states API documentation is missing",
             ))
         if excluded:
-            clarifications.append(_scope_question(L, scope_q, req_id, title, hedge, draft.items, evidence, answers,
+            clarifications.append(_scope_question(L, scope_q, req_id, clause.text.strip().rstrip("."), hedge, draft.items, evidence, answers,
                                                  ai=ai_tentative is not None))
             draft.items = []
             continue
@@ -792,7 +795,7 @@ def extract_scope_and_wbs(
 
         # --- clarification questions grounded in this clause ---------------
         if hedge:
-            clarifications.append(_scope_question(L, scope_q, req_id, title, hedge, draft.items, evidence, answers,
+            clarifications.append(_scope_question(L, scope_q, req_id, clause.text.strip().rstrip("."), hedge, draft.items, evidence, answers,
                                                  ai=ai_tentative is not None))
             critics.append(CriticFinding(
                 finding_id=f"CRITIC-{req_id}-HEDGE", category="scope_ambiguity",
