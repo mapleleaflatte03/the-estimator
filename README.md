@@ -17,8 +17,8 @@ were wrong.
 | --- | --- | --- |
 | Learning from actual hours beats the developers' own estimates | 2,248 real tasks, 2011–2014 (SiP), model fitted on earlier years | MAE **10.34 → 9.26 h (−10.4%)** · SA **48.6 → 54.0%** · Wilcoxon **p = 3×10⁻⁶** · P10–P90 interval holds **82.0%** of actuals |
 | …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 · interval holds **85.0%** |
-| The AI reader catches scope the client has not committed to | 4 rounds of new brief clauses, 99 clauses (Vietnamese, English, no diacritics), labels committed first | **20/21** caught vs **6/21** with keyword rules · **0** false alarms |
-| It finds the main kind of work in each clause | same 99 clauses | **83/99** (rules alone 80/99) |
+| The AI reader catches scope the client has not committed to | 5 rounds of new brief clauses, 112 clauses (Vietnamese, English, no diacritics, incl. a private-equity onboarding brief), labels committed first | **23/24** caught vs **8/24** with keyword rules · **0** false alarms |
+| It finds the main kind of work in each clause | same 112 clauses | **95/112** (rules alone 90/112); private-equity round: Jev alone **13/13** |
 | Rule fixes generalise | Round 3 written before the fixes; PROMISE_exp: 392 real requirements from projects not used for the fixes | 17/25 → **23/25** · requirements kept 72.7% → **100%** |
 
 SA = standardized accuracy vs random guessing (Shepperd & MacDonell 2012); higher is better. The "human" baseline is
@@ -29,8 +29,9 @@ what the company actually used, i.e. its developers' estimates before the work s
 - **"Will this take longer than it looks?"** We had Jev read 798 real SiP tasks.
   - On unseen years, the tasks it flagged overran 1.47× as much as the rest (AUC 0.62).
   - But turning that into extra hours did **not** reduce error.
-  - Re-run unchanged on another organisation's data (Itemlet, 465 issues so far), the signal was much weaker (AUC
-    0.56), and the SiP-based hours made error worse.
+  - Re-run unchanged and pre-registered on 2,032 Jira issues from 37 other open-source projects (Itemlet), the direction
+    held (28.6% of flagged work overran by > 25% vs 19.9% of the rest) but the signal was weak (AUC 0.54), and the
+    SiP-based extra hours made error worse (MAE 18.4 → 19.5 h, 95% CI of the change entirely negative).
   - **So the app flags such clauses for senior review and only adds hours once your own actuals show it.**
 - **Keyword rules don't keep up with new phrasing.** Rules tuned through round 4 caught 1/6 uncommitted clauses in round
   5; Jev caught 6/6. This is why the AI reader is mandatory.
@@ -128,6 +129,9 @@ flowchart LR
 | [Itemlet](https://doi.org/10.5281/zenodo.19411554) (Abebe & Rusiecki 2026) | Jira issues with logged hours and original estimates | CC BY 4.0 | Independent replication (downloaded on demand, not committed) |
 | [PROMISE_exp](https://doi.org/10.1145/3350768.3350776) (Lima et al. 2019) | 969 real requirements | research | Rule checks |
 | Clause sets v1–v6 | 139 brief clauses written in the style of client briefs, hand-labelled before runs | this repo | Reader evaluation |
+
+The AI provider is interchangeable: the same pinned model (`jev-1.13.0`) was used through JevStation (credits) and
+TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet replication cost a few cents).
 
 ## Limitations
 

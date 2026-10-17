@@ -1,0 +1,250 @@
+{
+  "labels": "datasets/eval/clause_labels_v6.json",
+  "tag": "round6_heldout",
+  "rules_version": "f0608239a4",
+  "model": "jev-1.13.0",
+  "thresholds": {
+    "kind_confidence_min": 0.6,
+    "tentative_min": 0.7
+  },
+  "summary": [
+    {
+      "reader": "rules",
+      "n_clauses": 13,
+      "primary_kind_found": 10,
+      "kind_recall_pct": 76.9,
+      "kind_precision_pct": 50.0,
+      "tentative_correct": 12,
+      "tentative_caught": "2/3",
+      "false_tentative": 0
+    },
+    {
+      "reader": "jev",
+      "n_clauses": 13,
+      "primary_kind_found": 13,
+      "kind_recall_pct": 100.0,
+      "kind_precision_pct": 100.0,
+      "tentative_correct": 13,
+      "tentative_caught": "3/3",
+      "false_tentative": 0
+    },
+    {
+      "reader": "hybrid",
+      "n_clauses": 13,
+      "primary_kind_found": 13,
+      "kind_recall_pct": 100.0,
+      "kind_precision_pct": 56.5,
+      "tentative_correct": 13,
+      "tentative_caught": "3/3",
+      "false_tentative": 0
+    },
+    {
+      "reader": "shipped",
+      "n_clauses": 13,
+      "primary_kind_found": 12,
+      "kind_recall_pct": 92.3,
+      "kind_precision_pct": 54.5,
+      "tentative_correct": 13,
+      "tentative_caught": "3/3",
+      "false_tentative": 0,
+      "primary_kind_suggested_as_question": 1
+    }
+  ],
+  "coverage": {
+    "clauses_labelled": 13,
+    "clauses_scored": 13,
+    "unread": [],
+    "cached_before_run": 0,
+    "fresh_api_calls": 2,
+    "credits_remaining_after": null
+  },
+  "details": [
+    {
+      "text": "Limited partners complete subscription documents online and sign them electronically.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": false,
+      "rules": [
+        "payment"
+      ],
+      "rules_tentative": false,
+      "jev": "data_management",
+      "jev_confidence": 0.88,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Each subscription goes through draft, submitted, under review, approved and countersigned states.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "payment",
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "workflow_approval",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "The compliance team reviews KYC/AML checks before a subscription can be approved.",
+      "expected": [
+        "workflow_approval"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_management",
+        "payment",
+        "permissions_audit",
+        "workflow_approval"
+      ],
+      "rules_tentative": false,
+      "jev": "workflow_approval",
+      "jev_confidence": 0.93,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Verify investor identity through our KYC provider's API.",
+      "expected": [
+        "external_integration"
+      ],
+      "tentative": false,
+      "rules": [
+        "external_integration"
+      ],
+      "rules_tentative": false,
+      "jev": "external_integration",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "Fund admins see every investor; investors see only their own documents.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Keep a full audit trail of who changed any investor's commitment amount.",
+      "expected": [
+        "permissions_audit"
+      ],
+      "tentative": false,
+      "rules": [
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "permissions_audit",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.05
+    },
+    {
+      "text": "Capital call notices are emailed to all investors with their pro-rata amounts.",
+      "expected": [
+        "notification"
+      ],
+      "tentative": false,
+      "rules": [],
+      "rules_tentative": false,
+      "jev": "notification",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.06
+    },
+    {
+      "text": "A dashboard shows total commitments, called capital and outstanding amounts per fund.",
+      "expected": [
+        "reporting"
+      ],
+      "tentative": false,
+      "rules": [
+        "reporting"
+      ],
+      "rules_tentative": false,
+      "jev": "reporting",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.07
+    },
+    {
+      "text": "Import the existing investor list from the spreadsheet our fund administrator keeps (about 600 investors).",
+      "expected": [
+        "data_import"
+      ],
+      "tentative": false,
+      "rules": [
+        "data_import",
+        "data_management"
+      ],
+      "rules_tentative": false,
+      "jev": "data_import",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.13
+    },
+    {
+      "text": "We might also want a side-letter tracker later, depending on how the first close goes.",
+      "expected": [
+        "data_management"
+      ],
+      "tentative": true,
+      "rules": [
+        "data_management"
+      ],
+      "rules_tentative": true,
+      "jev": "data_management",
+      "jev_confidence": 0.93,
+      "jev_tentative": 0.98
+    },
+    {
+      "text": "Export the investor register to Excel for the auditors.",
+      "expected": [
+        "file_export"
+      ],
+      "tentative": false,
+      "rules": [
+        "file_export",
+        "permissions_audit"
+      ],
+      "rules_tentative": false,
+      "jev": "file_export",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.04
+    },
+    {
+      "text": "Not decided yet whether investors need two-factor login.",
+      "expected": [
+        "auth"
+      ],
+      "tentative": true,
+      "rules": [
+        "auth"
+      ],
+      "rules_tentative": false,
+      "jev": "auth",
+      "jev_confidence": 0.99,
+      "jev_tentative": 0.97
+    },
+    {
+      "text": "Possibly an AI assistant that pre-fills subscription forms from uploaded passports, if the budget allows.",
+      "expected": [
+        "ai_assistant"
+      ],
+      "tentative": true,
+      "rules": [
+        "ai_assistant",
+        "data_management",
+        "payment"
+      ],
+      "rules_tentative": true,
+      "jev": "ai_assistant",
+      "jev_confidence": 1.0,
+      "jev_tentative": 0.98
+    }
+  ]
+}

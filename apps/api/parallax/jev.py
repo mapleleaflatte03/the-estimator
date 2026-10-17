@@ -47,7 +47,9 @@ QUESTION_VERSION = "v1"  # namespace of the legacy kind+tentative cache
 # Fixed before the held-out evaluation was run (see scripts/evaluate_readers.py).
 KIND_CONFIDENCE_MIN = 0.6
 TENTATIVE_MIN = 0.7
-QUESTIONS_PER_CALL = 5  # 1-5 questions = 1 credit, 6-10 = 3 credits
+QUESTIONS_PER_CALL = 5  # JevStation: 1-5 questions = 1 credit, 6-10 = 3 credits
+QUESTIONS_PER_CALL_DIRECT = 20  # TypeSafe/Vercel bill input tokens only: bigger packs share the fixed overhead
+USD_PER_MILLION_INPUT_TOKENS = 0.042  # TypeSafe list price (docs.typesafe.ai/models)
 CLAUSES_PER_CALL = 2  # legacy constant (2 clauses x 2 questions); kept for scripts that report it
 SHIPPED_CACHE = ROOT_DIR / "datasets" / "jev_cache" / f"clauses_{QUESTION_VERSION}.json"
 SHIPPED_ANSWERS = ROOT_DIR / "datasets" / "jev_cache" / "answers_v2.json"
@@ -193,12 +195,18 @@ class JevKey:
     disabled_until: float = 0.0
     calls: int = 0
     charged: int = 0
+    input_tokens: int = 0
     last_error: Optional[str] = None
+
+    @property
+    def per_credit(self) -> bool:
+        return self.provider == "jevstation"
 
     def public(self) -> dict:
         return {"name": self.name, "provider": self.provider, "credits": self.credits, "calls": self.calls,
-                "charged": self.charged, "cooling_down": time.time() < self.disabled_until,
-                "last_error": self.last_error}
+                "charged": self.charged, "input_tokens": self.input_tokens,
+                "usd_spent": None if self.per_credit else round(self.input_tokens * USD_PER_MILLION_INPUT_TOKENS / 1e6, 5),
+                "cooling_down": time.time() < self.disabled_until, "last_error": self.last_error}
 
 
 def discover_keys() -> list[JevKey]:
@@ -298,6 +306,8 @@ class JevReader:
             "cached_clauses": len(self.cache),
             "calls_this_process": self.calls_made,
             "credits_charged_this_process": self.credits_charged,
+            "usd_spent_this_process": round(sum(k.input_tokens for k in self.keys if not k.per_credit)
+                                            * USD_PER_MILLION_INPUT_TOKENS / 1e6, 5),
             "questions": [q.tag for q in self.questions],
             "last_error": self.last_error,
             "halted": self.halted,
@@ -373,7 +383,10 @@ class JevReader:
         Returns the fresh answers keyed by (text, question id).
         """
         todo = self.missing(texts, questions)
-        packs = [todo[i: i + QUESTIONS_PER_CALL] for i in range(0, len(todo), QUESTIONS_PER_CALL)]
+        # Token-billed providers take big packs; per-credit JevStation is cheapest at 5 questions.
+        direct = any(not k.per_credit and self._usable(k) for k in self.keys)
+        size = QUESTIONS_PER_CALL_DIRECT if direct else QUESTIONS_PER_CALL
+        packs = [todo[i: i + size] for i in range(0, len(todo), size)]
         if max_calls is not None:
             packs = packs[:max_calls]
         if not packs or not self.configured:
@@ -395,9 +408,10 @@ class JevReader:
             self.calls_made += 1
             return True
 
-    def _pick_key(self, tried: set[str]) -> Optional[JevKey]:
+    def _pick_key(self, tried: set[str], n_questions: int = QUESTIONS_PER_CALL) -> Optional[JevKey]:
         with self.lock:
-            usable = [k for k in self.keys if k.name not in tried and self._usable(k)]
+            usable = [k for k in self.keys if k.name not in tried and self._usable(k)
+                      and (n_questions <= QUESTIONS_PER_CALL or not k.per_credit)]
             if not usable:
                 return None
             # Prefer keys with the largest known balance; unknown balances count as fresh.
@@ -415,7 +429,7 @@ class JevReader:
         questions = {f"{refs[t]}_{q.qid}": q.spec(refs[t]) for t, q in pack}
         tried: set[str] = set()
         while True:
-            key = self._pick_key(tried)
+            key = self._pick_key(tried, len(pack))
             if key is None:
                 return {}
             tried.add(key.name)
@@ -435,6 +449,7 @@ class JevReader:
                 key.credits = int(credits["remaining"])
             charged = int(credits.get("charged") or 0)
             key.charged += charged
+            key.input_tokens += int((data.get("usage") or {}).get("input_tokens") or 0)
             key.calls += 1
             key.last_error = None
             self.credits_charged += charged

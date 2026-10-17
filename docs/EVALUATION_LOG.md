@@ -312,23 +312,45 @@ pooling).
 
 This decision was made on replication data, so it is reported as such. The SiP factors stay visible as evidence.
 
-### 18. Round 6: the challenge host's domain (rules only so far)
+### 18. Round 6: the challenge host's domain
 
 GOLDEN-07 is an investor onboarding portal for a private equity fund: 13 clauses, 3 tentative. Its labels were
-committed in `60fbfe8` before any run.
+committed in `60fbfe8` before any run. Jev was reached through TypeSafe directly, with the same pinned model
+`jev-1.13.0`.
 
-- Rules incl. round-5 fixes: 10/13 kinds, 2/3 tentative, 0 false alarms. This is the first held-out check of the
-  round-5 fixes.
-- The Jev run is pending credits.
+| Reader | Primary kind | Tentative caught | False alarms |
+| --- | --- | --- | --- |
+| Rules (incl. round-5 fixes, first held-out check) | 10/13 | 2/3 | 0 |
+| Jev alone | **13/13** | **3/3** | 0 |
+| **Shipped** | 12/13 (+1 as a question) | **3/3** | 0 |
+
+Kind precision of the rules was 50%: they add kinds the clause does not ask for. That is the next thing to fix.
+
+### 19. Itemlet replication, final (all 2,032 issues)
+
+After the top-up, the reader continued in the pre-registered order to the full population (37 projects). This was
+done through TypeSafe directly, at a few cents in total.
+
+| Jev overrun group | n | Median actual/estimate | Share overrunning > 25% |
+| --- | --- | --- | --- |
+| low | 1,279 | 0.82 | 19.9% |
+| medium | 407 | 0.85 | 21.1% |
+| high | 346 | 0.925 | 28.6% |
+
+- **Direction confirmed:** high-risk work overran more often, 28.6% vs 19.9%, two-proportion z ≈ 3.5.
+- **Weak as a predictor:** Spearman 0.054, AUC 0.535.
+- **SiP factors hurt:** multiplying estimates by them increased MAE, 18.35 → 19.54 h (gain CI −1.45..−0.95 h).
+
+The interim result (section 16) and this final one agree, and the decision in section 17 stands.
 
 ## Final result (held-out numbers only)
 
 | Claim | Evidence |
 | --- | --- |
 | Learning from actual hours makes estimates more accurate | SiP 2011–2014, 2,248 unseen tasks: MAE −10.4%, SA 48.6 → 54.0%, Wilcoxon p = 3.2×10⁻⁶, P10–P90 coverage 82.0%. Production replay (1,391 tasks): SA 56.3 → 61.1%, p = 0.006, coverage 85.0% |
-| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4 and 5: **20/21** tentative clauses caught vs **6/21** with rules alone, **0** false alarms |
-| The shipped reader finds the main kind of work | Rounds 1, 2, 4 and 5: **83/99** vs 80/99 with rules alone |
-| Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, interim n=465): same direction, much weaker (AUC 0.56). No MAE gain anywhere, so it is a review flag, not extra hours |
+| The shipped reader notices what the client has not committed to | Rounds 1, 2, 4, 5 and 6: **23/24** tentative clauses caught vs **8/24** with rules alone, **0** false alarms |
+| The shipped reader finds the main kind of work | Rounds 1, 2, 4, 5 and 6: **95/112** vs 90/112 with rules alone |
+| Jev spots work that will take longer than it looks | Partly. SiP 2011–2014: high-risk group overran 1.47× as much as low-risk (Spearman 0.20, AUC 0.62). Other organisations (Itemlet, all 2,032 issues): same direction, weak (AUC 0.535). No MAE gain anywhere, so it is a review flag, not extra hours |
 | Rule fixes generalise | Round 3: 17/25 → 23/25. PROMISE odd projects: 72.7% → 100% kept, performance recall 3.2% → 51.6%. Round-4 hedge fixes did **not** generalise to round 5 (rules 1/6) |
 
 ## Limitations
@@ -385,4 +407,6 @@ committed in `60fbfe8` before any run.
 | 37 | 2026-10-17 14:51 | `itemlet_replication_interim` | `` | jev-1.13.0 | read 465/2032: high/low median ratio x1.145, Spearman 0.053, AUC 0.559<br>MAE raw 18.64 h → with SiP factors 19.86 h (gain CI [-1.81, -0.66]) | Independent replication on Itemlet (30 open-source Jira projects), SiP thresholds and factors unchanged, protocol committed before the run. Read 465/2032 (random prefix). |
 | 38 | 2026-10-17 14:52 | `sip_operational_replay` | `` | jev-1.13.0 (cached) | human: MAE 4.33 h, PRED(25) 51.5%, SA 56.3%, P10–P90 —<br>frozen: MAE 3.82 h, PRED(25) 51.1%, SA 61.4%, P10–P90 85.3, Wilcoxon p 0.00208<br>online: MAE 3.85 h, PRED(25) 50.9%, SA 61.1%, P10–P90 85.0, Wilcoxon p 0.00552<br>dev>=20h human: MAE 26.89 h, PRED(25) 27.6%, SA 18.5%, P10–P90 —<br>dev>=20h online: MAE 23.81 h, PRED(25) 21.9%, SA 27.8%, P10–P90 81.0, Wilcoxon p 0.0155<br>dev>=20h online+jev: MAE 24.7 h, PRED(25) 22.9%, SA 25.1%, P10–P90 81.0, Wilcoxon p 0.0106 | Production replay: every estimate uses only work completed before its estimate date. Online = refit daily (what the app does); frozen = fitted on work completed before 2011. |
 | 39 | 2026-10-17 14:56 | `round6_rules_before` | `f0608239a4` | — | rules: kind 10/13, tentative 2/3, false 0 | Round 6 (private-equity onboarding, 13 new clauses, labels committed in 60fbfe8 before the run). Rules incl. round-5 fixes: first held-out check of those fixes. |
+| 40 | 2026-10-17 16:54 | `itemlet_replication_final` | `` | jev-1.13.0 | read 2032/2032: high/low median ratio x1.128, Spearman 0.054, AUC 0.535<br>MAE raw 18.35 h → with SiP factors 19.54 h (gain CI [-1.45, -0.95]) | Independent replication on Itemlet (37 open-source Jira projects), SiP thresholds and factors unchanged, protocol committed before the run. Read 2032/2032 (random prefix). |
+| 41 | 2026-10-17 16:55 | `round6_heldout` | `f0608239a4` | jev-1.13.0 | rules: kind 10/13, tentative 2/3, false 0<br>jev: kind 13/13, tentative 3/3, false 0<br>shipped: kind 12/13, tentative 3/3, false 0 | Round 6 held-out: private-equity investor onboarding (challenge host's domain), 13 new clauses, labels committed in 60fbfe8 before any reader ran. Jev jev-1.13.0 via TypeSafe direct (same pinned model). (scored 13/13, API calls 2, credits left None) |
 <!-- AUTO:journal:end -->

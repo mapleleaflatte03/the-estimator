@@ -65,7 +65,7 @@ def test_low_confidence_reading_is_ignored():
 
 
 def fake_keys(*credits):
-    return [jev.JevKey(f"KEY_{i}", "fake", "http://fake", "jev", f"secret{i}", credits=c)
+    return [jev.JevKey(f"KEY_{i}", "jevstation", "http://fake", "jev", f"secret{i}", credits=c)
             for i, c in enumerate(credits, start=1)]
 
 
@@ -131,6 +131,24 @@ def test_reader_respects_credit_floor_and_hourly_cap():
     capped = FakeReader(max_calls_per_hour=1)
     capped.read(["b1", "b2", "b3", "b4"])
     assert len(capped.bodies) == 1
+
+
+def test_token_billed_key_gets_big_packs_and_empty_per_credit_keys_are_skipped():
+    r = FakeReader(credits=(0,))
+    direct = jev.JevKey("TYPESAFE_API_KEY", "typesafe", "http://fake", "jev-1.13.0", "t")
+    r.keys.append(direct)
+    calls = []
+
+    def post(key, body):
+        calls.append((key.name, len(body["questions"])))
+        answers = {q: ({"type": "choice", "choice": "reporting", "confidence": 0.9, "probabilities": {}}
+                       if s["type"] == "choice" else {"type": "noul", "noul": 0.2}) for q, s in body["questions"].items()}
+        return {"model": "jev-1.13.0", "answers": answers, "usage": {"input_tokens": 1000}}
+
+    r._post = post
+    assert len(r.read([f"t{i}" for i in range(10)])) == 10  # 30 questions
+    assert calls == [("TYPESAFE_API_KEY", 20), ("TYPESAFE_API_KEY", 10)]
+    assert r.keys[1].input_tokens == 2000 and r.status()["usd_spent_this_process"] == pytest.approx(8e-05)
 
 
 def test_reader_halts_when_paid_answers_cannot_be_parsed():

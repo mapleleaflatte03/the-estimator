@@ -1,36 +1,36 @@
 {
-  "n_read": 465,
+  "n_read": 2032,
   "n_population": 2032,
-  "projects": 30,
+  "projects": 37,
   "groups": [
     {
       "group": 0,
-      "n": 289,
-      "ratio_p50": 0.76,
-      "share_overrun_25pct": 18.0
+      "n": 1279,
+      "ratio_p50": 0.82,
+      "share_overrun_25pct": 19.9
     },
     {
       "group": 1,
-      "n": 88,
-      "ratio_p50": 0.855,
-      "share_overrun_25pct": 20.5
+      "n": 407,
+      "ratio_p50": 0.85,
+      "share_overrun_25pct": 21.1
     },
     {
       "group": 2,
-      "n": 88,
-      "ratio_p50": 0.87,
-      "share_overrun_25pct": 30.7
+      "n": 346,
+      "ratio_p50": 0.925,
+      "share_overrun_25pct": 28.6
     }
   ],
-  "high_vs_low_ratio_p50": 1.145,
-  "spearman": 0.053,
-  "auc_overrun_25pct": 0.559,
-  "mae_raw_estimate": 18.64,
-  "mae_with_sip_factors": 19.86,
+  "high_vs_low_ratio_p50": 1.128,
+  "spearman": 0.054,
+  "auc_overrun_25pct": 0.535,
+  "mae_raw_estimate": 18.35,
+  "mae_with_sip_factors": 19.54,
   "mae_gain_95ci": [
-    -1.81,
-    -0.66
+    -1.45,
+    -0.95
   ],
-  "mdae_raw": 13.2,
-  "mdae_with_sip_factors": 14.11
+  "mdae_raw": 12.97,
+  "mdae_with_sip_factors": 13.81
 }
