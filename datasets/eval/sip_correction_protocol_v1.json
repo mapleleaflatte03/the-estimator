@@ -1,0 +1,65 @@
+{
+  "id": "sip_correction_protocol_v1",
+  "status": "frozen-before-scoring",
+  "question": "On SiP tasks estimated in 2010, does any listed correction have a lower MAE than the shipped size-only model?",
+  "data": "SiP effort estimation dataset, Derek-Jones/SiP_dataset @ fed32c65e974bdcabd417c695508fed05f93c215, CC BY-NC-ND 4.0, paper https://arxiv.org/abs/1901.01621. Same rows as parallax.empirical.load_sip_tasks.",
+  "no_jev": true,
+  "does_not_repeat": [
+    "hierarchical factor grid in scripts/sip_model_search.py",
+    "Jev overrun tertile turned into extra hours",
+    "adaptive conformal gamma",
+    "story-point text score"
+  ],
+  "validation_start": "2010-01-01",
+  "holdout_start": "2011-01-01",
+  "selection_fit": "estimated_on < 2010-01-01",
+  "selection_score": "2010-01-01 <= estimated_on < 2011-01-01",
+  "test_fit": "estimated_on < 2011-01-01; a recent-window candidate also drops rows before its start date",
+  "test_score": "estimated_on >= 2011-01-01, and only for the single promoted candidate",
+  "shipped_edges": [4.0, 8.0, 20.0, 50.0],
+  "min_cases": 30,
+  "probs": [0.1, 0.5, 0.9],
+  "quantile": "numpy.quantile default linear, the same call RatioQuantileModel uses",
+  "min_coverage": 75,
+  "bootstrap": {
+    "draws": 5000,
+    "seed": 20261017,
+    "restart": "each candidate builds a new numpy Generator from this seed, so the 5000 index vectors match",
+    "gain": "mean absolute error of size-only minus mean absolute error of the candidate, on paired resamples of task indices",
+    "ci": "numpy.quantile of the 5000 gains at 0.025 and 0.975"
+  },
+  "promotion": "Among candidates with unrounded P10-P90 coverage percent >= 75, unrounded MAE strictly below size-only, and bootstrap CI lower bound strictly above 0, pick the lowest unrounded MAE. If two MAEs are equal, the earlier candidate in this list wins. If none qualify, promote nobody.",
+  "multiplicity": "Eight candidates share the 2010 screen. Clearing it is not a family-wise 95% claim. The only accuracy claim is the single 2011-2014 score, and only if a candidate is promoted.",
+  "if_none_promoted": "Write datasets/eval/sip_correction_choice.json and append journal tag sip_correction_validation. Do not write sip_correction_test.json. Do not score any task estimated on or after 2011-01-01.",
+  "if_promoted": "Write the choice file and do not append a journal line yet. Commit that choice file before running test. test scores only the promoted id, refit on the test_fit window.",
+  "ship_eligible": "On 2011-2014 the promoted model has MAE strictly below size-only, coverage >= 75, and MAE-gain CI lower bound strictly above 0. Otherwise it is not shipped. The script does not edit apps/.",
+  "integrity_check": {
+    "n_validation": 557,
+    "size_only_mae_rounded_3dp": 8.189,
+    "human_mae_rounded_3dp": 8.738,
+    "on_fail": "exit without writing a choice file and without appending the journal"
+  },
+  "must_not_write": [
+    "datasets/eval/sip_model_choice.json",
+    "datasets/eval/sip_model_test.json",
+    "apps/"
+  ],
+  "crash_rule": "A crash before the choice file exists may be fixed and the command rerun. The candidate list, order, parameters, and promotion rule may not change after this file is committed.",
+  "round_hours": [0.5, 1, 2, 3, 4, 5, 6, 7, 7.5, 8, 10, 12, 14, 15, 16, 20, 21, 24, 28, 30, 35, 40, 50, 60, 70, 80, 100],
+  "mechanisms": {
+    "recent-window": "Fit the shipped RatioQuantileModel on training rows with estimated_on >= start. Rows before start are ignored.",
+    "shrink-quantile": "Blend each shipped size-bucket quantile toward the pooled quantile: q = (n * q_bucket + k * q_pooled) / (n + k). n = 0 uses the pooled quantile. There is no hard switch at 30.",
+    "round-by-bucket": "An estimate is round when its hours are in round_hours. Use that subset's quantiles inside the shipped size bucket when the subset has at least min_cases ratios; otherwise use the shipped bucket-or-pooled rule.",
+    "size-buckets": "The shipped estimator with the listed edges instead of shipped_edges, including the same fallback when a bucket has fewer than min_cases ratios."
+  },
+  "candidates": [
+    {"id": "recent-2006", "kind": "recent-window", "start": "2006-01-01"},
+    {"id": "recent-2007", "kind": "recent-window", "start": "2007-01-01"},
+    {"id": "recent-2008", "kind": "recent-window", "start": "2008-01-01"},
+    {"id": "shrink-k30", "kind": "shrink-quantile", "k": 30},
+    {"id": "shrink-k100", "kind": "shrink-quantile", "k": 100},
+    {"id": "round-by-bucket", "kind": "round-by-bucket"},
+    {"id": "edges-pow2", "kind": "size-buckets", "edges": [2.0, 4.0, 8.0, 16.0, 32.0]},
+    {"id": "edges-coarse", "kind": "size-buckets", "edges": [8.0, 40.0]}
+  ]
+}
