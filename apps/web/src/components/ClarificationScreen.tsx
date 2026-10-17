@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Check, Sparkles, X } from 'lucide-react';
 import type { EstimateVersion, ClarificationQuestion } from '../types';
-import { card, hours } from '../ui';
+import { useI18n } from '../i18n';
+import { card } from '../ui';
 
 interface ClarificationScreenProps {
   version: EstimateVersion;
@@ -16,6 +17,7 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
   onAnswerQuestion,
   isLoading,
 }) => {
+  const { locale, t, hours } = useI18n();
   const [answeringId, setAnsweringId] = useState<string | null>(null);
 
   const answer = async (q: ClarificationQuestion, value: boolean) => {
@@ -30,7 +32,9 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
   const impact = (q: ClarificationQuestion) => {
     const h = Math.round(q.sensitivity_spread_hours);
     const included = q.answer ?? q.current_assumption;
-    return included ? `Chọn “Không” sẽ bớt khoảng ${hours(h)}` : `Chọn “Có” sẽ thêm khoảng ${hours(h)}`;
+    return included
+      ? t(`Chọn “Không” sẽ bớt khoảng ${hours(h)}`, `Choosing “No” removes about ${hours(h)}`)
+      : t(`Chọn “Có” sẽ thêm khoảng ${hours(h)}`, `Choosing “Yes” adds about ${hours(h)}`);
   };
 
   const maxSpread = Math.max(...version.clarifications.map((q) => q.sensitivity_spread_hours), 1);
@@ -50,22 +54,27 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Câu hỏi cần làm rõ</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">{t('Câu hỏi cần làm rõ', 'Questions to settle')}</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
           {openCount > 0 ? (
             <>
-              Còn <strong className="text-amber-800 dark:text-amber-300">{openCount} câu</strong>, ảnh hưởng tới khoảng{' '}
-              <strong className="text-amber-800 dark:text-amber-300">{hours(atStake)}</strong>. Câu quan trọng nhất ở trên cùng; mỗi
-              câu trả lời tính lại dự toán ngay.
+              {t('Còn ', '')}
+              <strong className="text-amber-800 dark:text-amber-300">{t(`${openCount} câu`, `${openCount} still open`)}</strong>
+              {t(', ảnh hưởng tới khoảng ', ', affecting about ')}
+              <strong className="text-amber-800 dark:text-amber-300">{hours(atStake)}</strong>
+              {t(
+                '. Câu quan trọng nhất ở trên cùng; mỗi câu trả lời tính lại dự toán ngay.',
+                '. The most important question is first; each answer recalculates the estimate.',
+              )}
             </>
           ) : (
-            'Đã trả lời hết. Bạn vẫn có thể đổi câu trả lời.'
+            t('Đã trả lời hết. Bạn vẫn có thể đổi câu trả lời.', 'All answered. You can still change an answer.')
           )}
         </p>
       </div>
 
       {version.clarifications.length === 0 ? (
-        <div className={`${card} p-8 text-center text-slate-600 dark:text-slate-400`}>Không có câu hỏi nào. Mô tả đã đủ rõ.</div>
+        <div className={`${card} p-8 text-center text-slate-600 dark:text-slate-400`}>{t('Không có câu hỏi nào. Mô tả đã đủ rõ.', 'No questions. The brief is clear enough.')}</div>
       ) : (
         ordered.map((q, idx) => {
           const answered = q.answer != null;
@@ -76,16 +85,16 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
             className={`${card} space-y-3 ${answered ? 'p-4 opacity-80 border-emerald-200 dark:border-emerald-900' : 'p-6'} ${top ? 'border-2 border-amber-300 dark:border-amber-700' : ''}`}
           >
             <div className="flex flex-wrap items-center gap-2">
-              {top && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">Ảnh hưởng lớn nhất</span>}
+              {top && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">{t('Ảnh hưởng lớn nhất', 'Largest effect')}</span>}
               {answered && (
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
-                  Đã trả lời: {q.answer ? 'Có' : 'Không'}
+                  {t('Đã trả lời: ', 'Answered: ')}{q.answer ? t('Có', 'Yes') : t('Không', 'No')}
                 </span>
               )}
             </div>
             {(q.question_id.endsWith('-AI') || q.context_reason.includes('AI')) && (
               <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300">
-                <Sparkles className="w-3.5 h-3.5" /> Gợi ý từ AI
+                <Sparkles className="w-3.5 h-3.5" /> {t('Gợi ý từ AI', 'Suggested by AI')}
               </span>
             )}
             <h2 className={`${answered ? 'text-base' : 'text-lg'} font-bold leading-snug`}>{q.question_text}</h2>
@@ -114,7 +123,7 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
                   onClick={() => answer(q, true)}
                   className={choiceClass(q.answer === true)}
                 >
-                  <Check className="w-4 h-4" /> Có
+                  <Check className="w-4 h-4" /> {t('Có', 'Yes')}
                 </button>
                 <button
                   type="button"
@@ -123,7 +132,7 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
                   onClick={() => answer(q, false)}
                   className={choiceClass(q.answer === false)}
                 >
-                  <X className="w-4 h-4" /> Không
+                  <X className="w-4 h-4" /> {t('Không', 'No')}
                 </button>
               </div>
             </div>
@@ -134,12 +143,12 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
 
       {versionsHistory.length > 1 && (
         <section className={`${card} p-5`}>
-          <h2 className="font-bold mb-2">Các lần tính</h2>
+          <h2 className="font-bold mb-2">{t('Các lần tính', 'Each calculation')}</h2>
           <ol className="space-y-1 text-sm">
             {versionsHistory.map((v, i) => (
               <li key={v.version_id} className={`flex justify-between ${v.version_id === version.version_id ? 'font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                 <span>
-                  Lần {i + 1} · {new Date(v.created_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                  {t(`Lần ${i + 1}`, `Run ${i + 1}`)} · {new Date(v.created_at).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}
                 </span>
                 <span>{hours(v.forecast.p50_hours)}</span>
               </li>

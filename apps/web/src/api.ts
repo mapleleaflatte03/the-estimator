@@ -31,13 +31,24 @@ export class ApiError extends Error {
 
 export let lastVisitorCredits: number | null = null;
 
+function uiLang(): 'en' | 'vi' {
+  try {
+    return localStorage.getItem('parallax_lang') === 'vi' ? 'vi' : 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 async function request<T>(url: string, init?: RequestInit, fallbackError = 'Request failed'): Promise<T> {
   const key = visitorKey.get();
   // Only requests that may read a brief carry the key.
   const reads = !!init?.method && init.method !== 'GET';
-  const withKey: RequestInit =
-    key && reads ? { ...init, headers: { ...(init?.headers ?? {}), 'X-Jev-Key': key } } : init ?? {};
-  const res = await fetch(url, withKey);
+  const headers: Record<string, string> = {
+    'Accept-Language': uiLang(),
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+  if (key && reads) headers['X-Jev-Key'] = key;
+  const res = await fetch(url, { ...init, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: fallbackError }));
     throw new ApiError(typeof err.detail === 'string' ? err.detail : fallbackError, res.status);
@@ -113,16 +124,21 @@ export const updateWbs = (projectId: string, edits: ManualEdits) =>
     'Failed to save edits',
   );
 
-export const proposalUrl = (projectId: string, p: { confidence: number; rate: number; currency: string; people: number }) =>
+export const proposalUrl = (
+  projectId: string,
+  p: { confidence: number; rate: number; currency: string; people: number; lang: 'en' | 'vi' },
+) =>
   `${API_BASE}/projects/${projectId}/export/proposal.md?` +
   new URLSearchParams({
     confidence: String(p.confidence),
     rate: String(p.rate),
     currency: p.currency,
     people: String(p.people),
+    lang: p.lang,
   }).toString();
 
-export const wbsCsvUrl = (projectId: string) => `${API_BASE}/projects/${projectId}/export/wbs.csv`;
+export const wbsCsvUrl = (projectId: string, lang: 'en' | 'vi') =>
+  `${API_BASE}/projects/${projectId}/export/wbs.csv?lang=${lang}`;
 
 export const fetchReaderEvaluation = () =>
   request<ReaderEvaluation>(`${API_BASE}/reader/evaluation`, undefined, 'Evaluation unavailable');

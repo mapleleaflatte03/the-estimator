@@ -181,6 +181,15 @@ def test_exports_are_plain_language_and_excel_ready():
     assert csv_resp.status_code == 200 and csv_resp.text.startswith("\ufeff")
     assert "Gửi email nhắc lịch hẹn." in csv_resp.text
     assert client.get("/api/v1/projects/NOPE/export/wbs.csv").status_code == 404
+    en = client.get(f"/api/v1/projects/{pid}/export/proposal.md?confidence=80&rate=500000&people=2&lang=en")
+    assert en.status_code == 200 and "attachment" in en.headers["content-disposition"]
+    assert "# Estimate: Export test" in en.text and "Questions for the client" in en.text
+    assert "million VND" in en.text and "How this number was calculated" in en.text and "10,000 outcomes" in en.text
+    assert "# Dự toán" not in en.text and "Monte Carlo" not in en.text
+    en_csv = client.get(f"/api/v1/projects/{pid}/export/wbs.csv?lang=en")
+    assert en_csv.status_code == 200 and en_csv.text.startswith("\ufeff")
+    assert "Work item" in en_csv.text and "Typical hours" in en_csv.text
+    assert "Công việc" not in en_csv.text.splitlines()[0]
 
 
 def test_reader_evaluation_endpoint():

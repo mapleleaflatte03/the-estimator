@@ -21,10 +21,12 @@ import { EstimationLabScreen } from './components/EstimationLabScreen';
 import { ClarificationScreen } from './components/ClarificationScreen';
 import { AccuracyLearningScreen } from './components/AccuracyLearningScreen';
 import { EvidenceScreen } from './components/EvidenceScreen';
+import { useI18n } from './i18n';
 
 type Tab = 'intake' | 'scope' | 'estimation' | 'clarification' | 'accuracy' | 'evidence';
 
 export const App: React.FC = () => {
+  const { lang, setLang, locale, t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>('intake');
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -119,7 +121,7 @@ export const App: React.FC = () => {
       await work();
     } catch (err) {
       if (err instanceof ApiError && err.status === 503) setKeyDialog({ open: true, reason: err.message });
-      else alert(`Có lỗi xảy ra: ${(err as Error).message}`);
+      else alert(t(`Có lỗi xảy ra: ${(err as Error).message}`, `Something went wrong: ${(err as Error).message}`));
     } finally {
       setIsLoading(false);
       setStatusMessage(null);
@@ -127,7 +129,7 @@ export const App: React.FC = () => {
   };
 
   const handleProjectCreated = (newProj: Project) =>
-    withBusy('AI Jev đang đọc từng câu của mô tả (khoảng 20 giây với mô tả mới)…', async () => {
+    withBusy(t('AI Jev đang đọc từng câu của mô tả (khoảng 20 giây với mô tả mới)…', 'Jev is reading every sentence of the brief (about 20 seconds for a new one)…'), async () => {
       setOrphan(null);
       setProjects((prev) => [newProj, ...prev]);
       setCurrentProject(newProj);
@@ -138,7 +140,7 @@ export const App: React.FC = () => {
     });
 
   const handleAnswerClarification = (qId: string, ans: boolean) =>
-    withBusy('Đang tính lại dự toán…', async () => {
+    withBusy(t('Đang tính lại dự toán…', 'Recalculating the estimate…'), async () => {
       if (!currentProject) return;
       const v = await answerClarification(currentProject.project_id, qId, ans);
       setVersions((prev) => [...prev, v]);
@@ -146,7 +148,7 @@ export const App: React.FC = () => {
     });
 
   const handleReestimate = () =>
-    withBusy('Đang tính lại dự toán…', async () => {
+    withBusy(t('Đang tính lại dự toán…', 'Recalculating the estimate…'), async () => {
       if (!currentProject) return;
       const v = await estimateProject(currentProject.project_id);
       setVersions((prev) => [...prev, v]);
@@ -155,7 +157,7 @@ export const App: React.FC = () => {
     });
 
   const handleUpdateWbs = (edits: ManualEdits) =>
-    withBusy('Đang lưu chỉnh sửa và tính lại dự toán…', async () => {
+    withBusy(t('Đang lưu chỉnh sửa và tính lại dự toán…', 'Saving your edits and recalculating…'), async () => {
       if (!currentProject) return;
       const v = await updateWbs(currentProject.project_id, edits);
       setVersions((prev) => [...prev, v]);
@@ -163,7 +165,7 @@ export const App: React.FC = () => {
     });
 
   const handleRecordActuals = async (hoursSpent: number, reasons: string[], perRequirement?: Record<string, number>) => {
-    if (!currentProject) throw new Error('Chưa chọn dự án');
+    if (!currentProject) throw new Error(t('Chưa chọn dự án', 'No project selected'));
     const result = await recordActuals(currentProject.project_id, hoursSpent, reasons, perRequirement);
     setSavedActuals({ id: currentProject.project_id, actuals: { hours: hoursSpent, reasons, perRequirement } });
     setProjects((prev) =>
@@ -173,7 +175,7 @@ export const App: React.FC = () => {
   };
 
   const handleRestore = () =>
-    withBusy('Đang đọc lại mô tả bằng Jev và khôi phục dự án trên máy này…', async () => {
+    withBusy(t('Đang đọc lại mô tả bằng Jev và khôi phục dự án trên máy này…', 'Jev is reading the brief again and restoring this project…'), async () => {
       const saved = loadSavedProject();
       if (!saved) {
         setOrphan(null);
@@ -218,19 +220,22 @@ export const App: React.FC = () => {
       setOrphan(null);
       setActiveTab('estimation');
       if (skipped.length) {
-        alert(`Đã khôi phục dự toán. ${skipped.length} câu trả lời không còn khớp câu hỏi mới và được bỏ qua.`);
+        alert(t(
+          `Đã khôi phục dự toán. ${skipped.length} câu trả lời không còn khớp câu hỏi mới và được bỏ qua.`,
+          `Estimate restored. ${skipped.length} answers no longer match a question and were skipped.`,
+        ));
       }
     });
 
   const openQuestions = currentVersion?.clarifications.filter((q) => q.answer == null).length ?? 0;
 
   const STEPS: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'intake', label: 'Dự án mới' },
-    { id: 'estimation', label: 'Dự toán' },
-    { id: 'scope', label: 'Công việc' },
-    { id: 'clarification', label: 'Câu hỏi', badge: openQuestions },
-    { id: 'accuracy', label: 'Giờ thực tế' },
-    { id: 'evidence', label: 'Kiểm chứng' },
+    { id: 'intake', label: t('Dự án mới', 'New project') },
+    { id: 'estimation', label: t('Dự toán', 'Estimate') },
+    { id: 'scope', label: t('Công việc', 'Work') },
+    { id: 'clarification', label: t('Câu hỏi', 'Questions'), badge: openQuestions },
+    { id: 'accuracy', label: t('Giờ thực tế', 'Actual hours') },
+    { id: 'evidence', label: t('Kiểm chứng', 'Evidence') },
   ];
 
   const titleCounts = projects.reduce<Record<string, number>>((acc, p) => {
@@ -238,7 +243,7 @@ export const App: React.FC = () => {
     return acc;
   }, {});
   const projectLabel = (p: Project) =>
-    titleCounts[p.title] > 1 ? `${p.title} (${new Date(p.created_at).toLocaleDateString('vi-VN')})` : p.title;
+    titleCounts[p.title] > 1 ? `${p.title} (${new Date(p.created_at).toLocaleDateString(locale)})` : p.title;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f4f6fb] dark:bg-[#090d1a] text-slate-900 dark:text-slate-100 font-sans transition-colors">
@@ -253,7 +258,7 @@ export const App: React.FC = () => {
             {projects.length > 0 && (
               <label className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm min-w-0">
                 <FolderOpen className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0" />
-                <span className="sr-only">Chọn dự án</span>
+                <span className="sr-only">{t('Chọn dự án', 'Choose a project')}</span>
                 <select
                   value={currentProject?.project_id || ''}
                   onChange={(e) => {
@@ -272,16 +277,29 @@ export const App: React.FC = () => {
             )}
             <button
               onClick={() => setActiveTab('intake')}
-              aria-label="Dự án mới"
+              aria-label={t('Dự án mới', 'New project')}
               className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center gap-1.5 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Dự án mới</span>
+              <span className="hidden sm:inline">{t('Dự án mới', 'New project')}</span>
             </button>
+            <div role="group" aria-label={t('Ngôn ngữ', 'Language')} className="flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden text-xs font-bold">
+              {(['en', 'vi'] as const).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  aria-pressed={lang === code}
+                  onClick={() => setLang(code)}
+                  className={`px-2 py-2 cursor-pointer ${lang === code ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setKeyDialog({ open: true })}
-              aria-label="Khóa AI Jev"
-              title={hasKey ? 'Đang dùng khóa Jev của bạn' : 'Dùng khóa Jev của bạn'}
+              aria-label={t('Khóa AI Jev', 'Your Jev key')}
+              title={hasKey ? t('Đang dùng khóa Jev của bạn', 'Using your Jev key') : t('Dùng khóa Jev của bạn', 'Use your own Jev key')}
               className={`w-9 h-9 rounded-xl border flex items-center justify-center cursor-pointer ${
                 hasKey
                   ? 'bg-violet-50 dark:bg-violet-950/50 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300'
@@ -292,7 +310,7 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              aria-label={isDarkMode ? 'Chuyển sang nền sáng' : 'Chuyển sang nền tối'}
+              aria-label={isDarkMode ? t('Chuyển sang nền sáng', 'Switch to light background') : t('Chuyển sang nền tối', 'Switch to dark background')}
               className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-pointer"
             >
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
@@ -300,7 +318,7 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        <nav className="border-t border-slate-200/70 dark:border-slate-800" aria-label="Các bước">
+        <nav className="border-t border-slate-200/70 dark:border-slate-800" aria-label={t('Các bước', 'Steps')}>
           <div className="max-w-6xl mx-auto px-3 sm:px-6 grid grid-cols-3 gap-1 sm:flex sm:overflow-x-auto py-2 scrollbar-none">
             {STEPS.map((step) => {
               const isActive = activeTab === step.id;
@@ -341,7 +359,10 @@ export const App: React.FC = () => {
         {orphan && (
           <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100">
             <p className="text-sm font-semibold">
-              Máy chủ vừa khởi động lại và quên dự án «{orphan.title}». Bản mô tả vẫn nằm trong trình duyệt này.
+              {t(
+                `Máy chủ vừa khởi động lại và quên dự án «${orphan.title}». Bản mô tả vẫn nằm trong trình duyệt này.`,
+                `The server restarted and forgot “${orphan.title}”. This browser still has the brief.`,
+              )}
             </p>
             <button
               type="button"
@@ -349,7 +370,7 @@ export const App: React.FC = () => {
               disabled={isLoading}
               className="mt-3 px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer"
             >
-              Đọc lại bằng Jev và khôi phục
+              {t('Đọc lại bằng Jev và khôi phục', 'Read again with Jev and restore')}
             </button>
           </div>
         )}

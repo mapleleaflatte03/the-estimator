@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pencil, Plus, Sparkles, Trash2, Undo2 } from 'lucide-react';
 import type { EstimateVersion, ManualEdits, RequirementNode, WorkItem } from '../types';
-import { COMPONENT_LABELS, KIND_LABELS, ROLE_COLORS, ROLE_LABELS, card, hours, typicalHours } from '../ui';
+import { useI18n } from '../i18n';
+import { ROLE_COLORS, card, typicalHours } from '../ui';
 
 interface ScopeGraphScreenProps {
   version: EstimateVersion;
@@ -11,19 +12,36 @@ interface ScopeGraphScreenProps {
 
 const itemHours = (w: WorkItem) => typicalHours(w.optimistic_hours, w.most_likely_hours, w.pessimistic_hours);
 
-const aiNotes = (req: RequirementNode): string[] => {
+const aiNotes = (
+  req: RequirementNode,
+  t: (vi: string, en: string) => string,
+  kinds: Record<string, string>,
+  components: Record<string, string>,
+): string[] => {
   const a = req.ai_reading;
   if (!a) return [];
   const notes: string[] = [];
-  if (a.flagged_tentative) notes.push(`AI: có vẻ khách chưa chốt (${Math.round(a.tentative * 100)}%)`);
-  if (a.added_component) notes.push(`AI nhận ra: ${KIND_LABELS[a.kind] ?? a.kind}`);
-  if (a.suggested_component) notes.push(`AI gợi ý thêm: ${KIND_LABELS[a.kind] ?? a.kind} (xem Câu hỏi)`);
-  if (a.dropped_components?.length)
-    notes.push(`AI bỏ phần từ khóa gợi ý nhưng câu không yêu cầu: ${a.dropped_components.map((c) => COMPONENT_LABELS[c] ?? c).join(', ')} (xem Câu hỏi)`);
+  const kind = kinds[a.kind] ?? a.kind;
+  if (a.flagged_tentative) notes.push(t(`AI: có vẻ khách chưa chốt (${Math.round(a.tentative * 100)}%)`, `AI: the client may not have committed (${Math.round(a.tentative * 100)}%)`));
+  if (a.added_component) notes.push(t(`AI nhận ra: ${kind}`, `AI recognised: ${kind}`));
+  if (a.suggested_component) notes.push(t(`AI gợi ý thêm: ${kind} (xem Câu hỏi)`, `AI suggests adding: ${kind} (see Questions)`));
+  if (a.dropped_components?.length) {
+    const dropped = a.dropped_components.map((c) => components[c] ?? c).join(', ');
+    notes.push(t(
+      `AI bỏ phần từ khóa gợi ý nhưng câu không yêu cầu: ${dropped} (xem Câu hỏi)`,
+      `AI removed a keyword match the sentence does not ask for: ${dropped} (see Questions)`,
+    ));
+  }
   const f = req.adjustment_factor ?? 1;
-  const learned = Math.abs(f - 1) >= 0.01 ? ` · ${f > 1 ? '+' : '−'}${Math.abs(Math.round((f - 1) * 100))}% giờ, học từ giờ thực tế của nhóm` : '';
+  const learnedPct = `${f > 1 ? '+' : '−'}${Math.abs(Math.round((f - 1) * 100))}%`;
+  const learned = Math.abs(f - 1) >= 0.01
+    ? t(` · ${learnedPct} giờ, học từ giờ thực tế của nhóm`, ` · ${learnedPct} hours, learned from your team’s actuals`)
+    : '';
   if (req.risk_group === 2 && a.overrun != null)
-    notes.push(`AI: dễ tốn hơn vẻ ngoài (${Math.round(a.overrun * 100)}%), nên xem kỹ${learned}`);
+    notes.push(t(
+      `AI: dễ tốn hơn vẻ ngoài (${Math.round(a.overrun * 100)}%), nên xem kỹ${learned}`,
+      `AI: likely to take longer than it looks (${Math.round(a.overrun * 100)}%), worth a close look${learned}`,
+    ));
   else if (learned) notes.push(learned.slice(3));
   return notes;
 };
@@ -41,6 +59,7 @@ const fromVersion = (v: EstimateVersion): Draft => ({
 });
 
 export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onSaveEdits, isLoading }) => {
+  const { t, hours, roles, kinds, components } = useI18n();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => fromVersion(version));
   const [newItem, setNewItem] = useState<Record<string, { name: string; hours: string }>>({});
@@ -127,10 +146,13 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
     <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Công việc cần làm</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">{t('Công việc cần làm', 'Work to do')}</h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
-            {featureCount} yêu cầu từ mô tả · {version.wbs.length} công việc · tổng khoảng {hours(grandTotal)} (chưa tính rủi ro)
-            {editCount > 0 && ` · ${editCount} chỉnh sửa tay`}
+            {t(
+              `${featureCount} yêu cầu từ mô tả · ${version.wbs.length} công việc · tổng khoảng ${hours(grandTotal)} (chưa tính rủi ro)`,
+              `${featureCount} requirements from the brief · ${version.wbs.length} work items · about ${hours(grandTotal)} in total (before risk)`,
+            )}
+            {editCount > 0 && t(` · ${editCount} chỉnh sửa tay`, ` · ${editCount} manual edits`)}
           </p>
         </div>
         {!editing ? (
@@ -139,7 +161,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
             onClick={startEditing}
             className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:border-indigo-400 font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <Pencil className="w-4 h-4" /> Chỉnh sửa
+            <Pencil className="w-4 h-4" /> {t('Chỉnh sửa', 'Edit')}
           </button>
         ) : (
           <div className="flex gap-2">
@@ -148,7 +170,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
               onClick={() => setEditing(false)}
               className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-sm cursor-pointer"
             >
-              Hủy
+              {t('Hủy', 'Cancel')}
             </button>
             <button
               type="button"
@@ -156,7 +178,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
               disabled={isLoading}
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm disabled:opacity-50 cursor-pointer"
             >
-              Lưu & tính lại
+              {t('Lưu & tính lại', 'Save and recalculate')}
             </button>
           </div>
         )}
@@ -164,7 +186,10 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
 
       {editing && (
         <p className="text-sm text-slate-700 dark:text-slate-300 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-3">
-          Sửa số giờ hoặc tên, bỏ việc không cần, hoặc thêm việc mới. Chỉnh sửa được giữ lại cả khi bạn trả lời câu hỏi sau này.
+          {t(
+            'Sửa số giờ hoặc tên, bỏ việc không cần, hoặc thêm việc mới. Chỉnh sửa được giữ lại cả khi bạn trả lời câu hỏi sau này.',
+            'Change hours or names, drop work you do not need, or add new work. Edits stay in place when you answer a question later.',
+          )}
         </p>
       )}
 
@@ -178,7 +203,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
           {Object.entries(roleTotals).map(([role, h]) => (
             <span key={role} className="inline-flex items-center gap-1.5">
               <span className={`w-2.5 h-2.5 rounded-full ${ROLE_COLORS[role] || 'bg-slate-400'}`} />
-              {ROLE_LABELS[role] || role}: {hours(h)}
+              {roles[role] || role}: {hours(h)}
             </span>
           ))}
         </div>
@@ -189,7 +214,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
           const excluded = req.in_scope === false;
           const total = items.reduce((s, w) => s + itemHours(w), 0);
           const text = req.evidence[0]?.quote ?? req.title;
-          const notes = aiNotes(req);
+          const notes = aiNotes(req, t, kinds, components);
           const savedAdds = version.manual_edits?.added?.length ?? 0;
           const pendingAdds = editing ? draft.added.slice(savedAdds).filter((a) => a.req_id === req.req_id && !a.dropped) : [];
           return (
@@ -211,12 +236,12 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                     </span>
                   )}
                   {req.req_id === biggestFeature && !excluded && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">Tốn nhiều giờ nhất</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">{t('Tốn nhiều giờ nhất', 'Most hours')}</span>
                   )}
-                  {excluded && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">Đã bỏ</span>}
+                  {excluded && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">{t('Đã bỏ', 'Dropped')}</span>}
                   {!excluded && req.status === 'assumed' && req.req_id !== 'REQ-00' && (
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100">
-                      Chưa chắc chắn
+                      {t('Chưa chắc chắn', 'Not committed')}
                     </span>
                   )}
                 </div>
@@ -245,11 +270,11 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                         <span className="flex items-start gap-2 min-w-0 flex-1">
                           <span
                             className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${ROLE_COLORS[w.role] || 'bg-slate-400'}`}
-                            title={ROLE_LABELS[w.role]}
+                            title={roles[w.role]}
                           />
                           {editing ? (
                             <textarea
-                              aria-label={`Tên công việc ${w.name}`}
+                              aria-label={t(`Tên công việc ${w.name}`, `Work item name ${w.name}`)}
                               defaultValue={draft.overrides[w.item_id]?.name ?? w.name}
                               onChange={(e) => setName(w.item_id, e.target.value)}
                               disabled={removed}
@@ -259,7 +284,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                           ) : (
                             <span className="min-w-0 break-words text-slate-800 dark:text-slate-200">
                               {w.name}
-                              {edited && <span className="ml-1.5 text-xs text-slate-600 dark:text-slate-400">(đã chỉnh)</span>}
+                              {edited && <span className="ml-1.5 text-xs text-slate-600 dark:text-slate-400">{t('(đã chỉnh)', '(edited)')}</span>}
                             </span>
                           )}
                         </span>
@@ -268,18 +293,18 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                             <input
                               type="number"
                               min={1}
-                              aria-label={`Số giờ ${w.name}`}
+                              aria-label={t(`Số giờ ${w.name}`, `Hours for ${w.name}`)}
                               defaultValue={draft.overrides[w.item_id]?.hours ?? itemHours(w)}
                               onChange={(e) => setHours(w.item_id, e.target.value)}
                               disabled={removed}
                               className={`${inputClass} w-20 text-right`}
                             />
-                            <span className="text-slate-600 dark:text-slate-400">giờ</span>
+                            <span className="text-slate-600 dark:text-slate-400">{t('giờ', 'hours')}</span>
                             {(req.req_id !== 'REQ-00' || w.item_id.startsWith('USER-')) && (
                               <button
                                 type="button"
                                 onClick={() => toggleRemove(w.item_id)}
-                                aria-label={removed ? `Giữ lại ${w.name}` : `Bỏ ${w.name}`}
+                                aria-label={removed ? t(`Giữ lại ${w.name}`, `Keep ${w.name}`) : t(`Bỏ ${w.name}`, `Remove ${w.name}`)}
                                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                               >
                                 {removed ? <Undo2 className="w-4 h-4" /> : <Trash2 className="w-4 h-4 text-rose-600" />}
@@ -295,7 +320,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                   {pendingAdds.map((a, i) => (
                     <li key={`new-${i}`} className="py-2 flex flex-wrap items-start justify-between gap-x-3 text-sm text-indigo-800 dark:text-cyan-300">
                       <span className="min-w-0 break-words">+ {a.name}</span>
-                      <span className="whitespace-nowrap">{hours(a.hours)} (chưa lưu)</span>
+                      <span className="whitespace-nowrap">{hours(a.hours)} {t('(chưa lưu)', '(not saved)')}</span>
                     </li>
                   ))}
                 </ul>
@@ -304,8 +329,8 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
               {editing && !excluded && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <input
-                    aria-label="Tên công việc mới"
-                    placeholder="Thêm công việc…"
+                    aria-label={t('Tên công việc mới', 'New work item name')}
+                    placeholder={t('Thêm công việc…', 'Add work…')}
                     value={newItem[req.req_id]?.name ?? ''}
                     onChange={(e) => setNewItem((s) => ({ ...s, [req.req_id]: { name: e.target.value, hours: s[req.req_id]?.hours ?? '' } }))}
                     className={`${inputClass} flex-1 min-w-40`}
@@ -313,8 +338,8 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                   <input
                     type="number"
                     min={1}
-                    aria-label="Số giờ công việc mới"
-                    placeholder="giờ"
+                    aria-label={t('Số giờ công việc mới', 'Hours for the new item')}
+                    placeholder={t('giờ', 'hours')}
                     value={newItem[req.req_id]?.hours ?? ''}
                     onChange={(e) => setNewItem((s) => ({ ...s, [req.req_id]: { name: s[req.req_id]?.name ?? '', hours: e.target.value } }))}
                     className={`${inputClass} w-20 text-right`}
@@ -324,7 +349,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                     onClick={() => addItem(req.req_id)}
                     className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-semibold inline-flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" /> Thêm
+                    <Plus className="w-4 h-4" /> {t('Thêm', 'Add')}
                   </button>
                 </div>
               )}

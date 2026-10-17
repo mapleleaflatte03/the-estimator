@@ -62,7 +62,10 @@ what the company actually used, i.e. its developers' estimates before the work s
 
 ## Try it
 
-**Sample briefs** (Intake → "Thử một ví dụ") run instantly: their AI readings are cached in the repo.
+**Sample briefs** (New project → "No brief yet? Try a sample:") run instantly: their AI readings are cached in the repo.
+
+The app opens in English. **VI** in the header switches the whole interface, including the downloaded quote and the
+Excel work list. Questions and work-item names still follow the language of the brief.
 
 **Your own brief:** the AI reader (Jev, by TypeSafe) reads **every** clause before an estimate is produced. If the
 server's credits are exhausted you will get a clear message rather than a weaker estimate. Click the **key icon** in the
@@ -70,15 +73,15 @@ header and paste your own Jev key ([jevstation.com](https://jevstation.com) or T
 sent only with requests that read a brief, and never stored on the server.
 
 A 3-minute tour:
-1. **Dự án mới**: pick *Investor onboarding portal for a private equity fund* and press *Tính dự toán*.
-2. **Dự toán**: the hour range, the budget at your confidence level and team size, where the hours go, and downloads
+1. **New project**: pick *Investor onboarding portal for a private equity fund* and press *Estimate*.
+2. **Estimate**: the hour range, the budget at your confidence level and team size, where the hours go, and downloads
    (client proposal in Markdown, work list for Excel).
-3. **Công việc**: every requirement shows the brief's exact sentence and what the AI read in it. You can edit hours,
+3. **Work**: every requirement shows the brief's exact sentence and what the AI read in it. You can edit hours,
    remove items or add your own.
-4. **Câu hỏi**: questions for the client, ordered by how many hours depend on the answer. Answering creates a new,
+4. **Questions**: questions for the client, ordered by how many hours depend on the answer. Answering creates a new,
    immutable version.
-5. **Giờ thực tế**: enter actual hours, in total or per requirement. The next estimates adjust.
-6. **Kiểm chứng**: all the evidence above, live from the journal.
+5. **Actual hours**: enter actual hours, in total or per requirement. The next estimates adjust.
+6. **Evidence**: all the evidence above, live from the journal.
 
 **Run locally**
 

@@ -28,6 +28,7 @@ from .schemas import (
 from . import empirical
 from .export import proposal_markdown, wbs_csv
 from .jev import load_dotenv
+from .locale import ui_language
 from .service import AIReaderUnavailable, ParallaxService
 from .storage import StorageRepository
 
@@ -61,13 +62,17 @@ def enforce_estimate_limit(request: Request) -> None:
     ip = _visitor_ip(request)
     recent = [t for t in _estimate_hits.get(ip, []) if now - t < 3600]
     if len(recent) >= limit:
-        raise HTTPException(
-            status_code=429,
-            detail=(
+        if ui_language.get() == "en":
+            detail = (
+                f"This address has used its {limit} brief readings for this hour. "
+                "Sample briefs still open; try again later."
+            )
+        else:
+            detail = (
                 f"Đã đủ {limit} lần đọc mô tả từ địa chỉ này trong một giờ. "
                 "Các mô tả mẫu vẫn mở được; hãy thử lại sau."
-            ),
-        )
+            )
+        raise HTTPException(status_code=429, detail=detail)
     recent.append(now)
     _estimate_hits[ip] = recent
 
@@ -76,6 +81,16 @@ app = FastAPI(
     description="Evidence-driven, self-calibrating estimation engine for software and AI automation projects.",
     version="0.1.0",
 )
+
+
+@app.middleware("http")
+async def set_ui_language(request: Request, call_next):
+    header = request.headers.get("accept-language", "")
+    token = ui_language.set("en" if header.lower().startswith("en") else "vi")
+    try:
+        return await call_next(request)
+    finally:
+        ui_language.reset(token)
 
 # Enable CORS for local Next.js / Vite web development
 app.add_middleware(
@@ -211,24 +226,26 @@ def _latest(project_id: str) -> tuple[Project, EstimateVersion]:
     return project, versions[-1]
 
 
-def _download_name(project: Project, ext: str) -> str:
-    return f"du-toan-{project.project_id}.{ext}"
+def _download_name(project: Project, ext: str, lang: str) -> str:
+    stem = "estimate" if lang == "en" else "du-toan"
+    return f"{stem}-{project.project_id}.{ext}"
 
 
 @app.get("/api/v1/projects/{project_id}/export/proposal.md", tags=["Deliverables"])
 def export_proposal(project_id: str, confidence: float = Query(80, ge=50, le=95), rate: float = Query(500_000, ge=0),
-                    currency: str = Query("VND", pattern="^(VND|USD)$"), people: int = Query(3, ge=1, le=50)):
+                    currency: str = Query("VND", pattern="^(VND|USD)$"), people: int = Query(3, ge=1, le=50),
+                    lang: str = Query("vi", pattern="^(vi|en)$")):
     project, version = _latest(project_id)
-    body = proposal_markdown(project, version, confidence, rate, currency, people)
+    body = proposal_markdown(project, version, confidence, rate, currency, people, lang)
     return Response(body, media_type="text/markdown; charset=utf-8",
-                    headers={"Content-Disposition": f'attachment; filename="{_download_name(project, "md")}"'})
+                    headers={"Content-Disposition": f'attachment; filename="{_download_name(project, "md", lang)}"'} )
 
 
 @app.get("/api/v1/projects/{project_id}/export/wbs.csv", tags=["Deliverables"])
-def export_wbs(project_id: str):
+def export_wbs(project_id: str, lang: str = Query("vi", pattern="^(vi|en)$")):
     project, version = _latest(project_id)
-    return Response(wbs_csv(version), media_type="text/csv; charset=utf-8",
-                    headers={"Content-Disposition": f'attachment; filename="{_download_name(project, "csv")}"'})
+    return Response(wbs_csv(version, lang), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{_download_name(project, "csv", lang)}"'} )
 
 
 @app.get("/api/v1/reader/evaluation", tags=["Evaluation"])

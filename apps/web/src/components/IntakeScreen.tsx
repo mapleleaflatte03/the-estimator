@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, Upload } from 'lucide-react';
 import type { Project, SampleBrief } from '../types';
 import { createProject, fetchSampleBriefs } from '../api';
-import { PROJECT_TYPES, card } from '../ui';
+import { useI18n } from '../i18n';
+import { card } from '../ui';
 
 interface IntakeScreenProps {
   onProjectCreated: (project: Project) => void;
@@ -13,6 +14,7 @@ const inputClass =
   'w-full px-4 py-3 rounded-xl bg-white dark:bg-[#0b0f1a] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-indigo-600 dark:focus:border-cyan-400 focus:ring-2 focus:ring-indigo-500/20 text-sm';
 
 export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, isLoading }) => {
+  const { t, projectTypes } = useI18n();
   const [title, setTitle] = useState('');
   const [projectType, setProjectType] = useState('internal_tool');
   const [briefText, setBriefText] = useState('');
@@ -32,12 +34,12 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
-      setError('File quá lớn (tối đa 200 KB). Hãy dán phần mô tả yêu cầu vào ô bên dưới.');
+      setError(t('File quá lớn (tối đa 200 KB). Hãy dán phần mô tả yêu cầu vào ô bên dưới.', 'That file is too large (200 KB maximum). Paste the brief into the box below.'));
       return;
     }
     const text = (await file.text()).trim();
     if (!text) {
-      setError('File không có nội dung chữ. Hãy dùng file .txt, .md hoặc .csv.');
+      setError(t('File không có nội dung chữ. Hãy dùng file .txt, .md hoặc .csv.', 'That file has no text. Use a .txt, .md, or .csv file.'));
       return;
     }
     setError(null);
@@ -54,7 +56,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !briefText.trim()) {
-      setError('Vui lòng nhập tên dự án và mô tả.');
+      setError(t('Vui lòng nhập tên dự án và mô tả.', 'Enter a project name and a brief.'));
       return;
     }
     setError(null);
@@ -63,16 +65,19 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
         await createProject({ title: title.trim(), project_type: projectType, brief_text: briefText.trim() }),
       );
     } catch (err) {
-      setError((err as Error).message || 'Không kết nối được máy chủ.');
+      setError((err as Error).message || t('Không kết nối được máy chủ.', 'Could not reach the server.'));
     }
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Dự án mới</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('Dự án mới', 'New project')}</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Dán mô tả yêu cầu của khách hàng. Hệ thống sẽ chia thành các công việc và ước tính số giờ cần làm.
+          {t(
+            'Dán mô tả yêu cầu của khách hàng. Hệ thống sẽ chia thành các công việc và ước tính số giờ cần làm.',
+            'Paste the client’s brief. The system splits it into work and estimates the hours.',
+          )}
         </p>
       </div>
 
@@ -87,25 +92,25 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-2 space-y-1.5">
             <label htmlFor="intake-title" className="text-sm font-semibold">
-              Tên dự án
+              {t('Tên dự án', 'Project name')}
             </label>
             <input
               id="intake-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Ứng dụng đặt lịch bảo trì"
+              placeholder={t('VD: Ứng dụng đặt lịch bảo trì', 'e.g. Maintenance booking app')}
               className={inputClass}
               required
             />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="intake-type" className="text-sm font-semibold">
-              Loại dự án
+              {t('Loại dự án', 'Project type')}
             </label>
             <select id="intake-type" value={projectType} onChange={(e) => setProjectType(e.target.value)} className={`${inputClass} cursor-pointer`}>
-              {PROJECT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {projectTypes.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
                 </option>
               ))}
             </select>
@@ -115,10 +120,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <label htmlFor="intake-brief" className="text-sm font-semibold">
-              Mô tả yêu cầu
+              {t('Mô tả yêu cầu', 'Brief')}
             </label>
             <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-700 dark:text-cyan-300 cursor-pointer hover:underline">
-              <Upload className="w-4 h-4" /> Tải file (.txt, .md, .csv)
+              <Upload className="w-4 h-4" /> {t('Tải file (.txt, .md, .csv)', 'Upload a file (.txt, .md, .csv)')}
               <input type="file" accept=".txt,.md,.csv,text/plain,text/markdown,text/csv" onChange={handleFile} className="sr-only" />
             </label>
           </div>
@@ -127,7 +132,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
             value={briefText}
             onChange={(e) => setBriefText(e.target.value)}
             rows={9}
-            placeholder={'Mỗi yêu cầu nên viết trên một dòng, ví dụ:\n- Khách hàng đặt lịch qua điện thoại\n- Gửi tin nhắn nhắc lịch\n- Xuất báo cáo hàng tháng'}
+            placeholder={t(
+              'Mỗi yêu cầu nên viết trên một dòng, ví dụ:\n- Khách hàng đặt lịch qua điện thoại\n- Gửi tin nhắn nhắc lịch\n- Xuất báo cáo hàng tháng',
+              'Put each requirement on its own line, for example:\n- Customers book a slot by phone\n- Send a reminder message\n- Export a monthly report',
+            )}
             className={`${inputClass} leading-relaxed`}
             required
           />
@@ -138,14 +146,14 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
           disabled={isLoading || !title || !briefText}
           className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
         >
-          {isLoading ? 'Đang tính…' : 'Tính dự toán'}
+          {isLoading ? t('Đang tính…', 'Estimating…') : t('Tính dự toán', 'Estimate')}
           {!isLoading && <ArrowRight className="w-4 h-4" />}
         </button>
       </form>
 
       {samples.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Chưa có mô tả? Thử một ví dụ:</h2>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('Chưa có mô tả? Thử một ví dụ:', 'No brief yet? Try a sample:')}</h2>
           <div className="flex flex-wrap gap-2">
             {samples.map((s) => (
               <button

@@ -18,6 +18,7 @@ from .conformal import AdaptiveLevel
 from .evaluation.benchmark import PredictionRecord, evaluate_predictions
 from .extractor import MODEL_TAG, clause_texts, extract_scope_and_wbs, proposed_kinds
 from .jev import JevReader
+from .locale import current_lang
 from .schemas import (
     ActualWork,
     CalibrationObservation,
@@ -93,6 +94,21 @@ class ParallaxService:
         missing = [t for t in texts if t not in readings]
         if missing and self.jev_required:
             status = reader.status()
+            if current_lang() == "en":
+                if not status["configured"]:
+                    reason = "no Jev API key is configured (JEVSTATION_API_KEY…)"
+                elif status.get("halted"):
+                    reason = "the reader paused to protect credits"
+                elif status["keys_usable"] == 0:
+                    reason = "every Jev key is out of credit or failing"
+                elif not status["available"]:
+                    reason = "the hourly call limit has been reached"
+                else:
+                    reason = status.get("last_error") or "Jev did not answer"
+                raise AIReaderUnavailable(
+                    f"Jev could not read {len(missing)}/{len(texts)} clauses of the brief ({reason}). "
+                    "An estimate needs every clause read; try again in a few minutes."
+                )
             if not status["configured"]:
                 reason = "chưa cấu hình khóa API Jev (JEVSTATION_API_KEY…)"
             elif status.get("halted"):

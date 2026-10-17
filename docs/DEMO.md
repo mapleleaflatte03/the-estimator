@@ -6,6 +6,7 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
 - Open the live URL 2 minutes early: the free instance sleeps and takes up to ~50 s to wake.
 - Keep a second tab on the repo README.
 - Pre-type the car-wash brief (step 4) into a text file.
+- The app opens in English. **VI** in the header switches every label, and the downloaded quote follows that choice.
 
 ## 0:00 – 0:45 · The problem (no slides needed)
 
@@ -17,25 +18,25 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
 
 ## 0:45 – 3:00 · A brief from your world
 
-1. Open **Dự án mới** and pick the sample *Investor onboarding portal for a private equity fund*. Press **Tính dự toán**.
+1. Open **New project** and pick the sample *Investor onboarding portal for a private equity fund*. Press **Estimate**.
    It answers in under a second because the AI's readings are cached.
-2. **Dự toán:**
+2. **Estimate:**
    > "885 hours most likely; 8 in 10 simulated outcomes fall between 487 and 1,542."
 
    Move the confidence slider to 80% and point at the budget and timeline, which respect the critical path.
-3. **Công việc:** open any requirement.
+3. **Work:** open any requirement.
    > "Every line is tied to the exact sentence in the brief. Here the keyword rules thought 'subscription' meant
    > payments; the AI read the sentence, said no, and removed it. It didn't vanish: it became a question for the
    > client."
-4. **Câu hỏi:**
+4. **Questions:**
    > "Questions are ranked by how many hours depend on the answer. 'Possibly an AI assistant… if the budget allows' is
    > uncommitted scope worth 105 hours."
 
-   Click **Không** and the estimate drops. Every answer creates a new, immutable version.
+   Click **No** and the estimate drops. Every answer creates a new, immutable version.
 
 ## 3:00 – 4:30 · Live: a brief nobody has seen
 
-Paste the car-wash brief into **Dự án mới**:
+Paste the car-wash brief into **New project**:
 
 ```
 Project: booking platform for a chain of 12 car-wash stations.
@@ -55,13 +56,13 @@ The key icon in the header lets anyone use their own AI key.
 
 ## 4:30 – 6:00 · It learns from actual hours
 
-Open **Giờ thực tế**, enter a total, expand *per requirement*, and enter a couple of values. Save.
+Open **Actual hours**, enter a total, expand *per requirement*, and enter a couple of values. Save.
 
 > "The next estimate shifts: per project type, per kind of work, partially pooled so one project can't swing it."
 
-Click **Tính lại dự toán** and show the new version.
+Click **Recalculate this project** and show the new version.
 
-## 6:00 – 8:30 · Why you can trust it (Kiểm chứng tab)
+## 6:00 – 8:30 · Why you can trust it (Evidence tab)
 
 Point at the four cards at the top, then the charts:
 - **Learning from real actual hours.** 10,022 real tasks (SiP).

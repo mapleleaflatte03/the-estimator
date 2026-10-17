@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../i18n';
 import { TONE, type Tone } from './tone';
 
 export interface BarRow {
@@ -51,11 +52,15 @@ export const RangeBar: React.FC<{ low: number; mid: number; high: number; plan?:
   plan,
   format,
 }) => {
+  const { t } = useI18n();
   const lo = low * 0.9;
   const hi = high * 1.05;
   const x = (v: number) => `${((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * 100}%`;
   return (
-    <div className="pt-2 space-y-2" role="img" aria-label={`Khoảng dao động ${format(low)} đến ${format(high)}, ước tính ${format(mid)}${plan != null ? `, dự trù ${format(plan)}` : ""}`}>
+    <div className="pt-2 space-y-2" role="img" aria-label={t(
+      `Khoảng dao động ${format(low)} đến ${format(high)}, ước tính ${format(mid)}${plan != null ? `, dự trù ${format(plan)}` : ''}`,
+      `Range ${format(low)} to ${format(high)}, estimate ${format(mid)}${plan != null ? `, plan ${format(plan)}` : ''}`,
+    )}>
       <div className="relative h-3 mx-0.5 rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
         <div className="absolute inset-y-0 rounded-full bg-indigo-200 dark:bg-indigo-900" style={{ left: x(low), right: `calc(100% - ${x(high)})` }} />
         <div className="absolute -top-1 bottom-[-4px] w-1 -translate-x-1/2 rounded bg-indigo-700 dark:bg-indigo-300" style={{ left: x(mid) }} />
@@ -63,23 +68,23 @@ export const RangeBar: React.FC<{ low: number; mid: number; high: number; plan?:
       </div>
       <div className="flex items-start justify-between gap-2 text-xs tabular-nums text-slate-600 dark:text-slate-400" aria-hidden="true">
         <span className="min-w-0">
-          Thấp nhất
+          {t('Thấp nhất', 'Low')}
           <br />
           <b className="text-slate-800 dark:text-slate-200">{format(low)}</b>
         </span>
         <span className="min-w-0 text-right">
-          Cao nhất
+          {t('Cao nhất', 'High')}
           <br />
           <b className="text-slate-800 dark:text-slate-200">{format(high)}</b>
         </span>
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-700 dark:text-slate-300" aria-hidden="true">
         <span className="inline-flex items-center gap-1.5">
-          <span className="w-1 h-3 rounded bg-indigo-700 dark:bg-indigo-300" /> Ước tính <b className="tabular-nums">{format(mid)}</b>
+          <span className="w-1 h-3 rounded bg-indigo-700 dark:bg-indigo-300" /> {t('Ước tính', 'Estimate')} <b className="tabular-nums">{format(mid)}</b>
         </span>
         {plan != null && (
           <span className="inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-3 rounded bg-amber-500" /> Dự trù <b className="tabular-nums">{format(plan)}</b>
+            <span className="w-1.5 h-3 rounded bg-amber-500" /> {t('Dự trù', 'Plan')} <b className="tabular-nums">{format(plan)}</b>
           </span>
         )}
       </div>
