@@ -15,6 +15,19 @@ The [challenge](https://cybernetics.anduin.tech/agent-in-the-shell) asks for fas
 | Does it get better over time? | Finished projects change future project-type and work-kind factors. Versions and original estimates are preserved. SiP's operational replay beats human estimates (SA 56.3% to 61.1%). | In that same replay, updating online had MAE 3.85 hours versus 3.82 for a frozen calibrated model. No pilot has shown better *end-to-end* quotes after several team projects. |
 | Can a real team use it? | A browser can complete brief → questions → draft estimate → work edits → actuals. CSV and Markdown export work. | Free Render storage disappears on restart; only the last browser brief can be restored. There are no accounts, shared team review, durable history, timesheet import, or PDF/DOCX intake. This is a demo, not a production system for confidential client work. |
 
+## Audit of the data already in this folder
+
+| Local source | What it can test | Missing for a complete quote test |
+| --- | --- | --- |
+| `datasets/sip/` | Real task summaries, pre-work hour estimates, actual hours and dates; 12,299 raw task rows, 10,022 used after filtering. | These are individual task titles, not the original client brief for a whole delivery. |
+| `datasets/external/itemlet/` | Jira issue titles, logged hours and an original estimate derivable from `workratio`; independent check of task-level risk. | No issue descriptions or full client briefs. |
+| `datasets/external/deepse/` | Issue title/description and story points; text-to-story-point comparison. | No actual hours in its CSVs. |
+| `datasets/external/PROMISE_exp.csv` | 969 real requirements for retention/classification checks. | No original quote and actual hours. |
+| `datasets/golden_briefs/` | Nine end-to-end example inputs and expected scope properties. | Builder-written examples; no delivered-project actuals. |
+| `data/parallax_store.backup-20261016-010941.json` | Four saved actuals records for exercising the learning UI. | All four are duplicate “Corporate Project Management Portal” demo entries at exactly 175 hours with identical notes, not four independent real outcomes. |
+
+None of these sources contains a complete real client brief plus a quote made before delivery plus the final total. We should not turn task-level accuracy or synthetic examples into an end-to-end accuracy claim.
+
 ## Is Jev the right AI?
 
 [TypeSafe describes Jev](https://docs.typesafe.ai/introduction) as a general model for fast, typed decisions, with `Choice`, `Score` and `Noul` answers. It was **not designed specifically for effort estimation** and the challenge does not require it. It fits narrow judgments here: classify a clause, assess whether the client has committed, and check if keyword rules overmatched. The application should keep arithmetic, pricing and versioning in ordinary code. Typed output guarantees a valid answer shape; it does not guarantee a correct business interpretation. [TypeSafe itself recommends](https://docs.typesafe.ai/introduction) decomposing complex reasoning into small questions. The measured Jev overrun signal did **not** improve hour MAE, so it is only a review flag.
