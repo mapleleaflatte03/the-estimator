@@ -24,7 +24,7 @@ The [challenge](https://cybernetics.anduin.tech/agent-in-the-shell) asks for fas
 | `datasets/external/deepse/` | Issue title/description and story points; text-to-story-point comparison. | No actual hours in its CSVs. |
 | `datasets/external/PROMISE_exp.csv` | 969 real requirements for retention/classification checks. | No original quote and actual hours. |
 | `datasets/golden_briefs/` | Nine end-to-end example inputs and expected scope properties. | Builder-written examples; no delivered-project actuals. |
-| `data/parallax_store.backup-20261016-010941.json` | Four saved actuals records for exercising the learning UI. | All four are duplicate “Corporate Project Management Portal” demo entries at exactly 175 hours with identical notes, not four independent real outcomes. |
+| Local-only, Git-ignored `data/parallax_store.backup-20261016-010941.json` | Four saved actuals records for exercising the learning UI. | All four are duplicate “Corporate Project Management Portal” demo entries at exactly 175 hours with identical notes, not four independent real outcomes. This file is not part of the public repo or its reproducible evaluation. |
 
 None of these sources contains a complete real client brief plus a quote made before delivery plus the final total. We should not turn task-level accuracy or synthetic examples into an end-to-end accuracy claim.
 
