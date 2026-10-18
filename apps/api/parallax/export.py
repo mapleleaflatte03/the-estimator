@@ -124,13 +124,18 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
             "## Phạm vi công việc",
             "",
         ]
+    pending = []
     excluded = []
     ordered = [r for r in v.requirements if r.req_id != "REQ-00"] + [r for r in v.requirements if r.req_id == "REQ-00"]
     for req in ordered:
         items = by_req.get(req.req_id, [])
         quote = req.evidence[0].quote if req.evidence else req.title
         if req.in_scope is False:
-            excluded.append(quote)
+            scope_q = next((q for q in v.clarifications if q.question_id == f"CLAR-{req.req_id}"), None)
+            if scope_q and scope_q.answer is None:
+                pending.append((quote, scope_q.hours_if_true))
+            else:
+                excluded.append(quote)
             continue
         heading = req.title if req.req_id == "REQ-00" else quote
         shared = shared_by.get(req.req_id, [])
@@ -166,6 +171,9 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
         for w in items:
             lines.append(f"- {w.name} ({roles.get(w.role, w.role)}): {hh(pert_mean(w))}")
         lines.append("")
+    if pending:
+        heading = "## Pending scope (excluded until confirmed)" if en else "## Phạm vi chưa chốt (chưa tính giờ)"
+        lines += [heading, ""] + [f"- {quote} (+{hh(extra)} if confirmed)" if en else f"- {quote} (+{hh(extra)} nếu xác nhận làm)" for quote, extra in pending] + [""]
     if excluded:
         heading = "## Out of scope (confirmed not in this delivery)" if en else "## Ngoài phạm vi (đã chốt không làm)"
         lines += [heading, ""] + [f"- {q}" for q in excluded] + [""]

@@ -76,6 +76,7 @@ A 3-minute tour:
 1. **New project**: pick *Investor onboarding portal for a private equity fund* and press *Estimate*.
 2. **Estimate**: the hour range, the budget at your confidence level and team size, where the hours go, and downloads
    (client proposal in Markdown, work list for Excel).
+   Work the client has not committed to is listed separately and does not enter the quote until you confirm it.
 3. **Work**: every requirement shows the brief's exact sentence and what the AI read in it. You can edit hours,
    remove items or add your own.
 4. **Questions**: questions for the client, ordered by how many hours depend on the answer. Answering creates a new,
@@ -175,7 +176,7 @@ TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet repli
    commercial version needs permission or another data source.
 3. The labelled clause sets were written by the developer, not taken from real client documents.
 4. JevStation is an independent reseller: brief text passes through it. Use TypeSafe directly for confidential work.
-5. The free hosting plan has no persistent disk: projects entered on the live site reset when the service restarts. The browser keeps the last brief, answers and actual hours, and can ask Jev to read that brief again.
+5. Each browser gets an anonymous workspace: its projects, actual hours and learned adjustments are separate from other visitors. The free hosting plan has no persistent disk, so projects reset when the service restarts. The browser keeps the last brief, answers and actual hours, and can ask Jev to read that brief again.
 
 ## Roadmap
 

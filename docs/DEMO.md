@@ -21,7 +21,7 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
 1. Open **New project** and pick the sample *Investor onboarding portal for a private equity fund*. Press **Estimate**.
    It answers in under a second because the AI's readings are cached.
 2. **Estimate:**
-   > "885 hours most likely; 8 in 10 simulated outcomes fall between 487 and 1,542."
+   > "The first number covers the work the client has actually committed to. Tentative items are listed separately, with the hours they would add if confirmed. The range shows uncertainty in the included work."
 
    Move the confidence slider to 80% and point at the budget and timeline, which respect the critical path.
 3. **Work:** open any requirement.
@@ -32,7 +32,7 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
    > "Questions are ranked by how many hours depend on the answer. 'Possibly an AI assistant… if the budget allows' is
    > uncommitted scope worth 105 hours."
 
-   Click **No** and the estimate drops. Every answer creates a new, immutable version.
+   Click **Yes** to include it and watch the estimate rise. Every answer creates a new, immutable version.
 
 ## 3:00 – 4:30 · Live: a brief nobody has seen
 

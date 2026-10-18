@@ -61,25 +61,25 @@ def test_full_project_lifecycle_api():
     assert forecast["p10_hours"] <= forecast["p50_hours"] <= forecast["p80_hours"] <= forecast["p90_hours"]
     assert forecast["bottom_up_p50"] > 0
 
-    # 3. Active Clarification: the tentative ERP clause ("có thể cần") becomes a scope question
+    # 3. Tentative ERP work starts outside the quote and enters only after confirmation.
     erp_q = next(q for q in v1["clarifications"] if any("ERP" in ev["quote"] for ev in q["evidence"]))
     assert erp_q["sensitivity_spread_hours"] > 0
     clar_resp = client.post(
         f"/api/v1/projects/{project_id}/clarify",
         json={
             "question_id": erp_q["question_id"],
-            "answer": False,
-            "notes": "No ERP integration needed; export CSV is sufficient.",
+            "answer": True,
+            "notes": "ERP integration is required for this delivery.",
         },
     )
     assert clar_resp.status_code == 200
     v2 = clar_resp.json()
     assert v2["version_id"] == "v2"
     assert v2["parent_version_id"] == "v1"
-    assert v2["clarification_answers"] == {erp_q["question_id"]: False}
-    assert v2["forecast"]["p50_hours"] < v1["forecast"]["p50_hours"]
+    assert v2["clarification_answers"] == {erp_q["question_id"]: True}
+    assert v2["forecast"]["p50_hours"] > v1["forecast"]["p50_hours"]
     v2_erp = next(q for q in v2["clarifications"] if q["question_id"] == erp_q["question_id"])
-    assert v2_erp["answer"] is False
+    assert v2_erp["answer"] is True
 
     # Unknown question ids are rejected instead of silently creating versions
     bad = client.post(f"/api/v1/projects/{project_id}/clarify", json={"question_id": "CLAR-NOPE", "answer": True})
@@ -138,8 +138,27 @@ def test_system_status_and_samples():
     assert len(samples) >= 3 and all(s["brief_text"] for s in samples)
 
 
+def test_anonymous_workspaces_keep_briefs_and_learning_separate():
+    first = TestClient(app)
+    second = TestClient(app)
+    project = first.post("/api/v1/projects", json={
+        "title": "Private client brief", "brief_text": "- Staff manage investor records.",
+    }).json()
+    pid = project["project_id"]
+    assert any(p["project_id"] == pid for p in first.get("/api/v1/projects").json())
+    assert second.get("/api/v1/projects").json() == []
+    assert second.get(f"/api/v1/projects/{pid}").status_code == 404
+
+    version = first.post(f"/api/v1/projects/{pid}/estimate").json()
+    assert second.get(f"/api/v1/projects/{pid}/versions").status_code == 404
+    assert second.get(f"/api/v1/projects/{pid}/export/proposal.md").status_code == 404
+    first.post(f"/api/v1/projects/{pid}/actuals", json={"actual_hours": version["forecast"]["p50_hours"] * 1.5})
+    assert first.get("/api/v1/calibration").json()["n_observations"] == 1
+    assert second.get("/api/v1/calibration").json()["n_observations"] == 0
+
+
 def test_wbs_edits_persist_across_versions():
-    brief = "- Có thể cần thêm báo cáo doanh thu theo tháng.\n- Quản lý danh sách khách hàng và đơn hàng."
+    brief = "- Báo cáo doanh thu theo tháng.\n- Quản lý danh sách khách hàng và đơn hàng.\n- Có thể cần kết nối ERP."
     pid = client.post("/api/v1/projects", json={"title": "Edit test", "brief_text": brief}).json()["project_id"]
     v1 = client.post(f"/api/v1/projects/{pid}/estimate").json()
     crud = next(w for w in v1["wbs"] if "CRUD-BE" in w["item_id"])

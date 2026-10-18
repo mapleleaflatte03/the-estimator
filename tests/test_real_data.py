@@ -82,8 +82,11 @@ def test_tentative_wording_becomes_scope_question():
     assert report_req.status.value == "assumed"
     q = next(q for q in v.clarifications if q.question_id == f"CLAR-{report_req.req_id}")
     assert q.hours_if_true > 0 and q.hours_if_false == 0
+    assert q.current_assumption is False and report_req.in_scope is False
     v_no = extract_scope_and_wbs("P-TECH", TECH_BRIEF, clarification_answers={q.question_id: False})
-    assert v_no.forecast.p50_hours < v.forecast.p50_hours
+    v_yes = extract_scope_and_wbs("P-TECH", TECH_BRIEF, clarification_answers={q.question_id: True})
+    assert v_no.forecast.p50_hours == v.forecast.p50_hours
+    assert v_yes.forecast.p50_hours > v.forecast.p50_hours
     assert next(r for r in v_no.requirements if r.req_id == report_req.req_id).in_scope is False
     assert next(x for x in v_no.clarifications if x.question_id == q.question_id).answer is False
 

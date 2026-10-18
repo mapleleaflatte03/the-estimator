@@ -193,9 +193,9 @@ _REQUIREMENT_MARKERS = re.compile(
 )
 _HEDGES = re.compile(
     r"chua chac|chua ro|chua biet|chua quyet dinh|phan van|co le|co khi phai|bie?t dau|neu duoc|neu kip|neu con (ngan sach|thoi gian)|"
-    r"de sau|lam sau|tam thoi chua|uu tien thap|later on|for now|"
+    r"de sau|lam sau|tam thoi chua|uu tien thap|later on|"
     r"can xem xet|xem xet kha nang|co the can|co the se|co the bo sung|neu can|neu co the|tuy chon|"
-    r"giai doan sau|giai doan 2|sau nay|chua ro|chua xac dinh|chua chot|chua co tai lieu|chua co api|"
+    r"giai doan sau|giai doan 2|sau nay|chua ro|chua xac dinh|chua chot|"
     r"du kien|kha nang cao|\boptional\b|nice to have|phase 2|later phase|\bmaybe\b|\bmight\b|possibly|"
     r"\btbd\b|to be (?:decided|confirmed|defined)|if possible|\bconsider|"
     # round 4 (dev): "đang cân nhắc", budget/time conditions in English
@@ -293,10 +293,10 @@ _TEXT = {
         "foundation": "Chuẩn bị, kiểm thử & bàn giao",
         "foundation_desc": "Những việc luôn cần làm dù mô tả không nhắc tới.",
         "detected": "Gồm",
-        "excluded": "Đã bỏ khỏi dự án.",
+        "excluded": "Chưa tính vào dự toán vì khách chưa chốt phạm vi.",
         "q_scope": "Có làm phần “{title}” trong đợt này không?",
-        "q_scope_why": "Mô tả ghi “{hedge}” nên chưa chắc có làm. Hiện dự toán đang tính cả phần này.",
-        "q_scope_why_ai": "{hedge} (cách diễn đạt cho thấy chưa chốt). Hiện dự toán đang tính cả phần này.",
+        "q_scope_why": "Mô tả ghi “{hedge}” nên chưa chắc có làm. Dự toán chưa tính phần này; trả lời Có sẽ thêm {items}.",
+        "q_scope_why_ai": "{hedge} (cách diễn đạt cho thấy chưa chốt). Dự toán chưa tính phần này; trả lời Có sẽ thêm {items}.",
         "q_ai_kind": "Phần “{title}” có cần thêm {kind} không?",
         "q_ai_kind_why": "AI nhận định câu này có liên quan tới {kind} (chắc chắn {p}%), nhưng dự toán hiện chưa tính phần đó.",
         "c_hedge_ai": "Phần “{title}” có vẻ chưa chốt: {hedge}. Hãy trả lời câu hỏi để chốt.",
@@ -307,7 +307,7 @@ _TEXT = {
         "q_dataq_why": "Mô tả chưa nói dữ liệu cũ có gọn gàng không. Hiện đang giả định dữ liệu sạch.",
         "q_api": "Có cần tìm hiểu thêm cách kết nối với {system} vì chưa có tài liệu không?",
         "q_api_why": "Kết nối với hệ thống chưa có tài liệu thường tốn thêm thời gian.",
-        "c_hedge": "Phần “{title}” chưa chắc chắn (“{hedge}”). Hãy trả lời câu hỏi để chốt.",
+        "c_hedge": "Phần “{title}” chưa chắc chắn (“{hedge}”), đang nằm ngoài dự toán. Hãy trả lời câu hỏi để chốt.",
         "ai_hedge": "AI đánh giá {p}% khả năng khách chưa chốt",
         "c_generic": "Chưa rõ “{title}” là loại việc gì nên ước tính có thể lệch nhiều. Nên nhờ người có kinh nghiệm xem lại.",
         "c_perf": "Có yêu cầu chịu tải cao, đã cộng thêm thời gian kiểm tra tốc độ.",
@@ -322,10 +322,10 @@ _TEXT = {
         "foundation": "Engineering foundation & delivery",
         "foundation_desc": "Standard engineering work not stated in the brief: environments/CI-CD, core architecture, testing, deployment.",
         "detected": "Detected components",
-        "excluded": "Excluded from scope by clarification answer.",
+        "excluded": "Not included in the estimate until the client confirms this scope.",
         "q_scope": "Is “{title}” in scope for this delivery?",
-        "q_scope_why": "The brief uses tentative wording (“{hedge}”). The estimate currently includes it; answering “No” removes {items}.",
-        "q_scope_why_ai": "{hedge}. The estimate currently includes it; answering “No” removes {items}.",
+        "q_scope_why": "The brief uses tentative wording (“{hedge}”). The estimate excludes it until confirmed; answering “Yes” adds {items}.",
+        "q_scope_why_ai": "{hedge}. The estimate excludes it until confirmed; answering “Yes” adds {items}.",
         "q_ai_kind": "Does “{title}” also need {kind}?",
         "q_ai_kind_why": "AI reads this clause as involving {kind} ({p}% confident), which the estimate does not include yet.",
         "c_hedge_ai": "“{title}” looks uncommitted: {hedge}. Answer the question to settle it.",
@@ -336,7 +336,7 @@ _TEXT = {
         "q_dataq_why": "The brief does not describe source data quality, format or volume. The estimate assumes clean, well-formed data.",
         "q_api": "Does {system} lack a documented API / sandbox, requiring discovery or reverse-engineering?",
         "q_api_why": "The brief requires integrating {system} but does not mention API documentation; undocumented interfaces are a common overrun source.",
-        "c_hedge": "Tentative wording (“{hedge}”) for “{title}”; included as an assumption and turned into a clarification question.",
+        "c_hedge": "Tentative wording (“{hedge}”) for “{title}”; excluded from the estimate pending clarification.",
         "ai_hedge": "AI rates it {p}% likely the client has not committed",
         "c_generic": "Could not classify “{title}”; sized with a generic, wide-range template. Needs expert review.",
         "c_perf": "The brief states load/performance requirements; load testing and a cache/queue layer were added to the WBS.",
@@ -508,7 +508,7 @@ def _scope_question(L: dict, qid: str, req_id: str, title: str, hedge: str, item
         context_reason=L["q_scope_why_ai" if ai else "q_scope_why"].format(hedge=hedge, n=n, items=items_label),
         hours_if_false=0.0, hours_if_true=round(sum(_pert_mean(i) for i in items), 1),
         affected_item_ids=[i.item_id for i in items], evidence=evidence,
-        current_assumption=True, answer=answers.get(qid),
+        current_assumption=False, answer=answers.get(qid),
     )
 
 
@@ -677,7 +677,9 @@ def extract_scope_and_wbs(
         seq += 1
         req_id = f"REQ-{seq:02d}"
         title = _short_title(clause)
-        hedge_match = _HEDGES.search(folded)
+        # Jev's held-out tentative judgement can disambiguate phrases such as
+        # "may" in a requirement and "no API docs" in a committed integration.
+        hedge_match = _HEDGES.search(folded) if not reading or reading.tentative >= TENTATIVE_MIN else None
         hedge = None
         if hedge_match:
             # map folded offsets back to the original text (fold keeps length for Vietnamese)
@@ -692,7 +694,7 @@ def extract_scope_and_wbs(
             has_nfr = True
         evidence = [EvidenceSpan(source_doc=clause.doc, quote=clause.text, location=f"clause {clause.index + 1}")]
         scope_q = f"CLAR-{req_id}"
-        excluded = hedge is not None and answers.get(scope_q) is False
+        excluded = hedge is not None and answers.get(scope_q) is not True
         req = RequirementNode(
             req_id=req_id,
             title=title,

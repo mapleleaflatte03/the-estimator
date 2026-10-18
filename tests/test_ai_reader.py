@@ -92,6 +92,14 @@ def test_ai_tentative_reading_creates_scope_question():
     assert "AI" in q.context_reason
 
 
+def test_ai_committed_reading_keeps_a_requirement_despite_tentative_wording():
+    clause = "Staff may export the approved investor register for auditors."
+    v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("export", tentative=0.03)})
+    req = feature_reqs(v)[0]
+    assert req.in_scope is True
+    assert not any(q.question_id == f"CLAR-{req.req_id}" for q in v.clarifications)
+
+
 def test_low_confidence_reading_is_ignored():
     clause = "Tính hoa hồng cho cộng tác viên theo bậc thang."
     v = extract_scope_and_wbs("p", f"- {clause}", readings={clause: reading("auth", conf=0.3, tentative=0.4)})

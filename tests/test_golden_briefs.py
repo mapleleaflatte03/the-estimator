@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 
 from parallax.extractor import extract_scope_and_wbs
+from parallax.export import proposal_markdown
 from parallax.provenance import validate_evidence_against_sources
-from parallax.schemas import VerificationStatus
+from parallax.schemas import Project, VerificationStatus
 
 GOLDEN_DIR = Path(__file__).resolve().parent.parent / "datasets" / "golden_briefs"
 
@@ -68,8 +69,9 @@ def test_golden_brief_1_active_clarification_sensitivity():
     brief_text = data["brief_text"]
     v1 = extract_scope_and_wbs(project_id="GOLDEN-01", brief_text=brief_text, version_id="v1")
     erp_q = next(q for q in v1.clarifications if any("ERP" in ev.quote for ev in q.evidence))
-    assert erp_q.current_assumption is True
+    assert erp_q.current_assumption is False
     assert erp_q.affected_item_ids
+    assert not any(i.item_id in erp_q.affected_item_ids for i in v1.wbs)
 
     v_with_erp = extract_scope_and_wbs(
         project_id="GOLDEN-01", brief_text=brief_text,
@@ -80,6 +82,10 @@ def test_golden_brief_1_active_clarification_sensitivity():
         clarification_answers={erp_q.question_id: False}, version_id="v_false",
     )
     assert not any(i.item_id in erp_q.affected_item_ids for i in v_no_erp.wbs)
+    assert v1.forecast.p50_hours == v_no_erp.forecast.p50_hours
+    proposal = proposal_markdown(Project(project_id="GOLDEN-01", title="Portal", brief_text=brief_text), v1, lang="en")
+    assert "Pending scope (excluded until confirmed)" in proposal
+    assert "Out of scope (confirmed not in this delivery)" not in proposal
     diff = v_with_erp.forecast.p50_hours - v_no_erp.forecast.p50_hours
     # The removed items' PERT mean is the sensitivity; Monte Carlo + QA share keep it close.
     assert diff >= 0.7 * erp_q.sensitivity_spread_hours, f"diff={diff:.1f}, spread={erp_q.sensitivity_spread_hours}"

@@ -14,6 +14,17 @@ import type {
 
 const API_BASE = '/api/v1';
 const KEY_STORAGE = 'parallax_jev_key';
+const WORKSPACE_STORAGE = 'parallax_workspace_v1';
+
+/** Stable anonymous workspace: project briefs and learning stay with this browser. */
+function workspaceId(): string {
+  let id = localStorage.getItem(WORKSPACE_STORAGE);
+  if (!id || !/^[0-9a-f]{32}$/.test(id)) {
+    id = crypto.randomUUID().replaceAll('-', '');
+    localStorage.setItem(WORKSPACE_STORAGE, id);
+  }
+  return id;
+}
 
 /** The visitor's own Jev key: kept in this browser tab only and sent with requests that read briefs. */
 export const visitorKey = {
@@ -42,9 +53,10 @@ function uiLang(): 'en' | 'vi' {
 async function request<T>(url: string, init?: RequestInit, fallbackError = 'Request failed'): Promise<T> {
   const key = visitorKey.get();
   // Only requests that may read a brief carry the key.
-  const reads = !!init?.method && init.method !== 'GET';
+  const reads = /\/projects\/[^/]+\/(?:estimate|wbs|clarify)$/.test(url);
   const headers: Record<string, string> = {
     'Accept-Language': uiLang(),
+    'X-Parallax-Workspace': workspaceId(),
     ...(init?.headers as Record<string, string> | undefined),
   };
   if (key && reads) headers['X-Jev-Key'] = key;

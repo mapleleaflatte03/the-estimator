@@ -220,6 +220,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
       <div className="space-y-4">
         {groups.map(({ req, items }) => {
           const excluded = req.in_scope === false;
+          const scopePending = excluded && version.clarifications.some((q) => q.question_id === `CLAR-${req.req_id}` && q.answer == null);
           const shared = coveredBy.get(req.req_id) || [];
           const total = items.reduce((s, w) => s + itemHours(w), 0);
           const text = req.evidence[0]?.quote ?? req.title;
@@ -252,7 +253,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
                   {req.req_id === biggestFeature && !excluded && (
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">{t('Tốn nhiều giờ nhất', 'Most hours')}</span>
                   )}
-                  {excluded && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">{t('Đã bỏ', 'Dropped')}</span>}
+                  {excluded && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">{scopePending ? t('Chờ xác nhận', 'Pending decision') : t('Đã bỏ', 'Dropped')}</span>}
                   {!excluded && req.status === 'assumed' && req.req_id !== 'REQ-00' && (
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100">
                       {t('Chưa chắc chắn', 'Not committed')}

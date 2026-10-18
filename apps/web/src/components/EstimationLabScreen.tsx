@@ -85,6 +85,10 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
   const notes = version.critic_findings.filter((f) => !HIDDEN_NOTES.has(f.category));
   const open = version.clarifications.filter((q) => q.answer == null);
   const hoursAtStake = Math.round(open.reduce((s, q) => s + q.sensitivity_spread_hours, 0));
+  const pendingScope = version.requirements
+    .filter((r) => r.req_id !== 'REQ-00' && r.in_scope === false)
+    .map((r) => ({ req: r, question: version.clarifications.find((q) => q.question_id === `CLAR-${r.req_id}`) }))
+    .filter((entry) => entry.question?.answer == null);
 
   // Where the hours go: one bar per requirement, colour = state (uncertain / AI / foundation).
   const breakdown: BarRow[] = useMemo(() => {
@@ -130,8 +134,8 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
           <div className="flex items-center gap-3 text-amber-950 dark:text-amber-100">
             <HelpCircle className="w-6 h-6 flex-shrink-0" />
             <div>
-              <div className="font-bold">{t(`Còn ${open.length} câu hỏi chưa trả lời`, `${open.length} questions still open`)}</div>
-              <div className="text-sm">{t(`Khoảng ${hours(hoursAtStake)} trong dự toán đang phụ thuộc vào câu trả lời.`, `About ${hours(hoursAtStake)} of the estimate depends on the answers.`)}</div>
+              <div className="font-bold">{t(`Còn ${open.length} câu hỏi chưa trả lời`, `${open.length} ${open.length === 1 ? 'question' : 'questions'} still open`)}</div>
+              <div className="text-sm">{t(`Các quyết định này có thể thay đổi phạm vi khoảng ${hours(hoursAtStake)}.`, `These decisions could change the scope by about ${hours(hoursAtStake)}.`)}</div>
             </div>
           </div>
           <button onClick={onGoToQuestions} className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm cursor-pointer">
@@ -167,6 +171,11 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
               ` Finished projects of this type: about ${hours(forecast.reference_class_p50)}.`,
             )}
           </p>
+          {pendingScope.length > 0 && (
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              {t('Tổng giờ chưa tính các phần khách chưa chốt.', 'This total excludes work the client has not committed to.')}
+            </p>
+          )}
         </section>
 
         <section className="min-w-0 lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
@@ -231,6 +240,24 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
             <li className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-slate-400" aria-hidden="true" /> {t('việc chung (chuẩn bị, kiểm thử)', 'shared work (setup, testing)')}
             </li>
+          </ul>
+        </section>
+      )}
+
+      {pendingScope.length > 0 && (
+        <section className={`${card} p-6 space-y-3`}>
+          <h2 className="text-lg font-bold">{t('Chờ khách xác nhận', 'Pending client decision')}</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {t('Những phần này chưa nằm trong giờ và chi phí ở trên. Trả lời Có tại trang Câu hỏi để thêm vào dự toán.',
+              'These items are excluded from the hours and cost above. Answer Yes on the Questions page to add them.')}
+          </p>
+          <ul className="space-y-2 text-sm">
+            {pendingScope.map(({ req, question }) => (
+              <li key={req.req_id} className="flex justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-2">
+                <span className="break-words">{req.evidence[0]?.quote ?? req.title}</span>
+                <span className="font-bold whitespace-nowrap">+{hours(question?.hours_if_true ?? 0)}</span>
+              </li>
+            ))}
           </ul>
         </section>
       )}
