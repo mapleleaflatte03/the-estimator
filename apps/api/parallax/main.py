@@ -46,7 +46,7 @@ service = ParallaxService(repository=repo)
 _workspace_services: dict[str, ParallaxService] = {}
 _workspace_lock = Lock()
 _workspace_id_pattern = re.compile(r"[0-9a-f]{32}")
-RELEASE = "readiness-review-2026-10-18-r4"
+RELEASE = "scope-decisions-2026-10-18-r5"
 
 # One shared clock of estimate attempts per visitor.
 _estimate_hits: dict[str, list[float]] = {}
