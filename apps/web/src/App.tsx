@@ -171,6 +171,7 @@ export const App: React.FC = () => {
     setProjects((prev) =>
       prev.map((p) => (p.project_id === currentProject.project_id ? { ...p, status: 'actuals_recorded' } : p)),
     );
+    setCurrentProject((prev) => prev ? { ...prev, status: 'actuals_recorded' } : prev);
     return result;
   };
 
@@ -356,6 +357,15 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {currentProject?.status === 'actuals_recorded' && currentVersion && activeTab !== 'intake' && (
+          <div role="status" className="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 text-sm">
+            {t(
+              'Dự toán của dự án đã hoàn thành được giữ nguyên để so sánh công bằng. Hãy tạo dự án mới để xem dữ liệu thực tế ảnh hưởng đến dự toán tiếp theo.',
+              'This completed project’s estimate is frozen for a fair comparison. Start a new project to see how its actual hours affect a future estimate.',
+            )}
+          </div>
+        )}
+
         {orphan && (
           <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100">
             <p className="text-sm font-semibold">
@@ -377,7 +387,7 @@ export const App: React.FC = () => {
 
         {activeTab === 'intake' && <IntakeScreen onProjectCreated={handleProjectCreated} isLoading={isLoading} />}
         {activeTab === 'scope' && currentVersion && (
-          <ScopeGraphScreen version={currentVersion} onSaveEdits={handleUpdateWbs} isLoading={isLoading} />
+          <ScopeGraphScreen version={currentVersion} onSaveEdits={handleUpdateWbs} isLoading={isLoading || currentProject?.status === 'actuals_recorded'} />
         )}
         {activeTab === 'estimation' && currentVersion && (
           <EstimationLabScreen
@@ -391,7 +401,7 @@ export const App: React.FC = () => {
             version={currentVersion}
             versionsHistory={versions}
             onAnswerQuestion={handleAnswerClarification}
-            isLoading={isLoading}
+            isLoading={isLoading || currentProject?.status === 'actuals_recorded'}
           />
         )}
         {activeTab === 'accuracy' && currentVersion && currentProject && (
@@ -399,9 +409,8 @@ export const App: React.FC = () => {
             key={currentProject.project_id}
             version={currentVersion}
             onRecordActuals={handleRecordActuals}
-            onReestimate={handleReestimate}
+            onNewProject={() => setActiveTab('intake')}
             onOpenEvidence={() => setActiveTab('evidence')}
-            isLoading={isLoading}
           />
         )}
         {activeTab === 'evidence' && <EvidenceScreen onRunBenchmark={runBenchmark} />}

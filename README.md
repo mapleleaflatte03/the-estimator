@@ -1,11 +1,11 @@
 # PARALLAX — The Estimator
 
-**Paste a client's brief. Get what is being asked (with the exact quote), what the client has not committed to,
-the questions to ask before quoting, and an hour range you can sign. Then enter actual hours; the next estimate
-is more accurate.**
+**Paste a software delivery brief. See what is being asked (with exact quotes), what the client has not committed to,
+the questions to ask, and a draft hour range for a delivery lead to review. Record actual hours from a finished
+project; future projects then use that evidence.**
 
 Built for challenge 02 *The Estimator* of Anduin Cybernetics' *Agent in the Shell*.
-**Live:** https://the-estimator-9m6a.onrender.com · **Repo:** this one · **Full evaluation record:** [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md) · **10-minute demo script:** [`docs/DEMO.md`](docs/DEMO.md)
+**Live:** https://the-estimator-9m6a.onrender.com · **Repo:** this one · **Full evaluation record:** [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md) · **Product readiness review:** [`docs/READINESS_REVIEW.md`](docs/READINESS_REVIEW.md) · **10-minute demo script:** [`docs/DEMO.md`](docs/DEMO.md)
 
 Every number below was measured on data that was **not** used to build or tune what it measures. Labels were committed
 before runs (the commits are in the history), and every run is in an append-only journal, including the runs where we
@@ -16,7 +16,7 @@ were wrong.
 | Claim | Tested on (never used to build it) | Result |
 | --- | --- | --- |
 | Learning from actual hours beats the developers' own estimates | 2,248 real tasks, 2011–2014 (SiP), model fitted on earlier years | MAE **10.34 → 9.26 h (−10.4%)** · SA **48.6 → 54.0%** · Wilcoxon **p = 3×10⁻⁶** · P10–P90 interval holds **82.0%** of actuals |
-| …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 |
+| …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 versus human estimates. The online update had MAE **3.85 h**, slightly worse than a frozen calibrated model (**3.82 h**); this is not evidence that every update improves accuracy. |
 | The "80% range" really holds 80%, for every size of work | same production replay; each finished task adjusts the next ranges (adaptive conformal, step chosen on 2008–2010) | **80.4%** overall (fixed ranges: 85.0%); every size bucket with ≥ 100 tasks within **2.2 points** of 80% (was up to 9.7 off) |
 | The AI reader catches scope the client has not committed to | 7 rounds of new brief clauses, 160 clauses (Vietnamese, English, no diacritics, incl. a private-equity onboarding brief), labels committed first | **30/31** caught vs **14/31** with keyword rules · **0** false alarms |
 | It finds the main kind of work in each clause | same 160 clauses | **133/160** (rules alone 121/160); private-equity round: Jev alone **13/13** |
@@ -170,7 +170,8 @@ TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet repli
 ## Limitations
 
 1. Hour templates per kind of work are engine assumptions. Per-requirement actuals correct them over time, but only your
-   own outcomes can validate them.
+   own outcomes can validate them. The SiP task benchmark tests correction of an existing human estimate, **not** the
+   full brief-to-hours pipeline. No measured end-to-end accuracy is claimed for this app's generated quotes.
 2. SiP is one UK company's maintenance work. It is the only public source with task text, estimate and actual together;
    its error distribution may not transfer (Itemlet shows how much it can differ). SiP's licence is non-commercial: a
    commercial version needs permission or another data source.

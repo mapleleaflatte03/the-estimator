@@ -46,7 +46,7 @@ service = ParallaxService(repository=repo)
 _workspace_services: dict[str, ParallaxService] = {}
 _workspace_lock = Lock()
 _workspace_id_pattern = re.compile(r"[0-9a-f]{32}")
-RELEASE = "scope-private-2026-10-18-r2"
+RELEASE = "readiness-review-2026-10-18-r3"
 
 # One shared clock of estimate attempts per visitor. Render's proxy would otherwise
 # make every judge look like the same client, so the left-most forwarded address is used.
@@ -132,7 +132,7 @@ app.add_middleware(
 
 
 class ActualWorkCreate(BaseModel):
-    actual_hours: float = Field(gt=0)
+    actual_hours: float = Field(gt=0, allow_inf_nan=False)
     item_actuals: Optional[dict[str, float]] = None
     deviation_reasons: Optional[list[str]] = None
     requirement_actuals: Optional[dict[str, float]] = None

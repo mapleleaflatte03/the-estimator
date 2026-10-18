@@ -33,10 +33,10 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
   const curve = useMemo(() => {
     const pts = new Map<number, number>();
     (forecast.percentile_curve || []).forEach(([p, h]) => pts.set(p, h));
-    pts.set(10, forecast.p10_hours);
+    pts.set(forecast.range_percentiles?.[0] ?? 10, forecast.p10_hours);
     pts.set(50, forecast.p50_hours);
     pts.set(80, forecast.p80_hours);
-    pts.set(90, forecast.p90_hours);
+    pts.set(forecast.range_percentiles?.[1] ?? 90, forecast.p90_hours);
     return [...pts.entries()].sort((a, b) => a[0] - b[0]);
   }, [forecast]);
 
@@ -162,8 +162,8 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
           <RangeBar low={forecast.p10_hours} mid={forecast.p50_hours} high={forecast.p90_hours} plan={chosen} format={(n) => hours(n)} />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             {t(
-              `8/10 kịch bản rơi vào khoảng `,
-              `8 in 10 outcomes fall between `,
+              `Khoảng 80% theo mô phỏng: `,
+              `Modelled 80% interval: `,
             )}
             <strong>{hours(forecast.p10_hours)}</strong> – <strong>{hours(forecast.p90_hours)}</strong>.
             {forecast.reference_class_p50 != null && t(
@@ -176,6 +176,12 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
               {t('Tổng giờ chưa tính các phần khách chưa chốt.', 'This total excludes work the client has not committed to.')}
             </p>
           )}
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            {t(
+              'Bản nháp để người phụ trách giao hàng rà soát. Giờ gốc là giả định theo loại việc; chưa có kiểm định độ chính xác từ brief đến giờ thực tế của đội bạn.',
+              'Draft for a delivery lead to review. Base hours are work-type assumptions; brief-to-actual accuracy has not been validated for your team.',
+            )}
+          </p>
         </section>
 
         <section className="min-w-0 lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
@@ -187,7 +193,7 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
             </div>
           </div>
           <div className="min-w-0 p-4 rounded-2xl bg-white dark:bg-[#121829] border border-slate-200 dark:border-slate-800">
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('Chi phí', 'Cost')}</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('Chi phí tham khảo', 'Illustrative cost')}</div>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
               <span className="text-2xl font-extrabold tabular-nums break-all">{costValue}</span>
               {costUnit && <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{costUnit}</span>}
@@ -384,15 +390,15 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         )}
         <section className={`${card} p-5 space-y-3 ${notes.length ? '' : 'md:col-span-2'}`}>
           <div>
-            <h2 className="font-bold">{t('Gửi cho khách hàng', 'Send to the client')}</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">{t('Theo đúng mức chắc chắn, đơn giá và số người đang chọn.', 'Uses the confidence, rate, and team size selected above.')}</p>
+            <h2 className="font-bold">{t('Rà soát trước khi gửi', 'Review before sending')}</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">{t('Bản nháp theo mức dự trù, đơn giá và số người đang chọn. Kiểm tra giờ gốc và các câu hỏi chưa trả lời trước khi cam kết.', 'Draft using the selected planning level, rate, and team size. Check the base hours and open questions before committing.')}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a
               href={proposalUrl(projectId, { confidence, rate: rate[currency], currency, people, lang })}
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm inline-flex items-center gap-1.5"
             >
-              <Download className="w-4 h-4" /> {t('Tải báo giá', 'Download the quote')}
+              <Download className="w-4 h-4" /> {t('Tải dự toán nháp', 'Download draft estimate')}
             </a>
             <a
               href={wbsCsvUrl(projectId, lang)}

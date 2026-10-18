@@ -108,3 +108,21 @@ def test_requirement_actuals_teach_component_factors(tmp_path):
     assert hours(after, "reporting") > hours(base, "reporting") * 1.15
     with pytest.raises(ValueError):
         svc.record_actuals(p.project_id, 10, requirement_actuals={"REQ-99": 5})
+
+
+def test_bad_actuals_do_not_poison_learning_and_correction_removes_old_breakdown(tmp_path):
+    from parallax.service import ParallaxService
+    from parallax.storage import StorageRepository
+
+    svc = ParallaxService(StorageRepository(tmp_path / "s.json"))
+    p = svc.create_project("Actuals check", "- Monthly sales dashboard.")
+    version = svc.estimate_project(p.project_id)
+    req = next(r for r in version.requirements if r.req_id != "REQ-00")
+    with pytest.raises(ValueError, match="more than"):
+        svc.record_actuals(p.project_id, 10, requirement_actuals={req.req_id: 11})
+    assert svc.repo.get_calibration().observations == []
+    svc.record_actuals(p.project_id, 100, requirement_actuals={req.req_id: 40})
+    assert len(svc.repo.list_requirement_observations()) == 1
+    svc.record_actuals(p.project_id, 120)
+    assert svc.repo.list_requirement_observations() == []
+    assert svc.repo.get_calibration().interval_updates == 1

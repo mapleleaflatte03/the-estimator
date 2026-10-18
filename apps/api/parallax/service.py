@@ -216,6 +216,8 @@ class ParallaxService:
         project = self.repo.get_project(project_id)
         if not project:
             raise KeyError(f"Project {project_id} not found")
+        if self.repo.get_actuals(project_id):
+            raise ValueError("This project has actual hours and its estimate is frozen. Create a new project to measure what the system learned.")
         existing = self.repo.get_versions(project_id)
         answers = dict(existing[-1].clarification_answers) if existing else {}
         return self.repo.add_version(self._build_version(project, answers, reader=reader))
@@ -231,6 +233,8 @@ class ParallaxService:
         project = self.repo.get_project(project_id)
         if not project:
             raise KeyError(f"Project {project_id} not found")
+        if self.repo.get_actuals(project_id):
+            raise ValueError("This project has actual hours and its estimate is frozen. Create a new project to measure what the system learned.")
         existing = self.repo.get_versions(project_id)
         if not existing:
             raise ValueError("Cannot clarify before generating initial estimate")
@@ -256,6 +260,8 @@ class ParallaxService:
         project = self.repo.get_project(project_id)
         if not project:
             raise KeyError(f"Project {project_id} not found")
+        if self.repo.get_actuals(project_id):
+            raise ValueError("This project has actual hours and its estimate is frozen. Create a new project to measure what the system learned.")
         existing = self.repo.get_versions(project_id)
         if not existing:
             raise ValueError("Cannot edit the WBS before generating an estimate")
@@ -293,9 +299,18 @@ class ParallaxService:
         if not versions:
             raise ValueError("No estimate version found to compare against actuals")
 
-        # Accuracy is judged against the estimate that was actually committed
-        # (the latest version at completion time), never a post-hoc rewrite.
-        baseline = versions[-1]
+        if not math.isfinite(actual_hours) or actual_hours <= 0:
+            raise ValueError("Actual hours must be a positive finite number")
+        supplied = requirement_actuals or {}
+        if any(not math.isfinite(float(v)) or float(v) <= 0 for v in supplied.values()):
+            raise ValueError("Each requirement's actual hours must be a positive finite number")
+        if sum(float(v) for v in supplied.values()) > actual_hours + 0.1:
+            raise ValueError("Requirement hours cannot add up to more than the project's total actual hours")
+
+        # A correction to recorded actuals must still be compared with the
+        # original committed estimate, not a newer or retrospectively fitted one.
+        previous = self.repo.get_actuals(project_id)
+        baseline = self.repo.get_version(project_id, previous[-1].version_id) if previous else versions[-1]
         requirement_actuals = {k: float(v) for k, v in (requirement_actuals or {}).items() if v and float(v) > 0}
         unknown = set(requirement_actuals) - {r.req_id for r in baseline.requirements}
         if unknown:
@@ -311,8 +326,7 @@ class ParallaxService:
             if req.req_id in requirement_actuals and req.in_scope and req.estimated_hours_raw
         ]
         learning_before = self.adjustments()
-        if req_obs:
-            self.repo.set_requirement_observations(project_id, req_obs)
+        self.repo.set_requirement_observations(project_id, req_obs)
         learning_after = self.adjustments()
         actual = ActualWork(
             actual_id=f"ACT-{uuid.uuid4().hex[:8].upper()}",
@@ -342,18 +356,29 @@ class ParallaxService:
         type_before = hierarchical_multiplier(state.observations, project.project_type, state.prior_strength)[0]
         type_after, type_n = hierarchical_multiplier(observations, project.project_type, state.prior_strength)
         # Adaptive conformal update of the "80% range" (gamma fixed on SiP 2008-2010, scripts/sip_conformal_replay.py).
-        level = AdaptiveLevel(gamma=INTERVAL_GAMMA, alpha={"all": state.interval_alpha})
         hit = fc.p10_hours <= actual_hours <= fc.p90_hours
-        level.update("all", fc.p10_hours, fc.p90_hours, actual_hours)
+        if previous:
+            old_hit = fc.p10_hours <= previous[-1].actual_hours <= fc.p90_hours
+            # Replace this project's one contribution; do not count a correction
+            # as another finished project.
+            new_alpha = state.interval_alpha + INTERVAL_GAMMA * (int(hit) - int(old_hit))
+            range_checks = state.interval_updates
+            range_hits = state.interval_hits + int(hit) - int(old_hit)
+        else:
+            level = AdaptiveLevel(gamma=INTERVAL_GAMMA, alpha={"all": state.interval_alpha})
+            level.update("all", fc.p10_hours, fc.p90_hours, actual_hours)
+            new_alpha = level.level("all")
+            range_checks = state.interval_updates + 1
+            range_hits = state.interval_hits + int(hit)
         self.repo.save_calibration(
             CalibrationState(
                 multiplier=after,
                 prior_strength=state.prior_strength,
                 observations=observations,
                 updated_at=datetime.now(timezone.utc),
-                interval_alpha=round(min(0.95, max(0.0, level.level("all"))), 4),
-                interval_updates=state.interval_updates + 1,
-                interval_hits=state.interval_hits + int(hit),
+                interval_alpha=round(min(0.95, max(0.0, new_alpha)), 4),
+                interval_updates=range_checks,
+                interval_hits=range_hits,
             )
         )
 
@@ -385,11 +410,11 @@ class ParallaxService:
                 "type_observations": type_n,
                 "n_observations": len(observations),
                 "prior_strength": state.prior_strength,
-                "applies_to": "new estimates and re-estimates; existing versions stay unchanged",
+                "applies_to": "future projects; completed project estimates stay frozen",
                 "range_level_before": round(1 - state.interval_alpha, 4),
-                "range_level_after": round(1 - min(0.95, max(0.0, level.level("all"))), 4),
-                "range_hits": state.interval_hits + int(hit),
-                "range_checks": state.interval_updates + 1,
+                "range_level_after": round(1 - min(0.95, max(0.0, new_alpha)), 4),
+                "range_hits": range_hits,
+                "range_checks": range_checks,
             },
             "learning": {
                 "requirements_recorded": len(req_obs),

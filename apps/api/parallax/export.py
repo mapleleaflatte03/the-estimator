@@ -28,7 +28,8 @@ def hours_at(version: EstimateVersion, confidence: float) -> float:
     """Hours not exceeded in `confidence`% of simulated outcomes (linear between stored percentiles)."""
     fc = version.forecast
     points = {p: h for p, h in fc.percentile_curve}
-    points.update({10: fc.p10_hours, 50: fc.p50_hours, 80: fc.p80_hours, 90: fc.p90_hours})
+    low_pct, high_pct = fc.range_percentiles
+    points.update({low_pct: fc.p10_hours, 50: fc.p50_hours, 80: fc.p80_hours, high_pct: fc.p90_hours})
     pts = sorted(points.items())
     if confidence <= pts[0][0]:
         return pts[0][1]
@@ -97,10 +98,11 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
             "",
             "## Summary",
             "",
-            f"- **Most likely effort:** {hh(fc.p50_hours)} (usually between {hh(fc.p10_hours)} and {hh(fc.p90_hours)})",
+            f"- **Most likely effort:** {hh(fc.p50_hours)} (modelled 80% interval: {hh(fc.p10_hours)} to {hh(fc.p90_hours)})",
             f"- **Suggested plan:** {hh(planned)} — enough in about {round(confidence)}% of simulated outcomes",
-            f"- **Expected cost:** {_fmt_money(planned * rate, currency, lang)} (rate {_fmt_rate(rate, currency, lang)})",
+            f"- **Illustrative cost:** {_fmt_money(planned * rate, currency, lang)} (rate {_fmt_rate(rate, currency, lang)})",
             f"- **Time:** about {weeks} weeks with {people} people{chain}",
+            "- **Review status:** Draft. A delivery lead must check scope, base hours and constraints before a client commitment; end-to-end brief-to-actual accuracy has not been validated for this team.",
             "",
             "## Scope of work",
             "",
@@ -119,8 +121,9 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
             "",
             f"- **Khối lượng ước tính:** {hh(fc.p50_hours)} (thường dao động {hh(fc.p10_hours)} – {hh(fc.p90_hours)})",
             f"- **Đề xuất dự trù:** {hh(planned)} — đủ trong khoảng {round(confidence)}% kịch bản mô phỏng",
-            f"- **Chi phí dự kiến:** {_fmt_money(planned * rate, currency, lang)} (đơn giá {_fmt_rate(rate, currency, lang)})",
+            f"- **Chi phí tham khảo:** {_fmt_money(planned * rate, currency, lang)} (đơn giá {_fmt_rate(rate, currency, lang)})",
             f"- **Thời gian:** khoảng {weeks} tuần với {people} người{chain}",
+            "- **Trạng thái:** Dự toán nháp. Người phụ trách giao hàng cần kiểm tra phạm vi, giờ gốc và các ràng buộc trước khi cam kết với khách; độ chính xác từ brief đến giờ thực tế của nhóm này chưa được kiểm định.",
             "",
             "## Phạm vi công việc",
             "",

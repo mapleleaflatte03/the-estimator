@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, PlusCircle } from 'lucide-react';
 import type { ActualsResult, EstimateVersion, HistoricalCase } from '../types';
 import { fetchHistoricalCases } from '../api';
 import { useI18n } from '../i18n';
@@ -9,9 +9,8 @@ import { GroupedBars } from './charts';
 interface AccuracyLearningScreenProps {
   version: EstimateVersion;
   onRecordActuals: (actualHours: number, reasons: string[], perRequirement?: Record<string, number>) => Promise<ActualsResult>;
-  onReestimate: () => Promise<void>;
+  onNewProject: () => void;
   onOpenEvidence: () => void;
-  isLoading: boolean;
 }
 
 const pct = (v: number) => `${Math.abs(Math.round(v))}%`;
@@ -19,9 +18,8 @@ const pct = (v: number) => `${Math.abs(Math.round(v))}%`;
 export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
   version,
   onRecordActuals,
-  onReestimate,
+  onNewProject,
   onOpenEvidence,
-  isLoading,
 }) => {
   const { t, hours, projectTypes, components, risks } = useI18n();
   const typeLabel = (value: string) => projectTypes.find((p) => p.value === value)?.label ?? value;
@@ -246,11 +244,10 @@ export const AccuracyLearningScreen: React.FC<AccuracyLearningScreenProps> = ({
                 )}
                 <button
                   type="button"
-                  onClick={onReestimate}
-                  disabled={isLoading}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-700 dark:text-cyan-300 underline cursor-pointer disabled:opacity-50"
+                  onClick={onNewProject}
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-700 dark:text-cyan-300 underline cursor-pointer"
                 >
-                  <RefreshCw className="w-4 h-4" /> {t('Tính lại dự toán của dự án này', 'Recalculate this project')}
+                  <PlusCircle className="w-4 h-4" /> {t('Tạo dự án tiếp theo để kiểm tra việc học', 'Estimate a new project to test the learning')}
                 </button>
               </>
             )}

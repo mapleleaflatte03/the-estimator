@@ -129,6 +129,10 @@ def test_record_actuals_updates_calibration(tmp_path):
     # Re-recording the same project replaces, not duplicates, the observation
     svc.record_actuals(p.project_id, v1.forecast.p50_hours * 0.8)
     assert len(repo.get_calibration().observations) == 1
+    assert repo.get_calibration().interval_updates == 1
+    assert svc.record_actuals(p.project_id, v1.forecast.p50_hours * 0.8)["baseline_version_id"] == v1.version_id
+    with pytest.raises(ValueError, match="frozen"):
+        svc.estimate_project(p.project_id)
 
 
 def test_reference_class_needs_five_real_projects(tmp_path):

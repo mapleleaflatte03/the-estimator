@@ -89,6 +89,7 @@ export interface ProbabilisticForecast {
   uncertainty_source?: string | null;
   n_simulations?: number | null;
   percentile_curve: [number, number][];
+  range_percentiles?: [number, number];
   histogram: HistogramBin[];
   p99_hours?: number | null;
   max_hours?: number | null;

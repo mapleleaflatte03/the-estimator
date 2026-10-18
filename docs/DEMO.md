@@ -56,11 +56,15 @@ The key icon in the header lets anyone use their own AI key.
 
 ## 4:30 – 6:00 · It learns from actual hours
 
-Open **Actual hours**, enter a total, expand *per requirement*, and enter a couple of values. Save.
+Open **Actual hours** on the sample project. Enter a clearly labelled *simulated demo outcome*, expand *per requirement*,
+and enter a couple of values. Save. The original estimate is frozen.
 
-> "The next estimate shifts: per project type, per kind of work, partially pooled so one project can't swing it."
+> "A completed project's result can change only future estimates. This input is simulated for the demo; it does not
+> validate the estimate's accuracy. The model partially pools by project type and work kind, so one outcome cannot
+> swing it completely."
 
-Click **Recalculate this project** and show the new version.
+Click **Estimate a new project to test the learning**. Reuse the sample brief as a second project and compare its
+calibration multiplier with the frozen first estimate. Do not present this as a measured accuracy gain.
 
 ## 6:00 – 8:30 · Why you can trust it (Evidence tab)
 
@@ -68,7 +72,7 @@ Point at the four cards at the top, then the charts:
 - **Learning from real actual hours.** 10,022 real tasks (SiP).
   - Fitted on 2004–2010 and tested on 2,248 later tasks: error **−10.4%** vs the developers' own estimates, SA
     48.6 → 54.0%, Wilcoxon p = 3×10⁻⁶.
-  - Replayed day by day as if in production, using only work already finished: SA 56.3 → **61.1%**.
+  - Replayed day by day as if in production, using only work already finished: SA 56.3 → **61.1%** versus human estimates. A frozen calibrated model scored 61.4%, so continuous updating did not win that comparison.
 - **The AI catches uncommitted scope.** 8 rounds of new clauses, labels committed before every run: **30/31** caught
   vs 14/31 with keyword rules, zero false alarms.
 - **AI verification stops rules adding work nobody asked for.** Precision 73 → 83% and 85 → 96% on two fresh rounds.
@@ -98,3 +102,4 @@ Point at the four cards at the top, then the charts:
 | Confidential briefs? | Use TypeSafe directly (no training on data, DPA); the reseller route is for demos. Self-hosting is a Docker image. |
 | Cost? | About $0.04 per million input tokens: a 12-clause brief costs ~$0.0002. |
 | Why not just ask an LLM for hours? | Hours, simulation and learning stay in code so they can be measured and calibrated; the AI does the judgements it is good at, each validated on held-out data. |
+| Can a team sign this quote? | It is an internal draft. The work-type hour templates and SiP spread have not been validated against complete client briefs and actual outcomes for this team. A delivery lead must review it before commitment. |

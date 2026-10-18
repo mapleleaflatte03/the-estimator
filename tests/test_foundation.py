@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from parallax.calibration import propose_multiplier, apply_multiplier
+from parallax.export import hours_at
 from parallax.estimation.engine import run_correlated_monte_carlo, synthesize_forecast
 from parallax.evaluation.benchmark import (
     PredictionRecord,
@@ -90,6 +91,15 @@ def test_historical_disagreement_flagged_not_blended():
     assert forecast.reference_class_p50 == 120
     assert "disagree" in forecast.divergence_warning
     assert forecast.p50_hours == forecast.bottom_up_p50
+
+
+def test_confidence_slider_uses_actual_percentile_after_range_adapts():
+    version = make_version([work()])
+    version.forecast = synthesize_forecast([work()], interval_alpha=0.1)
+    curve = dict(version.forecast.percentile_curve)
+    assert version.forecast.range_percentiles == [5.0, 95.0]
+    assert hours_at(version, 10) == pytest.approx(curve[10])
+    assert hours_at(version, 90) == pytest.approx(curve[90])
 
 
 def records(actual=120, predicted=100, n=30):

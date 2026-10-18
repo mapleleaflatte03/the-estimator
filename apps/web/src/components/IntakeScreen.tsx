@@ -75,8 +75,8 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('Dự án mới', 'New project')}</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
           {t(
-            'Dán mô tả yêu cầu của khách hàng. Hệ thống sẽ chia thành các công việc và ước tính số giờ cần làm.',
-            'Paste the client’s brief. The system splits it into work and estimates the hours.',
+            'Dán mô tả dự án phần mềm hoặc tự động hóa AI của khách hàng. Hệ thống sẽ chia thành các công việc và lập dự toán nháp để người phụ trách rà soát.',
+            'Paste a software or AI automation brief. The system prepares a draft work breakdown and hour estimate for a delivery lead to review.',
           )}
         </p>
       </div>

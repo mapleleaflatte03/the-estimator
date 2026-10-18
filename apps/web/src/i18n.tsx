@@ -19,7 +19,7 @@ const VI: Labels = {
     { value: 'api_integration', label: 'Kết nối bán hàng / thương mại điện tử' },
     { value: 'ai_workflow', label: 'Trợ lý AI / chatbot' },
     { value: 'field_service', label: 'Ứng dụng điện thoại / hiện trường' },
-    { value: 'custom_software', label: 'Khác' },
+    { value: 'custom_software', label: 'Dự án phần mềm khác' },
   ],
   kinds: {
     auth: 'đăng nhập',
@@ -60,7 +60,7 @@ const EN: Labels = {
     { value: 'api_integration', label: 'Sales / commerce connection' },
     { value: 'ai_workflow', label: 'AI assistant / chatbot' },
     { value: 'field_service', label: 'Phone / field app' },
-    { value: 'custom_software', label: 'Other' },
+    { value: 'custom_software', label: 'Other software project' },
   ],
   kinds: {
     auth: 'sign-in',

@@ -104,14 +104,19 @@ def test_full_project_lifecycle_api():
     after = client.get("/api/v1/calibration").json()
     assert after["multiplier"] == cal["multiplier_after"]
 
-    # 6. A re-estimate now uses the learned multiplier; v1/v2 stay unchanged
-    v3 = client.post(f"/api/v1/projects/{project_id}/estimate").json()
-    # Re-estimates use the multiplier for this project's type (partially pooled with the global one)
+    # 6. The completed estimate is frozen. Only a future project may use
+    # this project's actual hours, so the demonstration cannot learn its answer.
+    assert client.post(f"/api/v1/projects/{project_id}/estimate").status_code == 400
+    assert client.post(f"/api/v1/projects/{project_id}/clarify", json={"question_id": erp_q["question_id"], "answer": False}).status_code == 400
+    next_id = client.post("/api/v1/projects", json={
+        "title": "Next corporate portal", "project_type": "internal_tool", "brief_text": brief_content,
+    }).json()["project_id"]
+    v3 = client.post(f"/api/v1/projects/{next_id}/estimate").json()
     assert v3["forecast"]["calibration_multiplier"] == round(cal["type_multiplier_after"], 4)
     assert cal["type_multiplier_after"] >= cal["multiplier_after"] > 1.0
-    assert v3["forecast"]["p50_hours"] > v2["forecast"]["p50_hours"]
-    assert v3["clarification_answers"] == v2["clarification_answers"]
+    assert v3["forecast"]["p50_hours"] > v1["forecast"]["p50_hours"]
     assert client.get(f"/api/v1/projects/{project_id}/versions/v2").json() == v2
+    assert [v["version_id"] for v in client.get(f"/api/v1/projects/{project_id}/versions").json()] == ["v1", "v2"]
 
     # 7. Completed project now appears in the (real, unseeded) reference class
     cases = client.get("/api/v1/historical-cases").json()
