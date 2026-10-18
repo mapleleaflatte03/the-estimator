@@ -1,6 +1,7 @@
 import type { ManualEdits } from './types';
 
-const STORAGE_KEY = 'parallax_last_project_v1';
+const STORAGE_KEY = 'parallax_projects_v2';
+const LEGACY_KEY = 'parallax_last_project_v1';
 
 export interface SavedActuals {
   hours: number;
@@ -11,9 +12,10 @@ export interface SavedActuals {
 export interface SavedAnswer {
   question_id: string;
   answer: boolean;
+  notes?: string;
 }
 
-/** Last project this browser estimated. Survives a free-host restart that wipes the server disk. */
+/** Browser copy of one project. Survives a free-host restart that wipes the server disk. */
 export interface SavedProject {
   title: string;
   project_type: string;
@@ -26,18 +28,48 @@ export interface SavedProject {
   saved_at: string;
 }
 
-export function loadSavedProject(): SavedProject | null {
+function validProject(value: unknown): value is SavedProject {
+  if (!value || typeof value !== 'object') return false;
+  const p = value as Partial<SavedProject>;
+  return typeof p.title === 'string' && typeof p.brief_text === 'string'
+    && typeof p.server_project_id === 'string' && !!p.title && !!p.brief_text && !!p.server_project_id;
+}
+
+export function loadSavedProjects(): SavedProject[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as SavedProject;
-    if (!parsed.brief_text || !parsed.title || !parsed.server_project_id) return null;
-    return parsed;
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter(validProject) : [];
+    }
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    const parsed: unknown = legacy ? JSON.parse(legacy) : null;
+    return validProject(parsed) ? [parsed] : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-export function saveProject(project: SavedProject): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+export function loadSavedProject(projectId: string): SavedProject | null {
+  return loadSavedProjects().find((p) => p.server_project_id === projectId) ?? null;
+}
+
+export function saveProject(project: SavedProject): boolean {
+  try {
+    const other = loadSavedProjects().filter((p) => p.server_project_id !== project.server_project_id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([project, ...other]));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function replaceSavedProject(oldId: string, project: SavedProject): boolean {
+  try {
+    const other = loadSavedProjects().filter((p) => p.server_project_id !== oldId && p.server_project_id !== project.server_project_id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([project, ...other]));
+    return true;
+  } catch {
+    return false;
+  }
 }

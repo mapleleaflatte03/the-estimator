@@ -117,7 +117,7 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
         };
       })
       .sort((a, b) => b.value - a.value);
-  }, [version, lang, hours, t]);
+  }, [version, hours, t]);
   const countedElsewhere = useMemo(() => {
     const owners = new Set(version.wbs.map((w) => w.req_ids[0]));
     return version.requirements.filter(

@@ -1,8 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-export type Lang = 'en' | 'vi';
-
-const STORAGE_KEY = 'parallax_lang';
+import { useContext } from 'react';
+import { I18nContext } from './i18n-context';
 
 type Labels = {
   roles: Record<string, string>;
@@ -92,22 +89,6 @@ const EN: Labels = {
     generic: 'unclassified', foundation: 'shared work',
   },
   risks: ['low risk', 'medium risk', 'likely to overrun'],
-};
-
-type Ctx = { lang: Lang; setLang: (lang: Lang) => void };
-
-const I18nContext = createContext<Ctx>({ lang: 'en', setLang: () => {} });
-
-export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lang, setLangState] = useState<Lang>(() => (localStorage.getItem(STORAGE_KEY) === 'vi' ? 'vi' : 'en'));
-  const setLang = (next: Lang) => {
-    localStorage.setItem(STORAGE_KEY, next);
-    setLangState(next);
-  };
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
-  return <I18nContext.Provider value={{ lang, setLang }}>{children}</I18nContext.Provider>;
 };
 
 export function useI18n() {

@@ -158,7 +158,7 @@ class ParallaxService:
         existing = self.repo.get_versions(project.project_id)
         if manual_edits is None:
             manual_edits = dict(existing[-1].manual_edits) if existing else {}
-        return extract_scope_and_wbs(
+        version = extract_scope_and_wbs(
             project_id=project.project_id,
             brief_text=project.brief_text,
             source_docs=project.documents,
@@ -174,6 +174,8 @@ class ParallaxService:
             adjustments=self.adjustments(),
             interval_alpha=self.repo.get_calibration().interval_alpha,
         )
+        version.clarification_notes = dict(existing[-1].clarification_notes) if existing else {}
+        return version
 
     def feedback_summary(self) -> dict:
         by_comp: dict[str, dict] = {}
@@ -243,17 +245,22 @@ class ParallaxService:
             raise ValueError(f"Unknown clarification question {question_id}")
         # Answers accumulate across versions; a later answer overrides an earlier one.
         answers = {**parent.clarification_answers, question_id: answer}
+        events = []
         if question_id.endswith("-AI"):
             req_id = question_id[len("CLAR-"):-len("-AI")]
             req = next((r for r in parent.requirements if r.req_id == req_id), None)
             comp = (req.ai_reading or {}).get("suggested_component") if req else None
             if comp:
-                self.repo.add_feedback([FeedbackEvent(event="ai_suggestion", component=comp, accepted=answer,
-                                                      project_id=project_id, version_id=parent.version_id)])
-        version = self.repo.add_version(self._build_version(project, answers, reader=reader))
-        project.status = "clarified"
-        self.repo.save_project(project)
-        return version
+                events.append(FeedbackEvent(event="ai_suggestion", component=comp, accepted=answer,
+                                            project_id=project_id, version_id=parent.version_id))
+        version = self._build_version(project, answers, reader=reader)
+        if notes is not None:
+            cleaned = notes.strip()
+            if cleaned:
+                version.clarification_notes[question_id] = cleaned
+            else:
+                version.clarification_notes.pop(question_id, None)
+        return self.repo.add_version(version, status="clarified", feedback_events=events)
 
     def update_wbs(self, project_id: str, edits: dict, reader: Optional[JevReader] = None) -> EstimateVersion:
         """New immutable version with the user's WBS edits; edits persist across later versions."""
@@ -281,8 +288,8 @@ class ParallaxService:
             if comp and any(i.startswith(f"{req.req_id}-{comp.upper()}-") for i in removed):
                 events.append(FeedbackEvent(event="ai_item_removed", component=comp, accepted=False,
                                             project_id=project_id, version_id=parent.version_id))
-        self.repo.add_feedback(events)
-        return self.repo.add_version(self._build_version(project, dict(parent.clarification_answers), edits, reader))
+        version = self._build_version(project, dict(parent.clarification_answers), edits, reader)
+        return self.repo.add_version(version, feedback_events=events)
 
     def record_actuals(
         self,
@@ -311,6 +318,14 @@ class ParallaxService:
         # original committed estimate, not a newer or retrospectively fitted one.
         previous = self.repo.get_actuals(project_id)
         baseline = self.repo.get_version(project_id, previous[-1].version_id) if previous else versions[-1]
+        supplied_items = item_actuals or {}
+        unknown_items = set(supplied_items) - {w.item_id for w in baseline.wbs}
+        if unknown_items:
+            raise ValueError(f"Unknown work items: {', '.join(sorted(unknown_items)[:5])}")
+        if any(not math.isfinite(float(v)) or float(v) <= 0 for v in supplied_items.values()):
+            raise ValueError("Each work item's actual hours must be a positive finite number")
+        if sum(float(v) for v in supplied_items.values()) > actual_hours + 0.1:
+            raise ValueError("Work-item hours cannot add up to more than the project's total actual hours")
         requirement_actuals = {k: float(v) for k, v in (requirement_actuals or {}).items() if v and float(v) > 0}
         unknown = set(requirement_actuals) - {r.req_id for r in baseline.requirements}
         if unknown:
@@ -325,18 +340,17 @@ class ParallaxService:
             for req in baseline.requirements
             if req.req_id in requirement_actuals and req.in_scope and req.estimated_hours_raw
         ]
-        learning_before = self.adjustments()
-        self.repo.set_requirement_observations(project_id, req_obs)
-        learning_after = self.adjustments()
+        old_req_obs = self.repo.list_requirement_observations()
+        learning_before = risk.learn(old_req_obs)
+        learning_after = risk.learn([o for o in old_req_obs if o.project_id != project_id] + req_obs)
         actual = ActualWork(
             actual_id=f"ACT-{uuid.uuid4().hex[:8].upper()}",
             project_id=project_id,
             version_id=baseline.version_id,
             actual_hours=actual_hours,
-            item_actuals=item_actuals or {},
+            item_actuals={k: float(v) for k, v in supplied_items.items()},
             deviation_reasons=deviation_reasons or [],
         )
-        self.repo.add_actual_work(actual)
 
         fc = baseline.forecast
         uncalibrated = fc.uncalibrated_p50_hours or fc.p50_hours / fc.calibration_multiplier
@@ -370,7 +384,8 @@ class ParallaxService:
             new_alpha = level.level("all")
             range_checks = state.interval_updates + 1
             range_hits = state.interval_hits + int(hit)
-        self.repo.save_calibration(
+        self.repo.commit_actuals(
+            actual, req_obs,
             CalibrationState(
                 multiplier=after,
                 prior_strength=state.prior_strength,
@@ -379,7 +394,7 @@ class ParallaxService:
                 interval_alpha=round(min(0.95, max(0.0, new_alpha)), 4),
                 interval_updates=range_checks,
                 interval_hits=range_hits,
-            )
+            ),
         )
 
         delta = actual_hours - fc.p50_hours

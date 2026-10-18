@@ -110,6 +110,7 @@ export interface EstimateVersion {
   clarifications: ClarificationQuestion[];
   forecast: ProbabilisticForecast;
   clarification_answers: Record<string, boolean>;
+  clarification_notes: Record<string, string>;
   reader?: string;
   reader_model?: string | null;
   manual_edits?: ManualEdits;

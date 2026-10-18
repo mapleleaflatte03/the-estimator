@@ -25,6 +25,10 @@ from .schemas import (
 logger = logging.getLogger(__name__)
 
 
+class StorageError(RuntimeError):
+    """A workspace could not be read or durably saved."""
+
+
 class StorageRepository:
     def __init__(self, data_path: Optional[Path] = None):
         self.lock = Lock()
@@ -41,23 +45,25 @@ class StorageRepository:
 
     def save_project(self, project: Project) -> Project:
         with self.lock:
-            self.projects[project.project_id] = project
+            self.projects[project.project_id] = project.model_copy(deep=True)
             if project.project_id not in self.versions:
                 self.versions[project.project_id] = []
             if project.project_id not in self.actuals:
                 self.actuals[project.project_id] = []
             self._save()
-            return project
+            return project.model_copy(deep=True)
 
     def get_project(self, project_id: str) -> Optional[Project]:
         with self.lock:
-            return self.projects.get(project_id)
+            project = self.projects.get(project_id)
+            return project.model_copy(deep=True) if project else None
 
     def list_projects(self) -> list[Project]:
         with self.lock:
-            return sorted(self.projects.values(), key=lambda p: p.created_at, reverse=True)
+            return [p.model_copy(deep=True) for p in sorted(self.projects.values(), key=lambda p: p.created_at, reverse=True)]
 
-    def add_version(self, version: EstimateVersion) -> EstimateVersion:
+    def add_version(self, version: EstimateVersion, *, status: str = "estimated",
+                    feedback_events: Optional[list[FeedbackEvent]] = None) -> EstimateVersion:
         with self.lock:
             p_id = version.project_id
             if p_id not in self.projects:
@@ -66,48 +72,46 @@ class StorageRepository:
             # Enforce immutable version IDs
             if any(v.version_id == version.version_id for v in existing):
                 raise ValueError(f"Version {version.version_id} already exists for project {p_id}")
-            existing.append(version)
+            existing.append(version.model_copy(deep=True))
             self.versions[p_id] = existing
             # Update project pointer
             project = self.projects[p_id]
             project.current_version_id = version.version_id
-            project.status = "estimated"
+            project.status = status
+            if feedback_events:
+                self.feedback.extend(feedback_events)
             self._save()
-            return version
+            return version.model_copy(deep=True)
 
     def get_versions(self, project_id: str) -> list[EstimateVersion]:
         with self.lock:
-            return list(self.versions.get(project_id, []))
+            return [v.model_copy(deep=True) for v in self.versions.get(project_id, [])]
 
     def get_version(self, project_id: str, version_id: str) -> Optional[EstimateVersion]:
         with self.lock:
             for v in self.versions.get(project_id, []):
                 if v.version_id == version_id:
-                    return v
+                    return v.model_copy(deep=True)
             return None
 
-    def add_actual_work(self, actual: ActualWork) -> ActualWork:
+    def commit_actuals(self, actual: ActualWork, observations: list[RequirementObservation],
+                       calibration: CalibrationState) -> None:
+        """Commit the outcome and both learning states in one durable write."""
         with self.lock:
-            p_id = actual.project_id
-            if p_id not in self.projects:
-                raise KeyError(f"Project {p_id} not found")
-            if p_id not in self.actuals:
-                self.actuals[p_id] = []
-            self.actuals[p_id].append(actual)
-            self.projects[p_id].status = "actuals_recorded"
+            pid = actual.project_id
+            if pid not in self.projects:
+                raise KeyError(f"Project {pid} not found")
+            self.requirement_observations = [
+                o for o in self.requirement_observations if o.project_id != pid
+            ] + list(observations)
+            self.actuals.setdefault(pid, []).append(actual)
+            self.projects[pid].status = "actuals_recorded"
+            self.calibration = calibration
             self._save()
-            return actual
 
     def get_actuals(self, project_id: str) -> list[ActualWork]:
         with self.lock:
-            return list(self.actuals.get(project_id, []))
-
-    def get_all_actuals(self) -> list[ActualWork]:
-        with self.lock:
-            res = []
-            for act_list in self.actuals.values():
-                res.extend(act_list)
-            return res
+            return [a.model_copy(deep=True) for a in self.actuals.get(project_id, [])]
 
     def list_historical_cases(self, domain: Optional[str] = None) -> list[HistoricalCase]:
         """Completed projects in this workspace, i.e. projects with recorded actuals.
@@ -141,24 +145,9 @@ class StorageRepository:
                 )
             return sorted(cases, key=lambda c: c.completed_at or datetime.min.replace(tzinfo=timezone.utc))
 
-    def add_feedback(self, events: list[FeedbackEvent]) -> None:
-        if not events:
-            return
-        with self.lock:
-            self.feedback.extend(events)
-            self._save()
-
     def list_feedback(self) -> list[FeedbackEvent]:
         with self.lock:
             return list(self.feedback)
-
-    def set_requirement_observations(self, project_id: str, observations: list[RequirementObservation]) -> None:
-        """Replace a project's per-requirement actuals (the latest record of a project wins)."""
-        with self.lock:
-            self.requirement_observations = [
-                o for o in self.requirement_observations if o.project_id != project_id
-            ] + list(observations)
-            self._save()
 
     def list_requirement_observations(self) -> list[RequirementObservation]:
         with self.lock:
@@ -167,12 +156,6 @@ class StorageRepository:
     def get_calibration(self) -> CalibrationState:
         with self.lock:
             return self.calibration.model_copy(deep=True)
-
-    def save_calibration(self, state: CalibrationState) -> CalibrationState:
-        with self.lock:
-            self.calibration = state
-            self._save()
-            return state
 
     def add_evaluation_run(self, run: EvaluationRun) -> EvaluationRun:
         with self.lock:
@@ -187,6 +170,7 @@ class StorageRepository:
     def _save(self) -> None:
         if not self.data_path:
             return
+        tmp = self.data_path.with_suffix(".tmp")
         try:
             self.data_path.parent.mkdir(parents=True, exist_ok=True)
             payload = {
@@ -204,12 +188,30 @@ class StorageRepository:
                 "feedback": [e.model_dump(mode="json") for e in self.feedback],
                 "requirement_observations": [o.model_dump(mode="json") for o in self.requirement_observations],
             }
-            tmp = self.data_path.with_suffix(".tmp")
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2, default=str)
             tmp.replace(self.data_path)
         except Exception as exc:
-            logger.error("Could not persist store %s: %s", self.data_path, exc)
+            logger.exception("Could not persist store %s", self.data_path)
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+            # A failed write must not leave changes visible in memory as if saved.
+            if self.data_path.exists():
+                self._load()
+            else:
+                self._reset()
+            raise StorageError(f"Workspace could not be saved: {self.data_path}") from exc
+
+    def _reset(self) -> None:
+        self.projects = {}
+        self.versions = {}
+        self.actuals = {}
+        self.evaluation_runs = []
+        self.calibration = CalibrationState()
+        self.feedback = []
+        self.requirement_observations = []
 
     def _load(self) -> None:
         if not self.data_path or not self.data_path.exists():
@@ -217,20 +219,23 @@ class StorageRepository:
         try:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 payload = json.load(f)
+            projects = {}
             for p_dict in payload.get("projects", []):
                 p = Project.model_validate(p_dict)
-                self.projects[p.project_id] = p
-            for pid, v_list in payload.get("versions", {}).items():
-                self.versions[pid] = [EstimateVersion.model_validate(v) for v in v_list]
-            for pid, a_list in payload.get("actuals", {}).items():
-                self.actuals[pid] = [ActualWork.model_validate(a) for a in a_list]
-            for r_dict in payload.get("evaluation_runs", []):
-                self.evaluation_runs.append(EvaluationRun.model_validate(r_dict))
-            self.feedback = [FeedbackEvent.model_validate(e) for e in payload.get("feedback", [])]
-            self.requirement_observations = [
+                projects[p.project_id] = p
+            versions = {pid: [EstimateVersion.model_validate(v) for v in v_list]
+                        for pid, v_list in payload.get("versions", {}).items()}
+            actuals = {pid: [ActualWork.model_validate(a) for a in a_list]
+                       for pid, a_list in payload.get("actuals", {}).items()}
+            evaluation_runs = [EvaluationRun.model_validate(r) for r in payload.get("evaluation_runs", [])]
+            feedback = [FeedbackEvent.model_validate(e) for e in payload.get("feedback", [])]
+            requirement_observations = [
                 RequirementObservation.model_validate(o) for o in payload.get("requirement_observations", [])
             ]
-            if payload.get("calibration"):
-                self.calibration = CalibrationState.model_validate(payload["calibration"])
-        except Exception as exc:  # keep the API up, but never fail silently
-            logger.error("Could not load store %s: %s", self.data_path, exc)
+            calibration = CalibrationState.model_validate(payload.get("calibration") or {})
+            self.projects, self.versions, self.actuals = projects, versions, actuals
+            self.evaluation_runs, self.feedback = evaluation_runs, feedback
+            self.requirement_observations, self.calibration = requirement_observations, calibration
+        except Exception as exc:
+            logger.exception("Could not load store %s", self.data_path)
+            raise StorageError(f"Workspace could not be loaded: {self.data_path}") from exc

@@ -6,7 +6,7 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
 - Open the live URL 2 minutes early: the free instance sleeps and takes up to ~50 s to wake.
 - Keep a second tab on the repo README.
 - Pre-type the car-wash brief (step 4) into a text file.
-- The app opens in English. **VI** in the header switches every label, and the downloaded quote follows that choice.
+- The app opens in English. **VI** in the header switches every label, and the downloaded draft proposal follows that choice.
 
 ## 0:00 – 0:45 · The problem (no slides needed)
 
@@ -32,7 +32,7 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
    > "Questions are ranked by how many hours depend on the answer. 'Possibly an AI assistant… if the budget allows' is
    > uncommitted scope worth 105 hours."
 
-   Click **Yes** to include it and watch the estimate rise. Every answer creates a new, immutable version.
+   Add a short confirmation note, then click **Yes** to include it and watch the estimate rise. Every answer creates a new, immutable version.
 
 ## 3:00 – 4:30 · Live: a brief nobody has seen
 
@@ -48,8 +48,8 @@ Project: booking platform for a chain of 12 car-wash stations.
 - Maybe later a loyalty programme with points, still being discussed.
 ```
 
-> "The AI, Jev by TypeSafe, reads every clause with three narrow questions: what kind of work, has the client committed,
-> and will it take longer than it looks. About 1.5 seconds, a fraction of a cent. It caught 'maybe later… still
+> "The AI, Jev by TypeSafe, reads every clause with narrow questions: what kind of work, has the client committed,
+> and will it take longer than it looks. In one measured live run it took about 1.5 seconds and cost a fraction of a cent. It caught 'maybe later… still
 > being discussed' as uncommitted."
 
 The key icon in the header lets anyone use their own AI key.
@@ -66,7 +66,7 @@ and enter a couple of values. Save. The original estimate is frozen.
 Click **Estimate a new project to test the learning**. Reuse the sample brief as a second project and compare its
 calibration multiplier with the frozen first estimate. Do not present this as a measured accuracy gain.
 
-## 6:00 – 8:30 · Why you can trust it (Evidence tab)
+## 6:00 – 8:30 · What the evidence supports (Evidence tab)
 
 Point at the four cards at the top, then the charts:
 - **Learning from real actual hours.** 10,022 real tasks (SiP).
@@ -84,22 +84,22 @@ Point at the four cards at the top, then the charts:
 ## 8:30 – 10:00 · Architecture and close
 
 > "FastAPI plus React in one container.
-> - The AI is a pool of keys with failover, 5 to 20 questions per call, every answer cached per question version, a
+> - The AI is a pool of keys with failover, five questions per call, every answer cached per question version, a
 >   pinned model, and a circuit breaker that stops spending if a paid call returns nothing usable.
 > - The estimates come from a Monte Carlo with a shared 'everything ran over' shock resampled from 56 real work
 >   packages, not an assumed curve.
 > - Automated tests and CI. Every number in the README has a one-line command to reproduce it.
 >
-> It reads like a senior estimator, shows its evidence, asks before it guesses, and gets better with every project
-> you close."
+> It gives a delivery lead a traceable first draft and a way to compare future forecasts with actual work. A real-team
+> pilot is the next test of whether that improves quotes."
 
 ## Likely questions
 
 | Question | Answer |
 | --- | --- |
-| Isn't SiP old and from one company? | Yes. It's the only public dataset with task text, estimate and actual together, and we say so. That's why we replicated on Itemlet (37 projects) and why the app learns from *your* actuals. |
+| Isn't SiP old and from one company? | Yes. It is our only task-level source here with text, estimate and actual hours. We tested the risk signal on Itemlet (37 projects), where it was weak, and the app learns from each workspace's own actuals. |
 | What if the AI is down? | You get a clear message instead of a weaker estimate; cached briefs still work, and you can paste your own key. |
-| Confidential briefs? | Use TypeSafe directly (no training on data, DPA); the reseller route is for demos. Self-hosting is a Docker image. |
-| Cost? | About $0.04 per million input tokens: a 12-clause brief costs ~$0.0002. |
+| Confidential briefs? | The demo sends brief text to an external AI provider. A team must review the provider path, contract and retention terms before using client-confidential material. The app can run in Docker, but that alone does not keep AI traffic private. |
+| Cost? | One measured 12-clause live run cost about $0.0002; actual cost depends on provider and current pricing. |
 | Why not just ask an LLM for hours? | Hours, simulation and learning stay in code so they can be measured and calibrated; the AI does the judgements it is good at, each validated on held-out data. |
 | Can a team sign this quote? | It is an internal draft. The work-type hour templates and SiP spread have not been validated against complete client briefs and actual outcomes for this team. A delivery lead must review it before commitment. |

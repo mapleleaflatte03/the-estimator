@@ -7,7 +7,7 @@ import { card } from '../ui';
 interface ClarificationScreenProps {
   version: EstimateVersion;
   versionsHistory: EstimateVersion[];
-  onAnswerQuestion: (questionId: string, answer: boolean) => Promise<void>;
+  onAnswerQuestion: (questionId: string, answer: boolean, notes?: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -19,11 +19,12 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
 }) => {
   const { locale, t, hours } = useI18n();
   const [answeringId, setAnsweringId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const answer = async (q: ClarificationQuestion, value: boolean) => {
     setAnsweringId(q.question_id);
     try {
-      await onAnswerQuestion(q.question_id, value);
+      await onAnswerQuestion(q.question_id, value, notes[q.question_id] ?? version.clarification_notes?.[q.question_id] ?? '');
     } finally {
       setAnsweringId(null);
     }
@@ -119,6 +120,17 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
               </p>
             )}
             {!answered && <p className="text-sm text-slate-600 dark:text-slate-400">{q.context_reason}</p>}
+            <label className="block text-sm text-slate-700 dark:text-slate-300">
+              {t('Ghi chú câu trả lời / nguồn xác nhận (không bắt buộc)', 'Answer note / confirmation source (optional)')}
+              <input
+                type="text"
+                maxLength={2000}
+                value={notes[q.question_id] ?? version.clarification_notes?.[q.question_id] ?? ''}
+                onChange={(event) => setNotes((prev) => ({ ...prev, [q.question_id]: event.target.value }))}
+                placeholder={t('Ví dụ: email khách hàng ngày 18/10', 'e.g. client email dated 18 Oct')}
+                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2"
+              />
+            </label>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
               <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">{impact(q)}</span>
               <div className="flex gap-2">

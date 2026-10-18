@@ -15,28 +15,44 @@ import type {
 const API_BASE = '/api/v1';
 const KEY_STORAGE = 'parallax_jev_key';
 const WORKSPACE_STORAGE = 'parallax_workspace_v1';
+let volatileWorkspaceId: string | null = null;
+let volatileVisitorKey = '';
 
 /** Stable anonymous workspace: project briefs and learning stay with this browser. */
 function workspaceId(): string {
-  let id = localStorage.getItem(WORKSPACE_STORAGE);
-  if (!id || !/^[0-9a-f]{32}$/.test(id)) {
-    id = crypto.randomUUID().replaceAll('-', '');
-    localStorage.setItem(WORKSPACE_STORAGE, id);
+  if (volatileWorkspaceId) return volatileWorkspaceId;
+  try {
+    const saved = localStorage.getItem(WORKSPACE_STORAGE);
+    if (saved && /^[0-9a-f]{32}$/.test(saved)) return saved;
+  } catch {
+    // Continue with a tab-local workspace if browser storage is unavailable.
   }
-  return id;
+  volatileWorkspaceId = crypto.randomUUID().replaceAll('-', '');
+  try { localStorage.setItem(WORKSPACE_STORAGE, volatileWorkspaceId); } catch { /* tab-local only */ }
+  return volatileWorkspaceId;
 }
 
 /** The visitor's own Jev key: kept in this browser tab only and sent with requests that read briefs. */
 export const visitorKey = {
-  get: () => sessionStorage.getItem(KEY_STORAGE) ?? '',
-  set: (k: string) => (k.trim() ? sessionStorage.setItem(KEY_STORAGE, k.trim()) : sessionStorage.removeItem(KEY_STORAGE)),
+  get: () => {
+    try { return sessionStorage.getItem(KEY_STORAGE) ?? volatileVisitorKey; } catch { return volatileVisitorKey; }
+  },
+  set: (k: string) => {
+    volatileVisitorKey = k.trim();
+    try {
+      if (volatileVisitorKey) sessionStorage.setItem(KEY_STORAGE, volatileVisitorKey);
+      else sessionStorage.removeItem(KEY_STORAGE);
+    } catch { /* tab-local only */ }
+  },
 };
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -63,7 +79,7 @@ async function request<T>(url: string, init?: RequestInit, fallbackError = 'Requ
   const res = await fetch(url, { ...init, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: fallbackError }));
-    throw new ApiError(typeof err.detail === 'string' ? err.detail : fallbackError, res.status);
+    throw new ApiError(typeof err.detail === 'string' ? err.detail : fallbackError, res.status, err.code);
   }
   const credits = res.headers.get('X-Jev-Credits-Remaining');
   if (credits != null) lastVisitorCredits = Number(credits);

@@ -77,6 +77,7 @@ def test_full_project_lifecycle_api():
     assert v2["version_id"] == "v2"
     assert v2["parent_version_id"] == "v1"
     assert v2["clarification_answers"] == {erp_q["question_id"]: True}
+    assert v2["clarification_notes"] == {erp_q["question_id"]: "ERP integration is required for this delivery."}
     assert v2["forecast"]["p50_hours"] > v1["forecast"]["p50_hours"]
     v2_erp = next(q for q in v2["clarifications"] if q["question_id"] == erp_q["question_id"])
     assert v2_erp["answer"] is True
@@ -88,6 +89,7 @@ def test_full_project_lifecycle_api():
     # 4. Version history is append-only
     versions = client.get(f"/api/v1/projects/{project_id}/versions").json()
     assert [v["version_id"] for v in versions] == ["v1", "v2"]
+    assert versions[-1]["clarification_notes"] == v2["clarification_notes"]
 
     # 5. Actuals close the loop: calibration multiplier is updated and persisted
     before = client.get("/api/v1/calibration").json()

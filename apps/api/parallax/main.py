@@ -33,7 +33,7 @@ from .export import proposal_markdown, wbs_csv
 from .jev import load_dotenv
 from .locale import ui_language
 from .service import AIReaderUnavailable, ParallaxService
-from .storage import StorageRepository
+from .storage import StorageError, StorageRepository
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")  # API keys live in a git-ignored .env; real env vars take precedence
@@ -46,17 +46,19 @@ service = ParallaxService(repository=repo)
 _workspace_services: dict[str, ParallaxService] = {}
 _workspace_lock = Lock()
 _workspace_id_pattern = re.compile(r"[0-9a-f]{32}")
-RELEASE = "readiness-review-2026-10-18-r3"
+RELEASE = "readiness-review-2026-10-18-r4"
 
-# One shared clock of estimate attempts per visitor. Render's proxy would otherwise
-# make every judge look like the same client, so the left-most forwarded address is used.
+# One shared clock of estimate attempts per visitor.
 _estimate_hits: dict[str, list[float]] = {}
+_estimate_lock = Lock()
 
 
 def _visitor_ip(request: Request) -> str:
+    # Only trust forwarding headers behind the known deployment proxy. Its
+    # right-most address is the one the proxy appended; left-most is spoofable.
     forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded.strip():
-        return forwarded.split(",")[0].strip()
+    if (os.environ.get("RENDER") or os.environ.get("TRUST_PROXY_HEADERS") == "1") and forwarded.strip():
+        return forwarded.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 
@@ -67,8 +69,18 @@ def enforce_estimate_limit(request: Request) -> None:
         return
     now = time.time()
     ip = _visitor_ip(request)
-    recent = [t for t in _estimate_hits.get(ip, []) if now - t < 3600]
-    if len(recent) >= limit:
+    with _estimate_lock:
+        # Expire abandoned visitors so a public demo cannot grow this map forever.
+        for key in list(_estimate_hits):
+            recent = [t for t in _estimate_hits[key] if now - t < 3600]
+            if recent:
+                _estimate_hits[key] = recent
+            else:
+                del _estimate_hits[key]
+        exceeded = len(_estimate_hits.get(ip, [])) >= limit
+        if not exceeded:
+            _estimate_hits.setdefault(ip, []).append(now)
+    if exceeded:
         if ui_language.get() == "en":
             detail = (
                 f"This address has used its {limit} brief readings for this hour. "
@@ -80,8 +92,6 @@ def enforce_estimate_limit(request: Request) -> None:
                 "Các mô tả mẫu vẫn mở được; hãy thử lại sau."
             )
         raise HTTPException(status_code=429, detail=detail)
-    recent.append(now)
-    _estimate_hits[ip] = recent
 
 app = FastAPI(
     title="PARALLAX AI — Estimation Intelligence API",
@@ -121,10 +131,12 @@ def workspace_service(request: Request) -> ParallaxService:
             )
         return _workspace_services[workspace_id]
 
-# Enable CORS for local Next.js / Vite web development
+# Production UI is same-origin. Explicit origins support local development.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin.strip() for origin in os.environ.get(
+        "PARALLAX_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",") if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -142,7 +154,14 @@ class ActualWorkCreate(BaseModel):
 def ai_unavailable(_request, exc: AIReaderUnavailable):
     from fastapi.responses import JSONResponse
 
-    return JSONResponse(status_code=503, content={"detail": str(exc)})
+    return JSONResponse(status_code=503, content={"detail": str(exc), "code": "AI_READER_UNAVAILABLE"})
+
+
+@app.exception_handler(StorageError)
+def storage_unavailable(_request, _exc: StorageError):
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=503, content={"detail": "Workspace storage is unavailable. Your changes were not saved; please retry later.", "code": "STORAGE_UNAVAILABLE"})
 
 
 def visitor_reader(
@@ -204,6 +223,8 @@ def create_project(payload: ProjectCreate, workspace: ParallaxService = Depends(
         )
         return project
     except Exception as e:
+        if isinstance(e, StorageError):
+            raise
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -233,6 +254,8 @@ def estimate_project(project_id: str, request: Request, response: Response, read
     except AIReaderUnavailable:
         raise
     except Exception as e:
+        if isinstance(e, StorageError):
+            raise
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -338,6 +361,8 @@ def answer_clarification(project_id: str, payload: ClarificationAnswer, request:
     except AIReaderUnavailable:
         raise
     except Exception as e:
+        if isinstance(e, StorageError):
+            raise
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -355,6 +380,8 @@ def record_actuals(project_id: str, payload: ActualWorkCreate, workspace: Parall
     except KeyError:
         raise HTTPException(status_code=404, detail="Project not found")
     except Exception as e:
+        if isinstance(e, StorageError):
+            raise
         raise HTTPException(status_code=400, detail=str(e))
 
 

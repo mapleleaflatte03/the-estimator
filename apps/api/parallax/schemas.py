@@ -150,6 +150,7 @@ class EstimateVersion(BaseModel):
     clarifications: list[ClarificationQuestion] = Field(default_factory=list)
     forecast: ProbabilisticForecast
     clarification_answers: dict[str, bool] = Field(default_factory=dict)
+    clarification_notes: dict[str, str] = Field(default_factory=dict)
     reader: str = "rules"
     reader_model: Optional[str] = None
     manual_edits: dict = Field(default_factory=dict)  # {"overrides": {id: {name, hours}}, "removed": [id], "added": [...]}
@@ -321,4 +322,4 @@ class ManualEdits(BaseModel):
 class ClarificationAnswer(BaseModel):
     question_id: str = Field(min_length=1)
     answer: bool
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=2000)

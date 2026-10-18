@@ -7,17 +7,17 @@ project; future projects then use that evidence.**
 Built for challenge 02 *The Estimator* of Anduin Cybernetics' *Agent in the Shell*.
 **Live:** https://the-estimator-9m6a.onrender.com · **Repo:** this one · **Full evaluation record:** [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md) · **Product readiness review:** [`docs/READINESS_REVIEW.md`](docs/READINESS_REVIEW.md) · **10-minute demo script:** [`docs/DEMO.md`](docs/DEMO.md)
 
-Every number below was measured on data that was **not** used to build or tune what it measures. Labels were committed
-before runs (the commits are in the history), and every run is in an append-only journal, including the runs where we
-were wrong.
+The benchmark rows below use later time periods or clause rounds held out from the relevant tuning step. The clause
+sets are developer-written, and task-level results do not validate the app's full quote. Protocols, failed runs and
+limits are recorded in the append-only journal and [readiness review](docs/READINESS_REVIEW.md).
 
 ## Results at a glance
 
-| Claim | Tested on (never used to build it) | Result |
+| Claim | Tested on | Result |
 | --- | --- | --- |
 | Learning from actual hours beats the developers' own estimates | 2,248 real tasks, 2011–2014 (SiP), model fitted on earlier years | MAE **10.34 → 9.26 h (−10.4%)** · SA **48.6 → 54.0%** · Wilcoxon **p = 3×10⁻⁶** · P10–P90 interval holds **82.0%** of actuals |
 | …also when replayed as if in production | 1,391 tasks, each estimated using only work *completed* before its estimate date | SA **56.3 → 61.1%** · p = 0.006 versus human estimates. The online update had MAE **3.85 h**, slightly worse than a frozen calibrated model (**3.82 h**); this is not evidence that every update improves accuracy. |
-| The "80% range" really holds 80%, for every size of work | same production replay; each finished task adjusts the next ranges (adaptive conformal, step chosen on 2008–2010) | **80.4%** overall (fixed ranges: 85.0%); every size bucket with ≥ 100 tasks within **2.2 points** of 80% (was up to 9.7 off) |
+| Task-level range calibration approaches 80% coverage | same SiP production replay; each finished task adjusts the next ranges (adaptive conformal, step chosen on 2008–2010) | **80.4%** overall (fixed ranges: 85.0%); every size bucket with ≥ 100 tasks within **2.2 points** of 80% (was up to 9.7 off). This is **not** measured coverage for app-generated project quotes. |
 | The AI reader catches scope the client has not committed to | 7 rounds of new brief clauses, 160 clauses (Vietnamese, English, no diacritics, incl. a private-equity onboarding brief), labels committed first | **30/31** caught vs **14/31** with keyword rules · **0** false alarms |
 | It finds the main kind of work in each clause | same 160 clauses | **133/160** (rules alone 121/160); private-equity round: Jev alone **13/13** |
 | It stops the rules from adding work nobody asked for | rounds 7 and 8, 48 new clauses; threshold fixed on earlier rounds | kind precision **73.1% → 83.3%** and **84.6% → 95.8%**, recall up too |
@@ -64,7 +64,7 @@ what the company actually used, i.e. its developers' estimates before the work s
 
 **Sample briefs** (New project → "No brief yet? Try a sample:") run instantly: their AI readings are cached in the repo.
 
-The app opens in English. **VI** in the header switches the whole interface, including the downloaded quote and the
+The app opens in English. **VI** in the header switches the whole interface, including the downloaded draft proposal and the
 Excel work list. Questions and work-item names still follow the language of the brief.
 
 **Your own brief:** the AI reader (Jev, by TypeSafe) reads **every** clause before an estimate is produced. If the
@@ -75,12 +75,12 @@ sent only with requests that read a brief, and never stored on the server.
 A 3-minute tour:
 1. **New project**: pick *Investor onboarding portal for a private equity fund* and press *Estimate*.
 2. **Estimate**: the hour range, the budget at your confidence level and team size, where the hours go, and downloads
-   (client proposal in Markdown, work list for Excel).
+   (draft proposal in Markdown, work list for Excel).
    Work the client has not committed to is listed separately and does not enter the quote until you confirm it.
 3. **Work**: every requirement shows the brief's exact sentence and what the AI read in it. You can edit hours,
    remove items or add your own.
-4. **Questions**: questions for the client, ordered by how many hours depend on the answer. Answering creates a new,
-   immutable version.
+4. **Questions**: questions for the client, ordered by how many hours depend on the answer. Record the answer and an
+   optional confirmation note; each answer creates a new, immutable version.
 5. **Actual hours**: enter actual hours, in total or per requirement. The next estimates adjust.
 6. **Evidence**: all the evidence above, live from the journal.
 
@@ -92,8 +92,35 @@ python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
 cp .env.example .env          # JEVSTATION_API_KEY, JEVSTATION_API_KEY_2, ... or TYPESAFE_API_KEY
 pytest -q                     # offline tests, no network, no credits
 uvicorn parallax.main:app --app-dir apps/api --port 8000
-cd apps/web && npm ci && npm run dev    # UI on :3000
 ```
+
+In a second terminal, run `cd apps/web && npm ci && npm run dev` (UI on port 3000).
+
+On Windows PowerShell, replace the environment setup and API command with:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install -e '.[dev]'
+Copy-Item .env.example .env
+.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe -m uvicorn parallax.main:app --app-dir apps/api --port 8000
+```
+
+Run `npm ci` and `npm run dev` from `apps/web` in another terminal.
+
+## Where Jev fits
+
+[Jev](https://docs.typesafe.ai/introduction) is a general typed decision model, not an effort-estimation model made for
+this challenge. Here it classifies each clause, judges whether the client committed to it, checks keyword matches, and
+flags possible overrun risk. The work breakdown, hour templates, dependencies and arithmetic are application code.
+Typed answers make the interface predictable; they do not prove that an interpretation or hour estimate is correct.
+The overrun signal did not improve hour error on an independent dataset, so the app shows it for review without adding
+hours by default. See the [full evaluation](docs/EVALUATION_LOG.md).
+
+Real estimates can miss for several reasons: unstated scope, wrong work type, integrations, migration, security and QA,
+team familiarity, dependencies, changed requirements, and inaccurate time records. This app exposes some of those
+through quoted evidence, questions, editable work items and actual-hour feedback. It does not infer every delivery
+constraint from a brief; a delivery lead must confirm the work and their team's capacity.
 
 ## How it works
 
@@ -168,19 +195,19 @@ The Itemlet report reads a Parquet file and needs the optional evaluation packag
 | Clause sets v1–v8 | 187 brief clauses written in the style of client briefs, hand-labelled before runs | this repo | Reader evaluation |
 
 The AI provider is interchangeable: the same pinned model (`jev-1.13.0`) was used through JevStation (credits) and
-TypeSafe directly (about $0.04 per million input tokens: the whole Itemlet replication cost a few cents).
+TypeSafe directly. The recorded evaluation runs contain their measured call counts and costs; provider prices can change.
 
 ## Limitations
 
 1. Hour templates per kind of work are engine assumptions. Per-requirement actuals correct them over time, but only your
    own outcomes can validate them. The SiP task benchmark tests correction of an existing human estimate, **not** the
    full brief-to-hours pipeline. No measured end-to-end accuracy is claimed for this app's generated quotes.
-2. SiP is one UK company's maintenance work. It is the only public source with task text, estimate and actual together;
+2. SiP is one UK company's maintenance work. It is our only task-level source here with text, estimate and actual together;
    its error distribution may not transfer (Itemlet shows how much it can differ). SiP's licence is non-commercial: a
    commercial version needs permission or another data source.
 3. The labelled clause sets were written by the developer, not taken from real client documents.
 4. JevStation is an independent reseller: brief text passes through it. Use TypeSafe directly for confidential work.
-5. Each browser gets an anonymous workspace: its projects, actual hours and learned adjustments are separate from other visitors. The free hosting plan has no persistent disk, so projects reset when the service restarts. The browser keeps the last brief, answers and actual hours, and can ask Jev to read that brief again.
+5. Each browser gets an anonymous workspace: its projects, actual hours and learned adjustments are separate from other visitors. The free hosting plan has no persistent disk, so server projects reset when it restarts. The browser keeps copies of projects opened in the UI (brief, answers, notes, edits and any actuals entered there) and can ask Jev to read them again. Recovery re-estimates under the current model; it is not an exact archive of the old forecast. Browser storage can be cleared or disabled. Production use needs a durable database, authenticated team workspaces and backups.
 
 ## Roadmap
 

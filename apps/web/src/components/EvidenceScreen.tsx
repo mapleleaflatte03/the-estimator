@@ -31,7 +31,7 @@ const promise = (e: JournalEntry | undefined) =>
 type Say = (vi: string, en: string) => string;
 
 /** One-line result of a journal entry, in the same words as the charts. */
-const resultText = (e: JournalEntry, t: Say, pct: (v: unknown) => string, hours1: (v: number) => string): string => {
+const resultText = (e: JournalEntry, t: Say, pct: (v: unknown) => string): string => {
   const odd = promise(e);
   if (odd) return t(
     `giữ lại ${pct(odd.retention_pct)} · hiệu năng ${pct(odd.performance_recall_pct)} · bảo mật ${pct(odd.security_recall_pct)}`,
@@ -617,7 +617,7 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ onRunBenchmark }
                 <tr key={i}>
                   <td className="py-1.5 pr-2 whitespace-nowrap">{e.date.replace('T', ' ').slice(0, 16)}</td>
                   <td className="py-1.5 px-2 font-mono">{e.tag}</td>
-                  <td className="py-1.5 px-2 min-w-48 font-semibold tabular-nums text-slate-800 dark:text-slate-200">{resultText(e, t, pct, hours1)}</td>
+                  <td className="py-1.5 px-2 min-w-48 font-semibold tabular-nums text-slate-800 dark:text-slate-200">{resultText(e, t, pct)}</td>
                   <td className="py-1.5 pl-2 min-w-64 text-slate-700 dark:text-slate-300">{e.note}</td>
                 </tr>
               ))}

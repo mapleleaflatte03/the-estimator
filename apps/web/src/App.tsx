@@ -14,7 +14,7 @@ import {
   visitorKey,
 } from './api';
 import { JevKeyDialog } from './components/JevKeyDialog';
-import { loadSavedProject, saveProject, type SavedActuals, type SavedProject } from './recovery';
+import { loadSavedProject, loadSavedProjects, replaceSavedProject, saveProject, type SavedActuals, type SavedProject } from './recovery';
 import { IntakeScreen } from './components/IntakeScreen';
 import { ScopeGraphScreen } from './components/ScopeGraphScreen';
 import { EstimationLabScreen } from './components/EstimationLabScreen';
@@ -35,12 +35,14 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [keyDialog, setKeyDialog] = useState<{ open: boolean; reason?: string | null }>({ open: false });
-  const [orphan, setOrphan] = useState<SavedProject | null>(null);
+  const [orphans, setOrphans] = useState<SavedProject[]>([]);
+  const [backupFailed, setBackupFailed] = useState(false);
   const [savedActuals, setSavedActuals] = useState<{ id: string; actuals: SavedActuals } | null>(null);
   const [hasKey, setHasKey] = useState(() => !!visitorKey.get());
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('parallax_theme');
+      let saved: string | null = null;
+      try { saved = localStorage.getItem('parallax_theme'); } catch { /* use system theme */ }
       if (saved) return saved === 'dark';
       return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
@@ -49,7 +51,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
-    localStorage.setItem('parallax_theme', isDarkMode ? 'dark' : 'light');
+    try { localStorage.setItem('parallax_theme', isDarkMode ? 'dark' : 'light'); } catch { /* tab-local only */ }
   }, [isDarkMode]);
 
   const selectProject = useCallback(async (proj: Project) => {
@@ -64,8 +66,11 @@ export const App: React.FC = () => {
     } catch (err) {
       setVersions([]);
       setCurrentVersion(null);
-      if (err instanceof ApiError && err.status === 503) setKeyDialog({ open: true, reason: err.message });
-      else console.error('Error loading project versions:', err);
+      if (err instanceof ApiError && err.code === 'AI_READER_UNAVAILABLE') setKeyDialog({ open: true, reason: err.message });
+      else {
+        console.error('Error loading project versions:', err);
+        alert((err as Error).message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,12 +82,13 @@ export const App: React.FC = () => {
       .then((list) => {
         if (cancelled) return;
         setProjects(list);
-        const saved = loadSavedProject();
-        const stillThere = saved != null && list.some((p) => p.project_id === saved.server_project_id);
-        setOrphan(saved && !stillThere ? saved : null);
+        setOrphans(loadSavedProjects().filter((saved) => !list.some((p) => p.project_id === saved.server_project_id)));
         if (list.length > 0) selectProject(list[0]);
       })
-      .catch((err) => console.error('Error fetching projects:', err));
+      .catch((err) => {
+        console.error('Error fetching projects:', err);
+        alert((err as Error).message);
+      });
     return () => {
       cancelled = true;
     };
@@ -90,10 +96,8 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     if (!currentProject || !currentVersion) return;
-    // A restart left a brief in this browser. Do not overwrite it with some other project the server still has.
-    if (orphan && orphan.brief_text !== currentProject.brief_text) return;
-    const prev = loadSavedProject();
-    saveProject({
+    const prev = loadSavedProject(currentProject.project_id);
+    const saved = saveProject({
       title: currentProject.title,
       project_type: currentProject.project_type,
       brief_text: currentProject.brief_text,
@@ -102,17 +106,18 @@ export const App: React.FC = () => {
       answers: Object.entries(currentVersion.clarification_answers).map(([question_id, answer]) => ({
         question_id,
         answer,
+        notes: currentVersion.clarification_notes?.[question_id],
       })),
       edits: currentVersion.manual_edits ?? null,
       actuals:
         savedActuals?.id === currentProject.project_id
           ? savedActuals.actuals
-          : prev?.server_project_id === currentProject.project_id
-            ? (prev.actuals ?? null)
-            : null,
+          : (prev?.actuals ?? null),
       saved_at: new Date().toISOString(),
     });
-  }, [currentProject, currentVersion, savedActuals, orphan]);
+    const notification = window.setTimeout(() => setBackupFailed(!saved), 0);
+    return () => window.clearTimeout(notification);
+  }, [currentProject, currentVersion, savedActuals]);
 
   const withBusy = async (message: string, work: () => Promise<void>) => {
     setIsLoading(true);
@@ -120,7 +125,7 @@ export const App: React.FC = () => {
     try {
       await work();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 503) setKeyDialog({ open: true, reason: err.message });
+      if (err instanceof ApiError && err.code === 'AI_READER_UNAVAILABLE') setKeyDialog({ open: true, reason: err.message });
       else alert(t(`Có lỗi xảy ra: ${(err as Error).message}`, `Something went wrong: ${(err as Error).message}`));
     } finally {
       setIsLoading(false);
@@ -130,7 +135,6 @@ export const App: React.FC = () => {
 
   const handleProjectCreated = (newProj: Project) =>
     withBusy(t('AI Jev đang đọc từng câu của mô tả (khoảng 20 giây với mô tả mới)…', 'Jev is reading every sentence of the brief (about 20 seconds for a new one)…'), async () => {
-      setOrphan(null);
       setProjects((prev) => [newProj, ...prev]);
       setCurrentProject(newProj);
       const v1 = await estimateProject(newProj.project_id);
@@ -139,10 +143,10 @@ export const App: React.FC = () => {
       setActiveTab('estimation');
     });
 
-  const handleAnswerClarification = (qId: string, ans: boolean) =>
+  const handleAnswerClarification = (qId: string, ans: boolean, notes?: string) =>
     withBusy(t('Đang tính lại dự toán…', 'Recalculating the estimate…'), async () => {
       if (!currentProject) return;
-      const v = await answerClarification(currentProject.project_id, qId, ans);
+      const v = await answerClarification(currentProject.project_id, qId, ans, notes);
       setVersions((prev) => [...prev, v]);
       setCurrentVersion(v);
     });
@@ -175,13 +179,8 @@ export const App: React.FC = () => {
     return result;
   };
 
-  const handleRestore = () =>
+  const handleRestore = (saved: SavedProject) =>
     withBusy(t('Đang đọc lại mô tả bằng Jev và khôi phục dự án trên máy này…', 'Jev is reading the brief again and restoring this project…'), async () => {
-      const saved = loadSavedProject();
-      if (!saved) {
-        setOrphan(null);
-        return;
-      }
       const project = await createProject({
         title: saved.title,
         project_type: saved.project_type,
@@ -192,7 +191,7 @@ export const App: React.FC = () => {
       const skipped: string[] = [];
       for (const item of saved.answers) {
         try {
-          version = await answerClarification(project.project_id, item.question_id, item.answer);
+          version = await answerClarification(project.project_id, item.question_id, item.answer, item.notes);
         } catch (err) {
           if (err instanceof ApiError && err.status === 400) {
             skipped.push(item.question_id);
@@ -218,7 +217,8 @@ export const App: React.FC = () => {
       setCurrentProject(project);
       setVersions(vList.length ? vList : [version]);
       setCurrentVersion(vList.length ? vList[vList.length - 1] : version);
-      setOrphan(null);
+      setBackupFailed(!replaceSavedProject(saved.server_project_id, { ...saved, server_project_id: project.project_id, saved_at: new Date().toISOString() }));
+      setOrphans((prev) => prev.filter((p) => p.server_project_id !== saved.server_project_id));
       setActiveTab('estimation');
       if (skipped.length) {
         alert(t(
@@ -366,8 +366,13 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {orphan && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100">
+        {backupFailed && (
+          <div role="alert" className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-100 text-sm">
+            {t('Trình duyệt không lưu được bản sao dự án. Hãy xuất dự toán trước khi rời trang.', 'This browser could not save a project copy. Export your estimate before leaving.')}
+          </div>
+        )}
+        {orphans.map((orphan) => (
+          <div key={orphan.server_project_id} className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100">
             <p className="text-sm font-semibold">
               {t(
                 `Không tìm thấy dự án «${orphan.title}» trong không gian làm việc trên máy chủ. Bản mô tả vẫn nằm trong trình duyệt này.`,
@@ -376,14 +381,14 @@ export const App: React.FC = () => {
             </p>
             <button
               type="button"
-              onClick={handleRestore}
+              onClick={() => handleRestore(orphan)}
               disabled={isLoading}
               className="mt-3 px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer"
             >
               {t('Đọc lại bằng Jev và khôi phục', 'Read again with Jev and restore')}
             </button>
           </div>
-        )}
+        ))}
 
         {activeTab === 'intake' && <IntakeScreen onProjectCreated={handleProjectCreated} isLoading={isLoading} />}
         {activeTab === 'scope' && currentVersion && (
@@ -398,6 +403,7 @@ export const App: React.FC = () => {
         )}
         {activeTab === 'clarification' && currentVersion && (
           <ClarificationScreen
+            key={currentProject?.project_id}
             version={currentVersion}
             versionsHistory={versions}
             onAnswerQuestion={handleAnswerClarification}
