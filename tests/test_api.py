@@ -90,6 +90,13 @@ def test_full_project_lifecycle_api():
     versions = client.get(f"/api/v1/projects/{project_id}/versions").json()
     assert [v["version_id"] for v in versions] == ["v1", "v2"]
     assert versions[-1]["clarification_notes"] == v2["clarification_notes"]
+    proposal = client.get(f"/api/v1/projects/{project_id}/export/proposal.md?lang=en")
+    assert proposal.status_code == 200
+    assert "## Recorded scope decisions" in proposal.text
+    assert erp_q["question_text"] in proposal.text
+    assert "**Answer:** Yes" in proposal.text
+    assert "**Confirmation source:** ERP integration is required for this delivery." in proposal.text
+    assert "legacy ERP" in proposal.text
 
     # 5. Actuals close the loop: calibration multiplier is updated and persisted
     before = client.get("/api/v1/calibration").json()

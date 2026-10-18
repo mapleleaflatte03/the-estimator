@@ -7,6 +7,12 @@ project; future projects then use that evidence.**
 Built for challenge 02 *The Estimator* of Anduin Cybernetics' *Agent in the Shell*.
 **Live:** https://the-estimator-9m6a.onrender.com · **Repo:** this one · **Full evaluation record:** [`docs/EVALUATION_LOG.md`](docs/EVALUATION_LOG.md) · **Product readiness review:** [`docs/READINESS_REVIEW.md`](docs/READINESS_REVIEW.md) · **10-minute demo script:** [`docs/DEMO.md`](docs/DEMO.md)
 
+## The decision this product helps make
+
+A team must decide **what it is actually committing to before quoting a delivery**. PARALLAX keeps each brief clause beside its exact source, separates tentative work from committed scope, asks the high-impact questions, records each answer and its confirmation source, and recalculates the draft hours. The downloaded proposal now carries the recorded decisions so a reviewer can trace the quoted scope. A human delivery lead still approves the work items, constraints and final commitment.
+
+Spreadsheets and Jira can track estimates and actual work; [Jira supports both](https://support.atlassian.com/jira-software-cloud/docs/configure-estimation-and-tracking/). AI work breakdown is also available in [Atlassian Rovo](https://www.atlassian.com/software/jira/ai) and [ScopeGen](https://www.koombea.com/products/scopegen-ai/). This entry's distinct workflow is **source quote → commitment decision → recorded confirmation → versioned estimate**, with task-level calibration from completed work. We have measured parts of that pipeline, but have **not** shown that the full app beats an experienced estimator, a spreadsheet workflow, or another app on unseen completed projects. The [pilot protocol](docs/PILOT_PROTOCOL.md) specifies the comparison needed to test that claim.
+
 The benchmark rows below use later time periods or clause rounds held out from the relevant tuning step. The clause
 sets are developer-written, and task-level results do not validate the app's full quote. Protocols, failed runs and
 limits are recorded in the append-only journal and [readiness review](docs/READINESS_REVIEW.md).
@@ -79,8 +85,8 @@ A 3-minute tour:
    Work the client has not committed to is listed separately and does not enter the quote until you confirm it.
 3. **Work**: every requirement shows the brief's exact sentence and what the AI read in it. You can edit hours,
    remove items or add your own.
-4. **Questions**: questions for the client, ordered by how many hours depend on the answer. Record the answer and an
-   optional confirmation note; each answer creates a new, immutable version.
+4. **Questions**: questions for the client, ordered by how many hours depend on each answer. Record the answer and an
+   optional confirmation note; each answer creates a new, immutable version. The history shows the decision and estimate change, and the proposal carries the current decisions and sources.
 5. **Actual hours**: enter actual hours, in total or per requirement. The next estimates adjust.
 6. **Evidence**: all the evidence above, live from the journal.
 

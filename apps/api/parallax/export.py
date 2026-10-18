@@ -1,4 +1,4 @@
-"""Client-ready deliverables from an estimate version: a plain-language proposal and a CSV work list."""
+"""Reviewable draft deliverables from an estimate version: a proposal and CSV work list."""
 from __future__ import annotations
 
 import csv
@@ -181,6 +181,22 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
     if excluded:
         heading = "## Out of scope (confirmed not in this delivery)" if en else "## Ngoài phạm vi (đã chốt không làm)"
         lines += [heading, ""] + [f"- {q}" for q in excluded] + [""]
+
+    answered = [q for q in v.clarifications if q.answer is not None]
+    if answered:
+        lines += ["## Recorded scope decisions" if en else "## Quyết định phạm vi đã ghi nhận", ""]
+        for q in answered:
+            decision = "Yes" if q.answer else "No"
+            if not en:
+                decision = "Có" if q.answer else "Không"
+            lines.append(f"- **{'Question' if en else 'Câu hỏi'}:** {' '.join(q.question_text.split())}")
+            lines.append(f"  - **{'Answer' if en else 'Trả lời'}:** {decision}")
+            note = v.clarification_notes.get(q.question_id, "").strip()
+            if note:
+                lines.append(f"  - **{'Confirmation source' if en else 'Nguồn xác nhận'}:** {' '.join(note.split())}")
+            if q.evidence:
+                lines.append(f"  - **{'Brief clause' if en else 'Câu trong mô tả'}:** {' '.join(q.evidence[0].quote.split())}")
+        lines.append("")
 
     open_q = [q for q in v.clarifications if q.answer is None]
     if open_q:

@@ -46,7 +46,7 @@ I reran the stored-data checks on this revision without paid model calls: `pytho
 
 ## Highest-value next proof
 
-Obtain 3–10 **completed software projects** with the original intake brief, the estimate recorded *before* delivery and actual hours. Remove names and secrets. Freeze the current code; run the briefs without editing the rules or templates, record omitted/misclassified scope, WBS edit time, MAE and interval coverage, and compare with the original human estimate. Report every case, including failures. This would test the exact business loop the challenge asks for. If those records are unavailable, demonstrate the workflow honestly and avoid claiming end-to-end accuracy or a proven win.
+Obtain 3–10 **completed software projects** with the original intake brief, the estimate recorded *before* delivery and actual hours. Remove names and secrets. Freeze the current code; run the briefs without editing the rules or templates, record omitted/misclassified scope, WBS edit time, MAE and interval coverage, and compare with the original human estimate. Report every case, including failures. This would be a diagnostic test of the exact business loop the challenge asks for; 3–10 cases would still be too few for a broad superiority claim. See the [pilot protocol](PILOT_PROTOCOL.md). If those records are unavailable, demonstrate the workflow honestly and avoid claiming end-to-end accuracy or a proven win.
 
 ## Final release checks
 

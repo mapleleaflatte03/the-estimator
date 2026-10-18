@@ -49,7 +49,7 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
     (a, b) => Number(a.answer != null) - Number(b.answer != null) || b.sensitivity_spread_hours - a.sensitivity_spread_hours,
   );
   const openCount = ordered.filter((q) => q.answer == null).length;
-  const atStake = Math.round(ordered.filter((q) => q.answer == null).reduce((s, q) => s + q.sensitivity_spread_hours, 0));
+  const largestOpenSpread = Math.round(ordered.find((q) => q.answer == null)?.sensitivity_spread_hours ?? 0);
 
   const choiceClass = (selected: boolean) =>
     `px-5 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 border cursor-pointer disabled:opacity-50 ${
@@ -67,11 +67,11 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
             <>
               {t('Còn ', '')}
               <strong className="text-amber-800 dark:text-amber-300">{t(`${openCount} câu`, `${openCount} still open`)}</strong>
-              {t(', ảnh hưởng tới khoảng ', ', affecting about ')}
-              <strong className="text-amber-800 dark:text-amber-300">{hours(atStake)}</strong>
+              {t('. Câu lớn nhất liên quan tới khoảng ', '. The largest concerns about ')}
+              <strong className="text-amber-800 dark:text-amber-300">{hours(largestOpenSpread)}</strong>
               {t(
-                '. Câu quan trọng nhất ở trên cùng; mỗi câu trả lời tính lại dự toán ngay.',
-                '. The most important question is first; each answer recalculates the estimate.',
+                ' công việc. Đây là độ nhạy từng câu, không cộng dồn; mỗi câu trả lời tính lại dự toán ngay.',
+                ' of work. This is per-question sensitivity, not an additive total; each answer recalculates the estimate.',
               )}
             </>
           ) : (
@@ -161,16 +161,43 @@ export const ClarificationScreen: React.FC<ClarificationScreenProps> = ({
 
       {versionsHistory.length > 1 && (
         <section className={`${card} p-5`}>
-          <h2 className="font-bold mb-2">{t('Các lần tính', 'Each calculation')}</h2>
-          <ol className="space-y-1 text-sm">
-            {versionsHistory.map((v, i) => (
-              <li key={v.version_id} className={`flex justify-between ${v.version_id === version.version_id ? 'font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
-                <span>
-                  {t(`Lần ${i + 1}`, `Run ${i + 1}`)} · {new Date(v.created_at).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}
-                </span>
-                <span>{hours(v.forecast.p50_hours)}</span>
-              </li>
-            ))}
+          <h2 className="font-bold mb-2">{t('Lịch sử quyết định', 'Decision history')}</h2>
+          <ol className="space-y-3 text-sm">
+            {versionsHistory.map((v, i) => {
+              const previous = versionsHistory.find((candidate) => candidate.version_id === v.parent_version_id);
+              const changedAnswers = Object.entries(v.clarification_answers).filter(
+                ([id, value]) => previous?.clarification_answers[id] !== value,
+              );
+              const changedNotes = Object.entries(v.clarification_notes).filter(
+                ([id, note]) => previous?.clarification_notes[id] !== note && !changedAnswers.some(([answerId]) => answerId === id),
+              );
+              const workEdited = previous && JSON.stringify(v.manual_edits ?? {}) !== JSON.stringify(previous.manual_edits ?? {});
+              const delta = previous ? Math.round(v.forecast.p50_hours - previous.forecast.p50_hours) : 0;
+              return (
+                <li key={v.version_id} className={`border-l-2 pl-3 ${v.version_id === version.version_id ? 'border-indigo-500' : 'border-slate-300 dark:border-slate-700'}`}>
+                  <div className="flex flex-wrap justify-between gap-1 font-semibold">
+                    <span>{t(`Lần ${i + 1}`, `Run ${i + 1}`)} · {new Date(v.created_at).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}</span>
+                    <span>{hours(v.forecast.p50_hours)}{previous && ` (${delta >= 0 ? '+' : '−'}${hours(Math.abs(delta))})`}</span>
+                  </div>
+                  {changedAnswers.map(([id, value]) => {
+                    const question = v.clarifications.find((q) => q.question_id === id);
+                    const note = v.clarification_notes[id];
+                    return (
+                      <div key={id} className="mt-1 text-slate-700 dark:text-slate-300">
+                        <span>{question?.question_text ?? id}: <strong>{value ? t('Có', 'Yes') : t('Không', 'No')}</strong></span>
+                        {note && <p className="text-xs break-words">{t('Nguồn xác nhận: ', 'Confirmation source: ')}{note}</p>}
+                      </div>
+                    );
+                  })}
+                  {changedNotes.map(([id, note]) => (
+                    <p key={id} className="mt-1 text-xs break-words text-slate-700 dark:text-slate-300">
+                      {t('Cập nhật nguồn xác nhận: ', 'Confirmation source updated: ')}{note || t('(đã xóa)', '(removed)')}
+                    </p>
+                  ))}
+                  {workEdited && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t('Đã sửa danh sách công việc', 'Work breakdown edited')}</p>}
+                </li>
+              );
+            })}
           </ol>
         </section>
       )}
