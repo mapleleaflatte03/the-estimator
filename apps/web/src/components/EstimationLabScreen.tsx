@@ -84,7 +84,7 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
 
   const notes = version.critic_findings.filter((f) => !HIDDEN_NOTES.has(f.category));
   const open = version.clarifications.filter((q) => q.answer == null);
-  const hoursAtStake = Math.round(open.reduce((s, q) => s + q.sensitivity_spread_hours, 0));
+  const largestOpenSpread = Math.round(Math.max(0, ...open.map((q) => q.sensitivity_spread_hours)));
   const pendingScope = version.requirements
     .filter((r) => r.req_id !== 'REQ-00' && r.in_scope === false)
     .map((r) => ({ req: r, question: version.clarifications.find((q) => q.question_id === `CLAR-${r.req_id}`) }))
@@ -135,7 +135,7 @@ export const EstimationLabScreen: React.FC<EstimationLabScreenProps> = ({ versio
             <HelpCircle className="w-6 h-6 flex-shrink-0" />
             <div>
               <div className="font-bold">{t(`Còn ${open.length} câu hỏi chưa trả lời`, `${open.length} ${open.length === 1 ? 'question' : 'questions'} still open`)}</div>
-              <div className="text-sm">{t(`Các quyết định này có thể thay đổi phạm vi khoảng ${hours(hoursAtStake)}.`, `These decisions could change the scope by about ${hours(hoursAtStake)}.`)}</div>
+              <div className="text-sm">{t(`Câu hỏi lớn nhất liên quan tới khoảng ${hours(largestOpenSpread)} công việc; các mức độ nhạy không cộng dồn.`, `The largest question concerns about ${hours(largestOpenSpread)} of work; question sensitivities are not additive.`)}</div>
             </div>
           </div>
           <button onClick={onGoToQuestions} className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm cursor-pointer">
