@@ -13,8 +13,8 @@ Live app: https://the-estimator-9m6a.onrender.com · Repo: https://github.com/ma
 > "Every software agency quotes from a client brief. A senior person reads it line by line, guesses hours, misses the
 > things the client hasn't actually committed to, and nobody checks the guess against what really happened. The
 > challenge asked for three things: work out what's being asked, what's missing, and how long it takes, then get more
-> accurate from actual hours. That's exactly the loop we built, and every claim I'll show was measured on data the
-> system never saw."
+> accurate from actual hours. That's the loop we built. I'll separate what we measured on held-out task and clause
+> data from what still needs a real delivery-team pilot."
 
 ## 0:45 – 3:00 · A brief from your world
 
@@ -48,7 +48,7 @@ Project: booking platform for a chain of 12 car-wash stations.
 - Maybe later a loyalty programme with points, still being discussed.
 ```
 
-> "The AI, Jev by TypeSafe, reads every clause with three questions: what kind of work, has the client committed,
+> "The AI, Jev by TypeSafe, reads every clause with three narrow questions: what kind of work, has the client committed,
 > and will it take longer than it looks. About 1.5 seconds, a fraction of a cent. It caught 'maybe later… still
 > being discussed' as uncommitted."
 
