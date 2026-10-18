@@ -155,6 +155,9 @@ flowchart LR
 | Itemlet replication | `python scripts/itemlet_jev_replication.py report` | 0 for what is cached |
 | Journal → log table | `python scripts/journal_report.py` | 0 |
 
+The Itemlet report reads a Parquet file and needs the optional evaluation packages:
+`pip install -e '.[eval]'`. Its downloaded input belongs in `datasets/external/itemlet/`.
+
 ## Data
 
 | Dataset | What | License | How it is used |

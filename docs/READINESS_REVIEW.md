@@ -34,6 +34,8 @@ None of these sources contains a complete real client brief plus a quote made be
 
 There is a product tradeoff: requiring Jev on every new clause prevents silent degradation, but provider failure, exhausted credits or rate limits can stop the main flow. Cached samples still work. The live key pool must remain funded through judging. For real confidential briefs, the team's data-processing agreement and provider path need review; the demo's reseller path is not enough.
 
+I reran the stored-data checks on this revision without paid model calls: `python scripts/sip_operational_replay.py --no-journal` gave 1,391 time-ordered tasks with MAE 4.33 hours for human estimates, 3.82 for a frozen calibrated model, and 3.85 for online updates. After installing the optional `.[eval]` dependencies, `python scripts/itemlet_jev_replication.py report --no-journal` gave 2,032 issues from 37 projects: Jev's overrun signal had AUC 0.535, and adding SiP-derived risk factors worsened MAE from 18.35 to 19.54 hours. That is why the production estimate uses Jev's risk result only as a review flag.
+
 ## Other risks that affect judging
 
 1. **Domain fit.** The official prompt says “incoming work”; PARALLAX's templates, roles and prior data are for software delivery. It should be presented as a deliberate software-delivery slice of that problem, not as a universal estimator for legal, operations or fund-administration tasks.
