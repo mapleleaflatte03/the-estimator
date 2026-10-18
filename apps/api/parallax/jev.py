@@ -2,8 +2,8 @@
 
 Jev returns typed, calibrated decisions instead of text, which fits the part
 of scoping a human estimator does by judgement, one clause at a time:
-*what kind of work is this?*, *has the client committed to it?* and *is it
-defined well enough to size?*. Hours, simulation and learning stay in code
+*what kind of work is this?*, *has the client committed to it?* and *might it
+overrun?*. Hours, simulation and learning stay in code
 (Jev's own docs advise against using it for arithmetic).
 
 Design constraints:
