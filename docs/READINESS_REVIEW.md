@@ -51,5 +51,5 @@ Obtain 3–10 **completed software projects** with the original intake brief, th
 ## Final release checks
 
 - Local: 104 backend tests pass; frontend lint and production build pass. CI runs both backend tests and frontend lint/build on every push.
-- Live release `readiness-review-2026-10-18-r4`: restored an investor-portal sample after an ephemeral-store reset, saved a clarification with a source note, reloaded and confirmed both persisted. A second independent sample produced a draft estimate; its Markdown proposal downloaded. The browser reported no console errors during this check.
+- Live release `scope-decisions-2026-10-18-r6`: after the free host reset its store, restored the investor-portal and returns-portal samples from browser copies. The browser showed the revised single-question sensitivity text and a decision history entry with a confirmation source. A separate live HTTP run answered a question and confirmed two versions, the changed P50, and the question, answer and source note in the returned Markdown proposal. This checks the handoff path, not its real-world quote accuracy.
 - Storage failure tests cover an initial failed write, a failed update, a corrupt file and an interrupted actuals/calibration commit. These are simulated failures; the free host still needs a durable database for production use.
