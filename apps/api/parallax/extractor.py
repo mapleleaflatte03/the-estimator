@@ -299,7 +299,6 @@ _TEXT = {
         "q_scope_why_ai": "{hedge} (cách diễn đạt cho thấy chưa chốt). Dự toán chưa tính phần này; trả lời Có sẽ thêm {items}.",
         "q_ai_kind": "Phần “{title}” có cần thêm {kind} không?",
         "q_ai_kind_why": "AI nhận định câu này có liên quan tới {kind} (chắc chắn {p}%), nhưng dự toán hiện chưa tính phần đó.",
-        "c_hedge_ai": "Phần “{title}” có vẻ chưa chốt: {hedge}. Hãy trả lời câu hỏi để chốt.",
         "q_ai_drop_why": "Từ khóa gợi ý có {kind}, nhưng AI đọc câu này và cho rằng khách không yêu cầu phần đó ({p}% chắc chắn), nên dự toán chưa tính.",
         "q_platform": "Có cần làm riêng ứng dụng cho cả iPhone và Android không?",
         "q_platform_why": "Mô tả có nhắc điện thoại nhưng chưa nói loại máy. Hiện đang tính một ứng dụng dùng chung.",
@@ -307,7 +306,6 @@ _TEXT = {
         "q_dataq_why": "Mô tả chưa nói dữ liệu cũ có gọn gàng không. Hiện đang giả định dữ liệu sạch.",
         "q_api": "Có cần tìm hiểu thêm cách kết nối với {system} vì chưa có tài liệu không?",
         "q_api_why": "Kết nối với hệ thống chưa có tài liệu thường tốn thêm thời gian.",
-        "c_hedge": "Phần “{title}” chưa chắc chắn (“{hedge}”), đang nằm ngoài dự toán. Hãy trả lời câu hỏi để chốt.",
         "ai_hedge": "AI đánh giá {p}% khả năng khách chưa chốt",
         "c_generic": "Chưa rõ “{title}” là loại việc gì nên ước tính có thể lệch nhiều. Nên nhờ người có kinh nghiệm xem lại.",
         "c_perf": "Có yêu cầu chịu tải cao, đã cộng thêm thời gian kiểm tra tốc độ.",
@@ -328,7 +326,6 @@ _TEXT = {
         "q_scope_why_ai": "{hedge}. The estimate excludes it until confirmed; answering “Yes” adds {items}.",
         "q_ai_kind": "Does “{title}” also need {kind}?",
         "q_ai_kind_why": "AI reads this clause as involving {kind} ({p}% confident), which the estimate does not include yet.",
-        "c_hedge_ai": "“{title}” looks uncommitted: {hedge}. Answer the question to settle it.",
         "q_ai_drop_why": "Keywords suggested {kind}, but the AI reads this clause as not asking for it ({p}% sure), so it is not in the estimate.",
         "q_platform": "Are separate native apps required for both iOS and Android (instead of one cross-platform/PWA build)?",
         "q_platform_why": "The brief mentions mobile use but no platform. The estimate assumes a single cross-platform/PWA codebase.",
@@ -336,7 +333,6 @@ _TEXT = {
         "q_dataq_why": "The brief does not describe source data quality, format or volume. The estimate assumes clean, well-formed data.",
         "q_api": "Does {system} lack a documented API / sandbox, requiring discovery or reverse-engineering?",
         "q_api_why": "The brief requires integrating {system} but does not mention API documentation; undocumented interfaces are a common overrun source.",
-        "c_hedge": "Tentative wording (“{hedge}”) for “{title}”; excluded from the estimate pending clarification.",
         "ai_hedge": "AI rates it {p}% likely the client has not committed",
         "c_generic": "Could not classify “{title}”; sized with a generic, wide-range template. Needs expert review.",
         "c_perf": "The brief states load/performance requirements; load testing and a cache/queue layer were added to the WBS.",
@@ -805,12 +801,6 @@ def extract_scope_and_wbs(
         if hedge:
             clarifications.append(_scope_question(L, scope_q, req_id, clause.text.strip().rstrip("."), hedge, draft.items, evidence, answers,
                                                  ai=ai_tentative is not None))
-            critics.append(CriticFinding(
-                finding_id=f"CRITIC-{req_id}-HEDGE", category="scope_ambiguity",
-                claim=L["c_hedge_ai" if ai_tentative is not None else "c_hedge"].format(hedge=hedge, title=title),
-                verified_by_evidence=True,
-                supporting_evidence=evidence, action_taken="generated_clarification_question",
-            ))
 
         extra_questions = []
         if any(c.key == "mobile" for c in components) and not _PLATFORM.search(folded):

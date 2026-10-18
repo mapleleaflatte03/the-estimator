@@ -90,7 +90,7 @@ A 3-minute tour:
 git clone https://github.com/mapleleaflatte03/the-estimator && cd the-estimator
 python -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
 cp .env.example .env          # JEVSTATION_API_KEY, JEVSTATION_API_KEY_2, ... or TYPESAFE_API_KEY
-pytest -q                     # 80 tests, no network, no credits
+pytest -q                     # offline tests, no network, no credits
 uvicorn parallax.main:app --app-dir apps/api --port 8000
 cd apps/web && npm ci && npm run dev    # UI on :3000
 ```

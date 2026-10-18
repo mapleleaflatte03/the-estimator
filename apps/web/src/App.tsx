@@ -360,8 +360,8 @@ export const App: React.FC = () => {
           <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100">
             <p className="text-sm font-semibold">
               {t(
-                `Máy chủ vừa khởi động lại và quên dự án «${orphan.title}». Bản mô tả vẫn nằm trong trình duyệt này.`,
-                `The server restarted and forgot “${orphan.title}”. This browser still has the brief.`,
+                `Không tìm thấy dự án «${orphan.title}» trong không gian làm việc trên máy chủ. Bản mô tả vẫn nằm trong trình duyệt này.`,
+                `“${orphan.title}” is not in this server workspace. This browser still has the brief.`,
               )}
             </p>
             <button

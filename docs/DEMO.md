@@ -84,7 +84,7 @@ Point at the four cards at the top, then the charts:
 >   pinned model, and a circuit breaker that stops spending if a paid call returns nothing usable.
 > - The estimates come from a Monte Carlo with a shared 'everything ran over' shock resampled from 56 real work
 >   packages, not an assumed curve.
-> - 79 automated tests and CI. Every number in the README has a one-line command to reproduce it.
+> - Automated tests and CI. Every number in the README has a one-line command to reproduce it.
 >
 > It reads like a senior estimator, shows its evidence, asks before it guesses, and gets better with every project
 > you close."

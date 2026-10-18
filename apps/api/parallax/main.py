@@ -46,7 +46,7 @@ service = ParallaxService(repository=repo)
 _workspace_services: dict[str, ParallaxService] = {}
 _workspace_lock = Lock()
 _workspace_id_pattern = re.compile(r"[0-9a-f]{32}")
-RELEASE = "scope-private-2026-10-18"
+RELEASE = "scope-private-2026-10-18-r2"
 
 # One shared clock of estimate attempts per visitor. Render's proxy would otherwise
 # make every judge look like the same client, so the left-most forwarded address is used.

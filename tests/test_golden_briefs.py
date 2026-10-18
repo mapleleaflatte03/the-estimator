@@ -83,9 +83,14 @@ def test_golden_brief_1_active_clarification_sensitivity():
     )
     assert not any(i.item_id in erp_q.affected_item_ids for i in v_no_erp.wbs)
     assert v1.forecast.p50_hours == v_no_erp.forecast.p50_hours
-    proposal = proposal_markdown(Project(project_id="GOLDEN-01", title="Portal", brief_text=brief_text), v1, lang="en")
+    assert not any(f.category == "scope_ambiguity" and any("ERP" in e.quote for e in f.supporting_evidence)
+                   for f in v_with_erp.critic_findings)
+    proposal = proposal_markdown(Project(project_id="GOLDEN-01", title="Portal", brief_text=brief_text), v1, people=50, lang="en")
     assert "Pending scope (excluded until confirmed)" in proposal
     assert "Out of scope (confirmed not in this delivery)" not in proposal
+    import math
+    chain_weeks = math.ceil(v1.forecast.critical_path_hours * v1.forecast.calibration_multiplier / 32)
+    assert f"**Time:** about {chain_weeks} weeks with 50 people" in proposal
     diff = v_with_erp.forecast.p50_hours - v_no_erp.forecast.p50_hours
     # The removed items' PERT mean is the sensitivity; Monte Carlo + QA share keep it close.
     assert diff >= 0.7 * erp_q.sensitivity_spread_hours, f"diff={diff:.1f}, spread={erp_q.sensitivity_spread_hours}"

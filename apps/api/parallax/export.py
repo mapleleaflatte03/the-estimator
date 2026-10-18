@@ -70,8 +70,9 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
     fc = v.forecast
     planned = hours_at(v, confidence)
     people = max(1, people)
-    weeks = max(1, math.ceil(planned / (people * HOURS_PER_PERSON_WEEK)))
+    team_weeks = max(1, math.ceil(planned / (people * HOURS_PER_PERSON_WEEK)))
     chain_weeks = math.ceil((fc.critical_path_hours or 0) * fc.calibration_multiplier / HOURS_PER_PERSON_WEEK)
+    weeks = max(team_weeks, chain_weeks)
     by_req: dict[str, list[WorkItem]] = {}
     for w in v.wbs:
         by_req.setdefault(w.req_ids[0], []).append(w)
@@ -87,7 +88,7 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
     if en:
         chain = (
             f" (cannot be under about {chain_weeks} weeks, because some work must happen in sequence)"
-            if chain_weeks > weeks else ""
+            if chain_weeks > team_weeks else ""
         )
         lines = [
             f"# Estimate: {project.title}",
@@ -107,7 +108,7 @@ def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 
     else:
         chain = (
             f" (không thể dưới khoảng {chain_weeks} tuần vì một số việc phải làm nối tiếp nhau)"
-            if chain_weeks > weeks else ""
+            if chain_weeks > team_weeks else ""
         )
         lines = [
             f"# Dự toán: {project.title}",
