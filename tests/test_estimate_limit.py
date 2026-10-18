@@ -2,7 +2,10 @@
 import pytest
 from fastapi import HTTPException
 
-from parallax.main import _estimate_hits, enforce_estimate_limit
+from parallax.main import (
+    _benchmark_hits, _estimate_hits, _project_hits, enforce_benchmark_limit,
+    enforce_estimate_limit, enforce_project_limit,
+)
 
 
 class _Request:
@@ -22,6 +25,28 @@ def test_third_estimate_from_one_address_is_refused(monkeypatch):
         enforce_estimate_limit(request)
     assert caught.value.status_code == 429
     _estimate_hits.pop(ip, None)
+
+
+def test_project_creation_has_a_separate_hourly_cap(monkeypatch):
+    monkeypatch.setenv("CREATE_IP_LIMIT_PER_HOUR", "1")
+    ip = "198.51.100.45"
+    _project_hits.pop(ip, None)
+    enforce_project_limit(_Request(ip))
+    with pytest.raises(HTTPException) as caught:
+        enforce_project_limit(_Request(ip))
+    assert caught.value.status_code == 429
+    _project_hits.pop(ip, None)
+
+
+def test_benchmark_has_a_separate_hourly_cap(monkeypatch):
+    monkeypatch.setenv("BENCHMARK_IP_LIMIT_PER_HOUR", "1")
+    ip = "198.51.100.46"
+    _benchmark_hits.pop(ip, None)
+    enforce_benchmark_limit(_Request(ip))
+    with pytest.raises(HTTPException) as caught:
+        enforce_benchmark_limit(_Request(ip))
+    assert caught.value.status_code == 429
+    _benchmark_hits.pop(ip, None)
 
 
 def test_forwarded_ip_only_used_behind_proxy_and_uses_last_address(monkeypatch):

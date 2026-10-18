@@ -29,6 +29,7 @@ import copy
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import threading
@@ -198,6 +199,14 @@ class ClauseReading:
 
 def _norm(answer_key: str) -> str:
     return re.sub(r"_+", "_", answer_key.strip().lower())
+
+
+def _unit(value: object) -> float:
+    """Reject malformed confidence/probability values before caching them."""
+    number = float(value)
+    if not math.isfinite(number) or not 0 <= number <= 1:
+        raise ValueError("probability must be between 0 and 1")
+    return round(number, 4)
 
 
 def _legacy_key(text: str) -> str:
@@ -410,7 +419,7 @@ class JevReader:
                 out[text] = reading
         return out
 
-    def verify(self, readings: dict[str, ClauseReading], proposed: dict[str, set[str]]) -> None:
+    def verify(self, readings: dict[str, ClauseReading], proposed: dict[str, set[str]]) -> list[tuple[str, Question]]:
         """Ask Jev whether each clause really asks for the kinds the rules proposed (other than its own kind);
         answers land in reading.extra as needs_<kind>."""
         by_kind: dict[str, list[str]] = {}
@@ -429,6 +438,7 @@ class JevReader:
             a = self.answer(text, q)
             if a is not None and "noul" in a["answer"]:
                 readings[text].extra[q.qid] = float(a["answer"]["noul"])
+        return [(text, q) for text, q in pairs if self.answer(text, q) is None]
 
     def missing(self, texts: Sequence[str], questions: Sequence[Question]) -> list[tuple[str, Question]]:
         return [(t, q) for t in dict.fromkeys(x.strip() for x in texts if x.strip()) for q in questions
@@ -513,7 +523,8 @@ class JevReader:
         model = data.get("model") or key.model
         out: dict[tuple[str, str], dict] = {}
         # The API normalises answer keys (e.g. collapses repeated underscores), so match loosely.
-        answers = {_norm(k): v for k, v in (data.get("answers") or {}).items()}
+        raw_answers = data.get("answers") or {}
+        answers = {_norm(k): v for k, v in raw_answers.items()} if isinstance(raw_answers, dict) else {}
         with self.lock:
             credits = data.get("credits") or {}
             if credits.get("remaining") is not None:
@@ -527,17 +538,32 @@ class JevReader:
             self.last_error = None
             for t, q in pack:
                 raw = answers.get(_norm(f"{refs[t]}_{q.qid}")) or {}
-                if q.type == "choice" and "choice" in raw:
-                    probs = raw.get("probabilities") or {}
-                    top = dict(sorted(probs.items(), key=lambda kv: -kv[1])[:5])
-                    ans = {"choice": raw["choice"], "confidence": round(float(raw.get("confidence", 0.0)), 4),
-                           "probabilities": {k: round(float(v), 4) for k, v in top.items()}}
-                elif q.type == "noul" and "noul" in raw:
-                    ans = {"noul": round(float(raw["noul"]), 4)}
-                elif q.type == "score" and "score" in raw:
-                    ans = {"score": round(float(raw["score"]), 4), "confidence": round(float(raw.get("confidence", 0.0)), 4),
-                           "probabilities": {k: round(float(v), 4) for k, v in (raw.get("probabilities") or {}).items()}}
-                else:
+                if not isinstance(raw, dict):
+                    continue
+                try:
+                    if q.type == "choice" and "choice" in raw:
+                        if q.criteria and raw["choice"] not in q.criteria:
+                            continue
+                        probs = raw.get("probabilities") or {}
+                        if not isinstance(probs, dict):
+                            continue
+                        top = sorted(((k, _unit(v)) for k, v in probs.items()), key=lambda kv: -kv[1])[:5]
+                        ans = {"choice": raw["choice"], "confidence": _unit(raw.get("confidence", 0.0)),
+                               "probabilities": dict(top)}
+                    elif q.type == "noul" and "noul" in raw:
+                        ans = {"noul": _unit(raw["noul"])}
+                    elif q.type == "score" and "score" in raw:
+                        score = float(raw["score"])
+                        if not math.isfinite(score):
+                            continue
+                        probs = raw.get("probabilities") or {}
+                        if not isinstance(probs, dict):
+                            continue
+                        ans = {"score": round(score, 4), "confidence": _unit(raw.get("confidence", 0.0)),
+                               "probabilities": {k: _unit(v) for k, v in probs.items()}}
+                    else:
+                        continue
+                except (TypeError, ValueError, OverflowError):
                     continue
                 entry = {"answer": ans, "q": q.tag, "model": model, "provider": key.provider}
                 self.cache[_cache_key(t, q)] = entry
@@ -574,7 +600,10 @@ class JevReader:
             raise JevError("unexpected response")
         if payload.get("code") not in (None, 0):
             raise JevError(str(payload.get("message")), 402 if "credit" in str(payload.get("message")).lower() else None)
-        return payload.get("data", payload)
+        data = payload.get("data", payload)
+        if not isinstance(data, dict):
+            raise JevError("unexpected response data")
+        return data
 
     def _key_failed(self, key: JevKey, exc: JevError) -> None:
         logger.warning("Jev call failed on %s (%s)", key.name, exc)
@@ -591,20 +620,22 @@ class JevReader:
     def _persist(self) -> None:
         # Never rewrite the file without new answers: a disabled reader starts with an empty cache
         # and would otherwise overwrite the shipped answers.
-        if not self.cache_path or not self._dirty:
+        if not self.cache_path:
             return
-        try:
-            with self.lock:
+        with self.lock:
+            if not self._dirty:
+                return
+            try:
                 own = {k: v for k, v in self.cache.items() if "answer" in v} \
                     if self.cache_path == SHIPPED_ANSWERS else dict(self.cache)
                 payload = json.dumps(own, ensure_ascii=False, indent=0, sort_keys=True)
+                self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = self.cache_path.with_suffix(".tmp")
+                tmp.write_text(payload, encoding="utf-8")
+                tmp.replace(self.cache_path)
                 self._dirty = False
-            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.cache_path.with_suffix(".tmp")
-            tmp.write_text(payload, encoding="utf-8")
-            tmp.replace(self.cache_path)
-        except OSError as exc:
-            logger.warning("Could not persist Jev cache: %s", exc)
+            except OSError as exc:
+                logger.warning("Could not persist Jev cache: %s", exc)
 
 
 __all__ = [

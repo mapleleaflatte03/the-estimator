@@ -1,4 +1,6 @@
 """AI reader (Jev) integration: merging rules with readings, caching and spend guards. No network."""
+import json
+
 import pytest
 
 from parallax import jev
@@ -202,6 +204,24 @@ def test_reader_halts_when_paid_answers_cannot_be_parsed():
     assert r.status()["halted"]
 
 
+def test_reader_does_not_cache_invalid_model_probabilities():
+    r = FakeReader()
+
+    def malformed(_key, body):
+        answers = {}
+        for name, spec in body["questions"].items():
+            if spec["type"] == "choice":
+                answers[name] = {"choice": "not_a_kind", "confidence": 0.9}
+            else:
+                answers[name] = {"noul": float("nan")}
+        return {"model": "jev-test", "answers": answers}
+
+    r._post = malformed
+    assert r.read(["A software requirement"]) == {}
+    assert r.cache == {}
+    assert r.status()["halted"]
+
+
 def test_disabled_reader_never_calls(monkeypatch):
     monkeypatch.setenv("JEV_DISABLED", "1")
     monkeypatch.setenv("JEVSTATION_API_KEY", "x")
@@ -290,6 +310,22 @@ def test_estimate_requires_ai_reader(monkeypatch, tmp_path):
     assert all(r.ai_reading and r.ai_reading["overrun"] == 0.8 for r in v.requirements if r.req_id != "REQ-00")
 
 
+def test_required_reader_rejects_unverified_keyword_work(monkeypatch, tmp_path):
+    from parallax.service import AIReaderUnavailable, ParallaxService
+    from parallax.storage import StorageRepository
+
+    monkeypatch.setenv("JEV_REQUIRED", "1")
+    clause = "Users log in with Google SSO."
+    reader = FakeReader(credits=(0,))
+    reader.cache[jev._legacy_key(clause)] = jev.asdict(reading("reporting"))
+    reader.cache[jev._cache_key(clause, jev.OVERRUN_Q)] = {"answer": {"noul": 0.2}, "model": "jev-test"}
+    svc = ParallaxService(StorageRepository(tmp_path / "s.json"), reader=reader)
+    project = svc.create_project("Login", f"- {clause}")
+    with pytest.raises(AIReaderUnavailable, match="Jev"):
+        svc.estimate_project(project.project_id)
+    assert svc.repo.get_versions(project.project_id) == []
+
+
 def test_disabled_reader_never_overwrites_cache_file(monkeypatch, tmp_path):
     cache_file = tmp_path / "cache.json"
     cache_file.write_text('{"k": {"kind": "auth"}}', encoding="utf-8")
@@ -297,6 +333,25 @@ def test_disabled_reader_never_overwrites_cache_file(monkeypatch, tmp_path):
     r = JevReader(cache_path=cache_file)
     r.read(["a clause nobody has read"])
     assert cache_file.read_text(encoding="utf-8") == '{"k": {"kind": "auth"}}'
+
+
+def test_failed_cache_write_is_retried(monkeypatch, tmp_path):
+    cache_file = tmp_path / "cache.json"
+    reader = JevReader(cache_path=cache_file, keys=[])
+    reader.cache["fresh"] = {"answer": {"noul": 0.8}}
+    reader._dirty = True
+    original_replace = type(cache_file).replace
+
+    def fail_once(source, target):
+        monkeypatch.setattr(type(cache_file), "replace", original_replace)
+        raise OSError("disk full")
+
+    monkeypatch.setattr(type(cache_file), "replace", fail_once)
+    reader._persist()
+    assert reader._dirty and not cache_file.exists()
+    reader._persist()
+    assert not reader._dirty
+    assert json.loads(cache_file.read_text(encoding="utf-8"))["fresh"]["answer"]["noul"] == 0.8
 
 
 @pytest.mark.parametrize(

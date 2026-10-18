@@ -27,14 +27,15 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
       .catch((err) => console.error('Error fetching sample briefs:', err));
   }, []);
 
-  const MAX_FILE_BYTES = 200_000;
+  const MAX_FILE_BYTES = 50_000;
+  const MAX_BRIEF_CHARS = 50_000;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
-      setError(t('File quá lớn (tối đa 200 KB). Hãy dán phần mô tả yêu cầu vào ô bên dưới.', 'That file is too large (200 KB maximum). Paste the brief into the box below.'));
+      setError(t('File quá lớn (tối đa 50 KB). Hãy rút gọn mô tả yêu cầu.', 'That file is too large (50 KB maximum). Shorten the brief.'));
       return;
     }
     const text = (await file.text()).trim();
@@ -42,8 +43,13 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
       setError(t('File không có nội dung chữ. Hãy dùng file .txt, .md hoặc .csv.', 'That file has no text. Use a .txt, .md, or .csv file.'));
       return;
     }
+    const combined = briefText.trim() ? `${briefText.trim()}\n${text}` : text;
+    if (combined.length > MAX_BRIEF_CHARS) {
+      setError(t('Mô tả vượt 50.000 ký tự. Hãy giữ các yêu cầu quan trọng nhất.', 'The brief exceeds 50,000 characters. Keep the most important requirements.'));
+      return;
+    }
     setError(null);
-    setBriefText((prev) => (prev.trim() ? `${prev.trim()}\n${text}` : text));
+    setBriefText(combined);
     if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ''));
   };
 
@@ -57,6 +63,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
     e.preventDefault();
     if (!title.trim() || !briefText.trim()) {
       setError(t('Vui lòng nhập tên dự án và mô tả.', 'Enter a project name and a brief.'));
+      return;
+    }
+    if (briefText.length > MAX_BRIEF_CHARS) {
+      setError(t('Mô tả vượt 50.000 ký tự.', 'The brief exceeds 50,000 characters.'));
       return;
     }
     setError(null);
@@ -96,6 +106,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ onProjectCreated, is
             </label>
             <input
               id="intake-title"
+              maxLength={200}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('VD: Ứng dụng đặt lịch bảo trì', 'e.g. Maintenance booking app')}

@@ -13,6 +13,8 @@ os.environ["JEV_DISABLED"] = "1"
 os.environ["JEV_REQUIRED"] = "0"
 # The live service caps estimates per visitor. Tests share one client address.
 os.environ["ESTIMATE_IP_LIMIT_PER_HOUR"] = "0"
+os.environ["CREATE_IP_LIMIT_PER_HOUR"] = "0"
+os.environ["BENCHMARK_IP_LIMIT_PER_HOUR"] = "0"
 for _k in list(os.environ):
     if _k.startswith(("JEVSTATION_API_KEY", "TYPESAFE_API_KEY", "AI_GATEWAY_API_KEY")):
         os.environ.pop(_k, None)

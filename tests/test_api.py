@@ -23,6 +23,12 @@ def test_store_is_isolated_from_workspace():
     assert "parallax-test-" in str(DATA_PATH)
 
 
+def test_project_input_limits_reject_oversized_briefs_and_documents():
+    base = {"title": "Input limits", "brief_text": "- Build a portal."}
+    assert client.post("/api/v1/projects", json={**base, "brief_text": "x" * 50_001}).status_code == 422
+    assert client.post("/api/v1/projects", json={**base, "documents": {"notes": "x" * 20_001}}).status_code == 422
+
+
 def test_full_project_lifecycle_api():
     brief_content = (
         "Cần xây dựng một cổng thông tin quản lý dự án cho doanh nghiệp. "
@@ -199,6 +205,11 @@ def test_wbs_edits_persist_across_versions():
     # Unknown ids are rejected
     bad = client.put(f"/api/v1/projects/{pid}/wbs", json={"overrides": {"NOPE-1": {"hours": 3}}})
     assert bad.status_code == 400
+    assert client.put(f"/api/v1/projects/{pid}/wbs", json={"removed": ["NOPE-1"]}).status_code == 400
+    assert client.put(f"/api/v1/projects/{pid}/wbs", json={"overrides": {"USER-999": {"hours": 3}}}).status_code == 400
+    assert client.put(f"/api/v1/projects/{pid}/wbs", json={"added": [
+        {"name": f"Extra {i}", "hours": 1} for i in range(201)
+    ]}).status_code == 422
 
 
 def test_exports_are_plain_language_and_excel_ready():
@@ -223,6 +234,21 @@ def test_exports_are_plain_language_and_excel_ready():
     assert en_csv.status_code == 200 and en_csv.text.startswith("\ufeff")
     assert "Work item" in en_csv.text and "Typical hours" in en_csv.text
     assert "Công việc" not in en_csv.text.splitlines()[0]
+
+
+def test_csv_export_escapes_spreadsheet_formulas():
+    import csv
+    import io
+
+    from parallax.export import wbs_csv
+    from parallax.schemas import EstimateVersion
+
+    brief = "- Manage customer records."
+    pid = client.post("/api/v1/projects", json={"title": "Formula test", "brief_text": brief}).json()["project_id"]
+    version = EstimateVersion.model_validate(client.post(f"/api/v1/projects/{pid}/estimate").json())
+    version.wbs[0].name = "  =2+2"
+    rows = list(csv.reader(io.StringIO(wbs_csv(version, "en").lstrip("\ufeff"))))
+    assert rows[1][1] == "'  =2+2"
 
 
 def test_reader_evaluation_endpoint():

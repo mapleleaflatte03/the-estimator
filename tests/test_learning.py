@@ -1,4 +1,7 @@
 """Jev overrun reading -> hours (SiP prior) and learning from per-requirement actuals."""
+from concurrent.futures import ThreadPoolExecutor
+import time
+
 import pytest
 
 from parallax import risk
@@ -77,6 +80,34 @@ def test_ranges_widen_after_misses_and_narrow_after_hits(tmp_path):
     assert wide.range_percentiles[0] < 10 and wide.range_percentiles[1] > 90
     width = lambda f: (f.p90_hours - f.p10_hours) / f.p50_hours  # noqa: E731
     assert width(wide) > width(first.forecast)
+
+
+def test_simultaneous_completed_projects_both_update_calibration(tmp_path, monkeypatch):
+    from parallax.service import ParallaxService
+    from parallax.storage import StorageRepository
+
+    repo = StorageRepository(tmp_path / "s.json")
+    svc = ParallaxService(repo)
+    projects = [svc.create_project(f"Parallel {i}", "- Monthly sales dashboard.") for i in range(2)]
+    versions = [svc.estimate_project(p.project_id) for p in projects]
+    original_get = repo.get_calibration
+    first = True
+
+    def slow_first_read():
+        nonlocal first
+        state = original_get()
+        if first:
+            first = False
+            time.sleep(0.05)
+        return state
+
+    monkeypatch.setattr(repo, "get_calibration", slow_first_read)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        list(pool.map(lambda pair: svc.record_actuals(pair[0].project_id, pair[1].forecast.p50_hours * 1.5),
+                      zip(projects, versions)))
+    state = repo.get_calibration()
+    assert {o.project_id for o in state.observations} == {p.project_id for p in projects}
+    assert state.interval_updates == 2
 
 
 def test_requirement_actuals_teach_component_factors(tmp_path):

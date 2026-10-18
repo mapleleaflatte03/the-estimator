@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from threading import Lock
 from typing import Optional
+from weakref import WeakValueDictionary
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,13 +44,17 @@ GOLDEN_DIR = ROOT_DIR / "datasets" / "golden_briefs"
 WEB_DIST = Path(os.environ.get("PARALLAX_WEB_DIST", ROOT_DIR / "apps" / "web" / "dist"))
 repo = StorageRepository(data_path=DATA_PATH)
 service = ParallaxService(repository=repo)
-_workspace_services: dict[str, ParallaxService] = {}
+# A request holds its service strongly; inactive anonymous workspaces can be
+# collected instead of accumulating in process memory forever.
+_workspace_services: WeakValueDictionary[str, ParallaxService] = WeakValueDictionary()
 _workspace_lock = Lock()
 _workspace_id_pattern = re.compile(r"[0-9a-f]{32}")
-RELEASE = "scope-decisions-2026-10-18-r6"
+RELEASE = "source-audit-2026-10-18-r7"
 
 # One shared clock of estimate attempts per visitor.
 _estimate_hits: dict[str, list[float]] = {}
+_project_hits: dict[str, list[float]] = {}
+_benchmark_hits: dict[str, list[float]] = {}
 _estimate_lock = Lock()
 
 
@@ -62,25 +67,28 @@ def _visitor_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def enforce_estimate_limit(request: Request) -> None:
-    """Cap how often one visitor can ask Jev to read a brief. 0 disables the cap (tests)."""
-    limit = int(os.environ.get("ESTIMATE_IP_LIMIT_PER_HOUR", "24"))
+def _record_hourly_attempt(request: Request, hits: dict[str, list[float]], limit: int) -> bool:
     if limit <= 0:
-        return
+        return True
     now = time.time()
     ip = _visitor_ip(request)
     with _estimate_lock:
-        # Expire abandoned visitors so a public demo cannot grow this map forever.
-        for key in list(_estimate_hits):
-            recent = [t for t in _estimate_hits[key] if now - t < 3600]
+        for key in list(hits):
+            recent = [t for t in hits[key] if now - t < 3600]
             if recent:
-                _estimate_hits[key] = recent
+                hits[key] = recent
             else:
-                del _estimate_hits[key]
-        exceeded = len(_estimate_hits.get(ip, [])) >= limit
+                del hits[key]
+        exceeded = len(hits.get(ip, [])) >= limit
         if not exceeded:
-            _estimate_hits.setdefault(ip, []).append(now)
-    if exceeded:
+            hits.setdefault(ip, []).append(now)
+    return not exceeded
+
+
+def enforce_estimate_limit(request: Request) -> None:
+    """Cap how often one visitor can ask Jev to read a brief. 0 disables the cap (tests)."""
+    limit = int(os.environ.get("ESTIMATE_IP_LIMIT_PER_HOUR", "24"))
+    if not _record_hourly_attempt(request, _estimate_hits, limit):
         if ui_language.get() == "en":
             detail = (
                 f"This address has used its {limit} brief readings for this hour. "
@@ -92,6 +100,25 @@ def enforce_estimate_limit(request: Request) -> None:
                 "Các mô tả mẫu vẫn mở được; hãy thử lại sau."
             )
         raise HTTPException(status_code=429, detail=detail)
+
+
+def enforce_project_limit(request: Request) -> None:
+    """Bound anonymous project writes separately from paid AI reads."""
+    limit = int(os.environ.get("CREATE_IP_LIMIT_PER_HOUR", "30"))
+    if not _record_hourly_attempt(request, _project_hits, limit):
+        detail = (
+            f"This address has created {limit} projects this hour; try again later."
+            if ui_language.get() == "en" else
+            f"Địa chỉ này đã tạo {limit} dự án trong một giờ; hãy thử lại sau."
+        )
+        raise HTTPException(status_code=429, detail=detail)
+
+
+def enforce_benchmark_limit(request: Request) -> None:
+    """Cap repeated benchmark writes on the public demo."""
+    limit = int(os.environ.get("BENCHMARK_IP_LIMIT_PER_HOUR", "3"))
+    if not _record_hourly_attempt(request, _benchmark_hits, limit):
+        raise HTTPException(status_code=429, detail="Benchmark limit reached; try again in an hour.")
 
 app = FastAPI(
     title="PARALLAX AI — Estimation Intelligence API",
@@ -124,12 +151,14 @@ def workspace_service(request: Request) -> ParallaxService:
     """An anonymous browser keeps its own projects, actuals and learned calibration."""
     workspace_id = request.state.workspace_id
     with _workspace_lock:
-        if workspace_id not in _workspace_services:
+        workspace = _workspace_services.get(workspace_id)
+        if workspace is None:
             data_path = DATA_PATH.parent / "workspaces" / f"{workspace_id}.json"
-            _workspace_services[workspace_id] = ParallaxService(
+            workspace = ParallaxService(
                 repository=StorageRepository(data_path=data_path), reader=service.reader,
             )
-        return _workspace_services[workspace_id]
+            _workspace_services[workspace_id] = workspace
+        return workspace
 
 # Production UI is same-origin. Explicit origins support local development.
 app.add_middleware(
@@ -213,7 +242,8 @@ def sample_briefs():
 
 
 @app.post("/api/v1/projects", response_model=Project, status_code=status.HTTP_201_CREATED, tags=["Projects"])
-def create_project(payload: ProjectCreate, workspace: ParallaxService = Depends(workspace_service)):
+def create_project(payload: ProjectCreate, request: Request, workspace: ParallaxService = Depends(workspace_service)):
+    enforce_project_limit(request)
     try:
         project = workspace.create_project(
             title=payload.title,
@@ -405,7 +435,8 @@ def sip_dataset_summary():
 
 
 @app.post("/api/v1/benchmark/run", tags=["Evaluation"])
-def run_benchmark(workspace: ParallaxService = Depends(workspace_service)):
+def run_benchmark(request: Request, workspace: ParallaxService = Depends(workspace_service)):
+    enforce_benchmark_limit(request)
     try:
         return workspace.run_benchmark_suite()
     except FileNotFoundError as e:

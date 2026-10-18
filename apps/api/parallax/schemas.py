@@ -201,10 +201,19 @@ class Project(BaseModel):
 
 
 class ProjectCreate(BaseModel):
-    title: str = Field(min_length=1)
-    project_type: str = "custom_software"
-    brief_text: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=200)
+    project_type: str = Field(default="custom_software", min_length=1, max_length=80)
+    brief_text: str = Field(min_length=1, max_length=50_000)
     documents: Optional[dict[str, str]] = None
+
+    @model_validator(mode="after")
+    def bound_documents(self):
+        docs = self.documents or {}
+        if len(docs) > 10 or any(len(name) > 120 or len(body) > 20_000 for name, body in docs.items()):
+            raise ValueError("Use at most 10 documents, each with a name under 120 and text under 20,000 characters")
+        if sum(len(body) for body in docs.values()) > 50_000:
+            raise ValueError("Combined document text must be under 50,000 characters")
+        return self
 
 
 class HistoricalCase(BaseModel):
@@ -314,9 +323,9 @@ class WbsItemAdd(BaseModel):
 class ManualEdits(BaseModel):
     """Full set of user edits to the WBS; replaces the previous set."""
 
-    overrides: dict[str, WbsItemOverride] = Field(default_factory=dict)
-    removed: list[str] = Field(default_factory=list)
-    added: list[WbsItemAdd] = Field(default_factory=list)
+    overrides: dict[str, WbsItemOverride] = Field(default_factory=dict, max_length=200)
+    removed: list[str] = Field(default_factory=list, max_length=200)
+    added: list[WbsItemAdd] = Field(default_factory=list, max_length=200)
 
 
 class ClarificationAnswer(BaseModel):

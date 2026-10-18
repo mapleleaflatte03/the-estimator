@@ -64,6 +64,11 @@ def _fmt_rate(rate: float, currency: str, lang: str) -> str:
     return shown.replace(",", ".") + f" {currency}/giờ"
 
 
+def _csv_text(value: str) -> str:
+    """Keep brief text and user edits from becoming formulas in spreadsheets."""
+    return "'" + value if value.lstrip().startswith(("=", "+", "-", "@")) else value
+
+
 def proposal_markdown(project: Project, v: EstimateVersion, confidence: float = 80, rate: float = 500_000,
                       currency: str = "VND", people: int = 3, lang: str = "vi") -> str:
     lang = _lang(lang)
@@ -267,7 +272,7 @@ def wbs_csv(v: EstimateVersion, lang: str = "vi") -> str:
             if quote and quote not in covered:
                 covered.append(quote)
         writer.writerow([
-            " | ".join(covered), w.name, roles.get(w.role, w.role), round(pert_mean(w), 1),
+            _csv_text(" | ".join(covered)), _csv_text(w.name), _csv_text(roles.get(w.role, w.role)), round(pert_mean(w), 1),
             w.optimistic_hours, w.pessimistic_hours, yes if w.item_id in critical else "",
         ])
     return buf.getvalue()

@@ -214,6 +214,7 @@ TypeSafe directly. The recorded evaluation runs contain their measured call coun
 3. The labelled clause sets were written by the developer, not taken from real client documents.
 4. JevStation is an independent reseller: brief text passes through it. Use TypeSafe directly for confidential work.
 5. Each browser gets an anonymous workspace: its projects, actual hours and learned adjustments are separate from other visitors. The free hosting plan has no persistent disk, so server projects reset when it restarts. The browser keeps copies of projects opened in the UI (brief, answers, notes, edits and any actuals entered there) and can ask Jev to read them again. Recovery re-estimates under the current model; it is not an exact archive of the old forecast. Browser storage can be cleared or disabled. Production use needs a durable database, authenticated team workspaces and backups.
+6. The public demo limits anonymous project creation, estimates and benchmark runs per address. Its in-process storage and locks assume one API worker; production use needs a shared database and a durable distributed rate limit.
 
 ## Roadmap
 

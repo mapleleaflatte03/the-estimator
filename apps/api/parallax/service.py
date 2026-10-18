@@ -11,6 +11,8 @@ import math
 import os
 import uuid
 from datetime import datetime, timezone
+from functools import wraps
+from threading import RLock
 from typing import Optional
 
 from . import empirical, risk
@@ -41,6 +43,15 @@ INTERVAL_GAMMA = 0.05  # chosen on SiP 2008-2010 replay, confirmed on 2011-2014 
 SUPPRESS_MIN_ANSWERS = 3
 SUPPRESS_MAX_ACCEPTANCE = 0.3
 logger = logging.getLogger(__name__)
+
+
+def serialized_mutation(method):
+    """Keep read-compute-write operations consistent within one workspace."""
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        with self._mutation_lock:
+            return method(self, *args, **kwargs)
+    return locked
 
 
 def shrunk_multiplier(log_ratios: list[float], prior_strength: float) -> float:
@@ -75,6 +86,7 @@ class ParallaxService:
     def __init__(self, repository: StorageRepository, use_empirical_data: bool = True,
                  reader: Optional[JevReader] = None):
         self.repo = repository
+        self._mutation_lock = RLock()
         self.use_empirical_data = use_empirical_data
         cache = repository.data_path.with_name("jev_cache.json") if repository.data_path else None
         self.reader = reader if reader is not None else JevReader(cache_path=cache)
@@ -88,9 +100,10 @@ class ParallaxService:
             logger.warning("AI reader failed: %s", exc)
             readings = {}
         try:
-            reader.verify(readings, {t: proposed_kinds(t) for t in readings})
-        except Exception as exc:  # verification only removes rule over-matches; never block on it
+            unverified = reader.verify(readings, {t: proposed_kinds(t) for t in readings})
+        except Exception as exc:
             logger.warning("AI verification failed: %s", exc)
+            unverified = None
         missing = [t for t in texts if t not in readings]
         if missing and self.jev_required:
             status = reader.status()
@@ -122,6 +135,17 @@ class ParallaxService:
             raise AIReaderUnavailable(
                 f"AI Jev chưa đọc được {len(missing)}/{len(texts)} câu của mô tả ({reason}). "
                 "Dự toán cần AI đọc đủ mọi câu; hãy thử lại sau ít phút."
+            )
+        if self.jev_required and (unverified is None or unverified):
+            count = len(unverified) if unverified is not None else "some"
+            if current_lang() == "en":
+                raise AIReaderUnavailable(
+                    f"Jev could not verify {count} keyword work-kind matches. "
+                    "No estimate was produced with unchecked scope; try again in a few minutes."
+                )
+            raise AIReaderUnavailable(
+                f"Jev chưa kiểm tra được {count} loại công việc do từ khóa gợi ý. "
+                "Hệ thống chưa lập dự toán khi phạm vi chưa được kiểm tra; hãy thử lại sau ít phút."
             )
         return readings
 
@@ -197,6 +221,7 @@ class ParallaxService:
     def suppressed_ai_kinds(self) -> set[str]:
         return {r["component"] for r in self.feedback_summary()["by_component"] if r["muted"]}
 
+    @serialized_mutation
     def create_project(
         self,
         title: str,
@@ -214,6 +239,7 @@ class ParallaxService:
         )
         return self.repo.save_project(project)
 
+    @serialized_mutation
     def estimate_project(self, project_id: str, reader: Optional[JevReader] = None) -> EstimateVersion:
         project = self.repo.get_project(project_id)
         if not project:
@@ -224,6 +250,7 @@ class ParallaxService:
         answers = dict(existing[-1].clarification_answers) if existing else {}
         return self.repo.add_version(self._build_version(project, answers, reader=reader))
 
+    @serialized_mutation
     def answer_clarification(
         self,
         project_id: str,
@@ -262,6 +289,7 @@ class ParallaxService:
                 version.clarification_notes.pop(question_id, None)
         return self.repo.add_version(version, status="clarified", feedback_events=events)
 
+    @serialized_mutation
     def update_wbs(self, project_id: str, edits: dict, reader: Optional[JevReader] = None) -> EstimateVersion:
         """New immutable version with the user's WBS edits; edits persist across later versions."""
         project = self.repo.get_project(project_id)
@@ -273,12 +301,11 @@ class ParallaxService:
         if not existing:
             raise ValueError("Cannot edit the WBS before generating an estimate")
         parent = existing[-1]
-        known = {w.item_id for w in parent.wbs} | {
-            i for i in (parent.manual_edits.get("overrides") or {})
-        }
+        known = {w.item_id for w in parent.wbs} | set(parent.manual_edits.get("removed") or [])
         for i, add in enumerate(edits.get("added") or [], start=1):
             add["item_id"] = f"USER-{i:02d}"
-        unknown = [i for i in (edits.get("overrides") or {}) if i not in known and not i.startswith("USER-")]
+            known.add(add["item_id"])
+        unknown = [i for i in [*(edits.get("overrides") or {}), *(edits.get("removed") or [])] if i not in known]
         if unknown:
             raise ValueError(f"Unknown work items: {', '.join(unknown[:5])}")
         removed = set(edits.get("removed") or []) - set(parent.manual_edits.get("removed") or [])
@@ -291,6 +318,7 @@ class ParallaxService:
         version = self._build_version(project, dict(parent.clarification_answers), edits, reader)
         return self.repo.add_version(version, feedback_events=events)
 
+    @serialized_mutation
     def record_actuals(
         self,
         project_id: str,

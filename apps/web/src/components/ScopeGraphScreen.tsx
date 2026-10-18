@@ -6,7 +6,7 @@ import { ROLE_COLORS, card, typicalHours } from '../ui';
 
 interface ScopeGraphScreenProps {
   version: EstimateVersion;
-  onSaveEdits: (edits: ManualEdits) => Promise<void>;
+  onSaveEdits: (edits: ManualEdits) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -143,8 +143,7 @@ export const ScopeGraphScreen: React.FC<ScopeGraphScreenProps> = ({ version, onS
       Object.entries(draft.overrides).filter(([, v]) => v && (v.hours || v.name)),
     );
     const added = draft.added.filter((a) => !a.dropped).map(({ name, hours: h, req_id, role }) => ({ name, hours: h, req_id, role }));
-    await onSaveEdits({ overrides, removed: draft.removed, added });
-    setEditing(false);
+    if (await onSaveEdits({ overrides, removed: draft.removed, added })) setEditing(false);
   };
 
   const inputClass =

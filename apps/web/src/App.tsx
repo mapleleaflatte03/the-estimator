@@ -160,13 +160,17 @@ export const App: React.FC = () => {
       setActiveTab('estimation');
     });
 
-  const handleUpdateWbs = (edits: ManualEdits) =>
-    withBusy(t('Đang lưu chỉnh sửa và tính lại dự toán…', 'Saving your edits and recalculating…'), async () => {
+  const handleUpdateWbs = async (edits: ManualEdits): Promise<boolean> => {
+    let saved = false;
+    await withBusy(t('Đang lưu chỉnh sửa và tính lại dự toán…', 'Saving your edits and recalculating…'), async () => {
       if (!currentProject) return;
       const v = await updateWbs(currentProject.project_id, edits);
       setVersions((prev) => [...prev, v]);
       setCurrentVersion(v);
+      saved = true;
     });
+    return saved;
+  };
 
   const handleRecordActuals = async (hoursSpent: number, reasons: string[], perRequirement?: Record<string, number>) => {
     if (!currentProject) throw new Error(t('Chưa chọn dự án', 'No project selected'));

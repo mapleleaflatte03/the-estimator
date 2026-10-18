@@ -18,3 +18,7 @@ services:
         value: "120"
       - key: ESTIMATE_IP_LIMIT_PER_HOUR
         value: "24"
+      - key: CREATE_IP_LIMIT_PER_HOUR
+        value: "30"
+      - key: BENCHMARK_IP_LIMIT_PER_HOUR
+        value: "3"
