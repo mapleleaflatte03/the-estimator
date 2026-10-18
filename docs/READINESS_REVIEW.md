@@ -47,3 +47,9 @@ I reran the stored-data checks on this revision without paid model calls: `pytho
 ## Highest-value next proof
 
 Obtain 3–10 **completed software projects** with the original intake brief, the estimate recorded *before* delivery and actual hours. Remove names and secrets. Freeze the current code; run the briefs without editing the rules or templates, record omitted/misclassified scope, WBS edit time, MAE and interval coverage, and compare with the original human estimate. Report every case, including failures. This would test the exact business loop the challenge asks for. If those records are unavailable, demonstrate the workflow honestly and avoid claiming end-to-end accuracy or a proven win.
+
+## Final release checks
+
+- Local: 104 backend tests pass; frontend lint and production build pass. CI runs both backend tests and frontend lint/build on every push.
+- Live release `readiness-review-2026-10-18-r4`: restored an investor-portal sample after an ephemeral-store reset, saved a clarification with a source note, reloaded and confirmed both persisted. A second independent sample produced a draft estimate; its Markdown proposal downloaded. The browser reported no console errors during this check.
+- Storage failure tests cover an initial failed write, a failed update, a corrupt file and an interrupted actuals/calibration commit. These are simulated failures; the free host still needs a durable database for production use.
